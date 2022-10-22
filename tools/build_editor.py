@@ -20,23 +20,21 @@ def run():
             "scons",
             "-j", f"{cores}",
             "p=windows",
-            "tools=yes",
-            "module_mono_enabled=yes",
-            "mono_glue=no",
-        ], shell=True, check=True, cwd="godot")
-        
-    subprocess.run([
-            "bin\godot.windows.tools.x86_64.mono.exe",
-            "--generate-mono-glue", "modules/mono/glue",
-        ], shell=True, check=True, cwd="godot")
-
-    subprocess.run([
-            "scons",
-            "-j", f"{cores}",
-            "p=windows",
             "target=release_debug",
             "tools=yes",
             "module_mono_enabled=yes",
+        ], shell=True, check=True, cwd="godot")
+        
+    subprocess.run([
+            "bin\godot.windows.opt.tools.x86_64.mono.exe",
+            "--headless",
+            "--generate-mono-glue", "./modules/mono/glue",
+        ], shell=True, check=True, cwd="godot")
+
+    subprocess.run([
+           "python",
+           "./modules/mono/build_scripts/build_assemblies.py",
+           "--godot-output-dir", "./bin",
         ], shell=True, check=True, cwd="godot")
 
     # priority back up
