@@ -32,9 +32,16 @@ def run():
         ], shell=True, check=True, cwd="godot")
 
     subprocess.run([
+            "dotnet", "nuget",
+            "add", "source", "%APPDATA%/NuGetLocal",
+            "--name", "NuGetLocal",
+        ], shell=True)  # not checking, it'll fail on the seond run if we do
+    
+    subprocess.run([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
+           "--push-nupkgs-local", "%APPDATA%/NuGetLocal",
         ], shell=True, check=True, cwd="godot")
 
     # priority back up
