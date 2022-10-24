@@ -509,14 +509,8 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		error->set_custom_color(0, color);
 		error->set_custom_color(1, color);
 
-		String error_title;
-		if (oe.callstack.size() > 0) {
-			// If available, use the script's stack in the error title.
-			error_title = oe.callstack[oe.callstack.size() - 1].func + ": ";
-		} else if (!oe.source_func.is_empty()) {
-			// Otherwise try to use the C++ source function.
-			error_title += oe.source_func + ": ";
-		}
+		String error_title = "";
+		
 		// If we have a (custom) error message, use it as title, and add a C++ Error
 		// item with the original error condition.
 		error_title += oe.error_descr.is_empty() ? oe.error : oe.error_descr;
