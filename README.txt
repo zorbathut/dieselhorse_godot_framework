@@ -6,7 +6,6 @@ To set up environment:
 		(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
 * Install Visual Studio 2022 Community from https://visualstudio.microsoft.com/vs/
 	* When installing, under Workloads, click "Desktop development with C++" and ".NET desktop development"
-	* Switch to "Individual Components" and make sure ".NET 6.0 Runtime" is selected
 
 To run the editor:
 

@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.9"
 psutil = "*"
 
+# needed for the build system
+scons = "*"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
