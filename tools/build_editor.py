@@ -31,9 +31,12 @@ def run():
             "--generate-mono-glue", "./modules/mono/glue",
         ], shell=True, check=True, cwd="godot")
 
+    nugetdir = os.path.expandvars("%APPDATA%/NuGetLocal")
+    if not os.path.exists(nugetdir):
+        os.makedirs(nugetdir)
     subprocess.run([
             "dotnet", "nuget",
-            "add", "source", "%APPDATA%/NuGetLocal",
+            "add", "source", nugetdir,
             "--name", "NuGetLocal",
         ], shell=True)  # not checking, it'll fail on the seond run if we do
     
@@ -41,7 +44,7 @@ def run():
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
-           "--push-nupkgs-local", "%APPDATA%/NuGetLocal",
+           "--push-nupkgs-local", nugetdir,
         ], shell=True, check=True, cwd="godot")
 
     # priority back up
