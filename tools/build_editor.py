@@ -2,6 +2,7 @@
 import multiprocessing
 import os
 import psutil
+import shutil
 import subprocess
 import sys
 
@@ -15,6 +16,12 @@ def run():
 
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
+    
+    # Wipe out the GodotNuGetFallbackFolder because Godot does not properly update it
+    fallbackdir = os.path.expandvars("%APPDATA%/Godot/mono/GodotNuGetFallbackFolder")
+    if os.path.exists(fallbackdir):
+        shutil.rmtree(fallbackdir)
+        os.makedirs(fallbackdir)
     
     subprocess.run([
             "scons",
