@@ -1439,7 +1439,7 @@ void AnimationTree::_process_graph(double p_delta) {
 								StringName method = a->method_track_get_name(i, F);
 								Vector<Variant> params = a->method_track_get_params(i, F);
 								if (can_call) {
-									_call_object(t->object, method, params, true);
+									_call_object(t->object, method, params, Object::cast_to<AnimationPlayer>(get_node(animation_player))->get_method_call_mode() == AnimationPlayer::ANIMATION_METHOD_CALL_DEFERRED);
 								}
 							}
 						}
