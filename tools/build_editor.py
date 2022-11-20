@@ -5,9 +5,9 @@ import psutil
 import shutil
 import subprocess
 import sys
+import util
 
-import cwdhack
-cwdhack.cwdhack()
+util.cwdhack()
 
 def run():
     # kick priority down to make builds smoother
@@ -23,7 +23,7 @@ def run():
         shutil.rmtree(fallbackdir)
         os.makedirs(fallbackdir)
     
-    subprocess.run([
+    util.subprocess_run_reporting([
             "scons",
             "-j", f"{cores}",
             "p=windows",
@@ -32,7 +32,7 @@ def run():
             "module_mono_enabled=yes",
         ], shell=True, check=True, cwd="godot")
         
-    subprocess.run([
+    util.subprocess_run_reporting([
             "bin\godot.windows.opt.tools.x86_64.mono.exe",
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
@@ -40,14 +40,16 @@ def run():
 
     nugetdir = os.path.expandvars("%APPDATA%/NuGetLocal")
     if not os.path.exists(nugetdir):
+        print(f"Making {nugetdir}")
         os.makedirs(nugetdir)
-    subprocess.run([
+    
+    util.subprocess_run_reporting([
             "dotnet", "nuget",
             "add", "source", nugetdir,
             "--name", "NuGetLocal",
         ], shell=True)  # not checking, it'll fail on the seond run if we do
     
-    subprocess.run([
+    util.subprocess_run_reporting([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",

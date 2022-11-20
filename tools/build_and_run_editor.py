@@ -1,15 +1,15 @@
 
-import subprocess
-
 import build_editor
+import run_editor
+import subprocess
+import util
 
-import cwdhack
-cwdhack.cwdhack()
+util.cwdhack()
 
 def run():
     build_editor.run()
     
-    subprocess.run(["godot/bin/godot.windows.opt.tools.x86_64.mono.exe", "project/project.godot"])
+    run_editor.run()
 
 if __name__ == '__main__':
     run()
