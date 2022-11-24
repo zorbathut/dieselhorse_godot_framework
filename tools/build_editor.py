@@ -11,8 +11,11 @@ util.cwdhack()
 
 def run():
     # kick priority down to make builds smoother
-    proc = psutil.Process(os.getpid())
-    proc.nice(psutil.IDLE_PRIORITY_CLASS)
+    # can't do this on linux, currently disabled
+    #proc = psutil.Process(os.getpid())
+    #proc.nice(psutil.IDLE_PRIORITY_CLASS)
+
+    platform = util.platformswitch(linux = "linuxbsd", windows = "windows")
 
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
@@ -23,41 +26,41 @@ def run():
         shutil.rmtree(fallbackdir)
         os.makedirs(fallbackdir)
     
-    util.subprocess_run_reporting([
+    util.run([
             "scons",
             "-j", f"{cores}",
-            "p=windows",
+            f"p={platform}",
             "target=release_debug",
             "tools=yes",
             "module_mono_enabled=yes",
-        ], shell=True, check=True, cwd="godot")
+        ], check=True, cwd="godot")
         
-    util.subprocess_run_reporting([
-            "bin\godot.windows.opt.tools.x86_64.mono.exe",
+    util.run([
+            util.godot_bin(),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
-        ], shell=True, check=True, cwd="godot")
+        ], check=True, cwd="godot")
 
-    nugetdir = os.path.expandvars("%APPDATA%/NuGetLocal")
+    nugetdir = util.platformswitch(linux = os.path.expanduser("~/.nuget/NuGetLocal"), windows = os.path.expandvars("%APPDATA%/NuGetLocal"))
     if not os.path.exists(nugetdir):
         print(f"Making {nugetdir}")
         os.makedirs(nugetdir)
     
-    util.subprocess_run_reporting([
+    util.run([
             "dotnet", "nuget",
             "add", "source", nugetdir,
             "--name", "NuGetLocal",
-        ], shell=True)  # not checking, it'll fail on the seond run if we do
+        ])  # not checking, it'll fail on the seond run if we do
     
-    util.subprocess_run_reporting([
+    util.run([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
            "--push-nupkgs-local", nugetdir,
-        ], shell=True, check=True, cwd="godot")
+        ], check=True, cwd="godot")
 
     # priority back up
-    proc.nice(psutil.NORMAL_PRIORITY_CLASS)
+    #proc.nice(psutil.NORMAL_PRIORITY_CLASS)
 
 if __name__ == '__main__':
     run()

@@ -10,7 +10,10 @@ import util
 util.cwdhack()
 
 def run():
-    util.subprocess_run_reporting(["godot/bin/godot.windows.opt.tools.x86_64.mono.exe", "project/project.godot"])
+    util.run([
+        "godot/" + util.godot_bin(),
+        "project/project.godot"
+    ])
 
 if __name__ == '__main__':
     run()

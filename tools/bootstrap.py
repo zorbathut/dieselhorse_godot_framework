@@ -1,17 +1,23 @@
 
+import sys
+
 # this runs from main directory so we need to specify stuff
 import tools.util
 
 def execute(token):
-    tools.util.subprocess_run_reporting([
-            "%APPDATA%/pypoetry/venv/Scripts/poetry",
-            "install",
-        ], shell=True, check=True, cwd="tools")
+    poetry = tools.util.platformswitch(
+        linux = "poetry",
+        windows = "%APPDATA%/pypoetry/venv/Scripts/poetry")
     
-    tools.util.subprocess_run_reporting([
-            "%APPDATA%/pypoetry/venv/Scripts/poetry",
+    tools.util.run([
+            poetry,
+            "install",
+        ], check=True, cwd="tools")
+    
+    tools.util.run([
+            poetry,
             "run",
             "python",
             f"{token}.py",
-        ], shell=True, check=True, cwd="tools")    
+        ], check=True, cwd="tools")    
 
