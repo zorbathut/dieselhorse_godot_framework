@@ -31,7 +31,7 @@
 #ifndef GLTF_DOCUMENT_H
 #define GLTF_DOCUMENT_H
 
-#include "gltf_defines.h"
+#include "extensions/gltf_document_extension.h"
 #include "structures/gltf_animation.h"
 
 #include "scene/3d/bone_attachment_3d.h"
@@ -44,13 +44,13 @@
 
 class GLTFDocument : public Resource {
 	GDCLASS(GLTFDocument, Resource);
-	TypedArray<GLTFDocumentExtension> document_extensions;
+	static Vector<Ref<GLTFDocumentExtension>> all_document_extensions;
+	Vector<Ref<GLTFDocumentExtension>> document_extensions;
 
 private:
 	const float BAKE_FPS = 30.0f;
 
 public:
-	GLTFDocument();
 	const int32_t JOINT_GROUP_SIZE = 4;
 
 	enum {
@@ -76,8 +76,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_extensions(TypedArray<GLTFDocumentExtension> p_extensions);
-	TypedArray<GLTFDocumentExtension> get_extensions() const;
+	static void register_gltf_document_extension(Ref<GLTFDocumentExtension> p_extension, bool p_first_priority = false);
+	static void unregister_gltf_document_extension(Ref<GLTFDocumentExtension> p_extension);
+	static void unregister_all_gltf_document_extensions();
 
 private:
 	void _build_parent_hierachy(Ref<GLTFState> state);
@@ -95,8 +96,13 @@ private:
 	String _gen_unique_bone_name(Ref<GLTFState> state,
 			const GLTFSkeletonIndex skel_i,
 			const String &p_name);
-	GLTFTextureIndex _set_texture(Ref<GLTFState> state, Ref<Texture2D> p_texture);
+	GLTFTextureIndex _set_texture(Ref<GLTFState> state, Ref<Texture2D> p_texture,
+			StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
 	Ref<Texture2D> _get_texture(Ref<GLTFState> state,
+			const GLTFTextureIndex p_texture);
+	GLTFTextureSamplerIndex _set_sampler_for_mode(Ref<GLTFState> state,
+			StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
+	Ref<GLTFTextureSampler> _get_sampler_for_texture(Ref<GLTFState> state,
 			const GLTFTextureIndex p_texture);
 	Error _parse_json(const String &p_path, Ref<GLTFState> state);
 	Error _parse_glb(Ref<FileAccess> f, Ref<GLTFState> state);
@@ -145,10 +151,12 @@ private:
 			const bool p_for_vertex);
 	Error _parse_meshes(Ref<GLTFState> state);
 	Error _serialize_textures(Ref<GLTFState> state);
+	Error _serialize_texture_samplers(Ref<GLTFState> state);
 	Error _serialize_images(Ref<GLTFState> state, const String &p_path);
 	Error _serialize_lights(Ref<GLTFState> state);
 	Error _parse_images(Ref<GLTFState> state, const String &p_base_path);
 	Error _parse_textures(Ref<GLTFState> state);
+	Error _parse_texture_samplers(Ref<GLTFState> state);
 	Error _parse_materials(Ref<GLTFState> state);
 	void _set_texture_transform_uv1(const Dictionary &d, Ref<BaseMaterial3D> material);
 	void spec_gloss_to_rough_metal(Ref<GLTFSpecGloss> r_spec_gloss,

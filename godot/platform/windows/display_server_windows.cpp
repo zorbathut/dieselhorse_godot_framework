@@ -561,20 +561,6 @@ float DisplayServerWindows::screen_get_refresh_rate(int p_screen) const {
 	return data.rate;
 }
 
-bool DisplayServerWindows::screen_is_touchscreen(int p_screen) const {
-#ifndef _MSC_VER
-#warning touchscreen not working
-#endif
-	return false;
-}
-
-void DisplayServerWindows::screen_set_orientation(ScreenOrientation p_orientation, int p_screen) {
-}
-
-DisplayServer::ScreenOrientation DisplayServerWindows::screen_get_orientation(int p_screen) const {
-	return SCREEN_LANDSCAPE;
-}
-
 void DisplayServerWindows::screen_set_keep_on(bool p_enable) {
 	if (keep_screen_on == p_enable) {
 		return;
@@ -755,9 +741,20 @@ int64_t DisplayServerWindows::window_get_native_handle(HandleType p_handle_type,
 		case WINDOW_HANDLE: {
 			return (int64_t)windows[p_window].hWnd;
 		}
+#if defined(GLES3_ENABLED)
 		case WINDOW_VIEW: {
-			return 0; // Not supported.
+			if (gl_manager) {
+				return (int64_t)gl_manager->get_hdc(p_window);
+			}
+			return 0;
 		}
+		case OPENGL_CONTEXT: {
+			if (gl_manager) {
+				return (int64_t)gl_manager->get_hglrc(p_window);
+			}
+			return 0;
+		}
+#endif
 		default: {
 			return 0;
 		}
@@ -1361,7 +1358,8 @@ void DisplayServerWindows::window_set_flag(WindowFlags p_flag, bool p_enabled, W
 			if (p_enabled) {
 				//enable per-pixel alpha
 
-				DWM_BLURBEHIND bb = { 0 };
+				DWM_BLURBEHIND bb;
+				ZeroMemory(&bb, sizeof(bb));
 				HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
 				bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
 				bb.hRgnBlur = hRgn;
@@ -1373,7 +1371,8 @@ void DisplayServerWindows::window_set_flag(WindowFlags p_flag, bool p_enabled, W
 				//disable per-pixel alpha
 				wd.layered_window = false;
 
-				DWM_BLURBEHIND bb = { 0 };
+				DWM_BLURBEHIND bb;
+				ZeroMemory(&bb, sizeof(bb));
 				HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
 				bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
 				bb.hRgnBlur = hRgn;
@@ -1390,7 +1389,7 @@ void DisplayServerWindows::window_set_flag(WindowFlags p_flag, bool p_enabled, W
 			ERR_FAIL_COND_MSG(IsWindowVisible(wd.hWnd) && (wd.is_popup != p_enabled), "Popup flag can't changed while window is opened.");
 			wd.is_popup = p_enabled;
 		} break;
-		case WINDOW_FLAG_MAX:
+		default:
 			break;
 	}
 }
@@ -1419,7 +1418,7 @@ bool DisplayServerWindows::window_get_flag(WindowFlags p_flag, WindowID p_window
 		case WINDOW_FLAG_POPUP: {
 			return wd.is_popup;
 		} break;
-		case WINDOW_FLAG_MAX:
+		default:
 			break;
 	}
 
@@ -1893,7 +1892,7 @@ void DisplayServerWindows::set_native_icon(const String &p_filename) {
 	pos += sizeof(WORD);
 	f->seek(pos);
 
-	icon_dir = (ICONDIR *)memrealloc(icon_dir, 3 * sizeof(WORD) + icon_dir->idCount * sizeof(ICONDIRENTRY));
+	icon_dir = (ICONDIR *)memrealloc(icon_dir, sizeof(ICONDIR) - sizeof(ICONDIRENTRY) + icon_dir->idCount * sizeof(ICONDIRENTRY));
 	f->get_buffer((uint8_t *)&icon_dir->idEntries[0], icon_dir->idCount * sizeof(ICONDIRENTRY));
 
 	int small_icon_index = -1; // Select 16x16 with largest color count.
@@ -2024,6 +2023,12 @@ void DisplayServerWindows::window_set_vsync_mode(DisplayServer::VSyncMode p_vsyn
 		context_vulkan->set_vsync_mode(p_window, p_vsync_mode);
 	}
 #endif
+
+#if defined(GLES3_ENABLED)
+	if (gl_manager) {
+		gl_manager->set_use_vsync(p_window, p_vsync_mode != DisplayServer::VSYNC_DISABLED);
+	}
+#endif
 }
 
 DisplayServer::VSyncMode DisplayServerWindows::window_get_vsync_mode(WindowID p_window) const {
@@ -2033,6 +2038,13 @@ DisplayServer::VSyncMode DisplayServerWindows::window_get_vsync_mode(WindowID p_
 		return context_vulkan->get_vsync_mode(p_window);
 	}
 #endif
+
+#if defined(GLES3_ENABLED)
+	if (gl_manager) {
+		return gl_manager->is_using_vsync(p_window) ? DisplayServer::VSYNC_ENABLED : DisplayServer::VSYNC_DISABLED;
+	}
+#endif
+
 	return DisplayServer::VSYNC_ENABLED;
 }
 
@@ -2456,10 +2468,16 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			return 0; // Jump back.
 		}
 		case WM_MOUSELEAVE: {
-			old_invalid = true;
-			windows[window_id].mouse_outside = true;
+			if (window_mouseover_id == window_id) {
+				old_invalid = true;
+				window_mouseover_id = INVALID_WINDOW_ID;
 
-			_send_window_event(windows[window_id], WINDOW_EVENT_MOUSE_EXIT);
+				_send_window_event(windows[window_id], WINDOW_EVENT_MOUSE_EXIT);
+			} else if (window_mouseover_id != INVALID_WINDOW_ID) {
+				// This is reached during drag and drop, after dropping in a different window.
+				// Once-off notification, must call again.
+				track_mouse_leave_event(windows[window_mouseover_id].hWnd);
+			}
 
 		} break;
 		case WM_INPUT: {
@@ -2690,17 +2708,21 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			if (windows[window_id].mouse_outside) {
+			if (window_mouseover_id != window_id) {
 				// Mouse enter.
 
 				if (mouse_mode != MOUSE_MODE_CAPTURED) {
+					if (window_mouseover_id != INVALID_WINDOW_ID) {
+						// Leave previous window.
+						_send_window_event(windows[window_mouseover_id], WINDOW_EVENT_MOUSE_EXIT);
+					}
 					_send_window_event(windows[window_id], WINDOW_EVENT_MOUSE_ENTER);
 				}
 
 				CursorShape c = cursor_shape;
 				cursor_shape = CURSOR_MAX;
 				cursor_set_shape(c);
-				windows[window_id].mouse_outside = false;
+				window_mouseover_id = window_id;
 
 				// Once-off notification, must call again.
 				track_mouse_leave_event(hWnd);
@@ -2791,17 +2813,29 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			if (windows[window_id].mouse_outside) {
+			DisplayServer::WindowID over_id = get_window_at_screen_position(mouse_get_position());
+			if (!Rect2(window_get_position(over_id), Point2(windows[over_id].width, windows[over_id].height)).has_point(mouse_get_position())) {
+				// Don't consider the windowborder as part of the window.
+				over_id = INVALID_WINDOW_ID;
+			}
+			if (window_mouseover_id != over_id) {
 				// Mouse enter.
 
 				if (mouse_mode != MOUSE_MODE_CAPTURED) {
-					_send_window_event(windows[window_id], WINDOW_EVENT_MOUSE_ENTER);
+					if (window_mouseover_id != INVALID_WINDOW_ID) {
+						// Leave previous window.
+						_send_window_event(windows[window_mouseover_id], WINDOW_EVENT_MOUSE_EXIT);
+					}
+
+					if (over_id != INVALID_WINDOW_ID) {
+						_send_window_event(windows[over_id], WINDOW_EVENT_MOUSE_ENTER);
+					}
 				}
 
 				CursorShape c = cursor_shape;
 				cursor_shape = CURSOR_MAX;
 				cursor_set_shape(c);
-				windows[window_id].mouse_outside = false;
+				window_mouseover_id = over_id;
 
 				// Once-off notification, must call again.
 				track_mouse_leave_event(hWnd);
@@ -2812,9 +2846,13 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
+			DisplayServer::WindowID receiving_window_id = _get_focused_window_or_popup();
+			if (receiving_window_id == INVALID_WINDOW_ID) {
+				receiving_window_id = window_id;
+			}
 			Ref<InputEventMouseMotion> mm;
 			mm.instantiate();
-			mm->set_window_id(window_id);
+			mm->set_window_id(receiving_window_id);
 			mm->set_ctrl_pressed((wParam & MK_CONTROL) != 0);
 			mm->set_shift_pressed((wParam & MK_SHIFT) != 0);
 			mm->set_alt_pressed(alt_mem);
@@ -2871,9 +2909,14 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 			mm->set_relative(Vector2(mm->get_position() - Vector2(old_x, old_y)));
 			old_x = mm->get_position().x;
 			old_y = mm->get_position().y;
-			if (windows[window_id].window_has_focus || window_get_active_popup() == window_id) {
-				Input::get_singleton()->parse_input_event(mm);
+
+			if (!windows[receiving_window_id].window_has_focus) {
+				// In case of unfocused Popups, adjust event position.
+				Point2i pos = mm->get_position() - window_get_position(receiving_window_id) + window_get_position(window_id);
+				mm->set_position(pos);
+				mm->set_global_position(pos);
 			}
+			Input::get_singleton()->parse_input_event(mm);
 
 		} break;
 		case WM_LBUTTONDOWN:
@@ -3099,7 +3142,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 					rect_changed = true;
 				}
 #if defined(VULKAN_ENABLED)
-				if (context_vulkan && window_created) {
+				if (context_vulkan && window.context_created) {
 					// Note: Trigger resize event to update swapchains when window is minimized/restored, even if size is not changed.
 					context_vulkan->window_resize(window_id, window.width, window.height);
 				}
@@ -3553,26 +3596,25 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 
 #ifdef VULKAN_ENABLED
 		if (context_vulkan) {
-			if (context_vulkan->window_create(id, p_vsync_mode, wd.hWnd, hInstance, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top) == -1) {
+			if (context_vulkan->window_create(id, p_vsync_mode, wd.hWnd, hInstance, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top) != OK) {
 				memdelete(context_vulkan);
 				context_vulkan = nullptr;
 				windows.erase(id);
 				ERR_FAIL_V_MSG(INVALID_WINDOW_ID, "Failed to create Vulkan Window.");
 			}
+			wd.context_created = true;
 		}
 #endif
 
 #ifdef GLES3_ENABLED
 		if (gl_manager) {
-			Error err = gl_manager->window_create(id, wd.hWnd, hInstance, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top);
-
-			// shut down OpenGL, to mirror behavior of Vulkan code
-			if (err != OK) {
+			if (gl_manager->window_create(id, wd.hWnd, hInstance, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top) != OK) {
 				memdelete(gl_manager);
 				gl_manager = nullptr;
 				windows.erase(id);
 				ERR_FAIL_V_MSG(INVALID_WINDOW_ID, "Failed to create an OpenGL window.");
 			}
+			window_set_vsync_mode(p_vsync_mode, id);
 		}
 #endif
 
@@ -3718,7 +3760,7 @@ void DisplayServerWindows::tablet_set_current_driver(const String &p_driver) {
 	}
 }
 
-DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i &p_resolution, Error &r_error) {
+DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, Error &r_error) {
 	drop_events = false;
 	key_event_pos = 0;
 
@@ -3870,6 +3912,10 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 			(screen_get_size(0).width - p_resolution.width) / 2,
 			(screen_get_size(0).height - p_resolution.height) / 2);
 
+	if (p_position != nullptr) {
+		window_position = *p_position;
+	}
+
 	WindowID main_window = _create_window(p_mode, p_vsync_mode, 0, Rect2i(window_position, p_resolution));
 	ERR_FAIL_COND_MSG(main_window == INVALID_WINDOW_ID, "Failed to create main window.");
 
@@ -3933,12 +3979,24 @@ Vector<String> DisplayServerWindows::get_rendering_drivers_func() {
 	return drivers;
 }
 
-DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i &p_resolution, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_resolution, r_error));
+DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, Error &r_error) {
+	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, r_error));
 	if (r_error != OK) {
-		OS::get_singleton()->alert("Your video card driver does not support any of the supported Vulkan or OpenGL versions.\n"
-								   "Please update your drivers or if you have a very old or integrated GPU upgrade it.",
-				"Unable to initialize Video driver");
+		if (p_rendering_driver == "vulkan") {
+			String executable_name = OS::get_singleton()->get_executable_path().get_file();
+			OS::get_singleton()->alert("Your video card driver does not support the selected Vulkan version.\n"
+									   "Please try updating your GPU driver or try using the OpenGL 3 driver.\n"
+									   "You can enable the OpenGL 3 driver by starting the engine from the\n"
+									   "command line with the command:\n'./" +
+							executable_name + " --rendering-driver opengl3'.\n "
+											  "If you have updated your graphics drivers recently, try rebooting.",
+					"Unable to initialize Video driver");
+		} else {
+			OS::get_singleton()->alert("Your video card driver does not support the selected OpenGL version.\n"
+									   "Please try updating your GPU driver.\n"
+									   "If you have updated your graphics drivers recently, try rebooting.",
+					"Unable to initialize Video driver");
+		}
 	}
 	return ds;
 }

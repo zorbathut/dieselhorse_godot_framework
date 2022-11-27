@@ -63,7 +63,7 @@ vec3 oct_to_vec3(vec2 e) {
 	vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
 	float t = max(-v.z, 0.0);
 	v.xy += t * -sign(v.xy);
-	return v;
+	return normalize(v);
 }
 
 /* Varyings */
@@ -123,6 +123,33 @@ invariant gl_Position;
 
 #define scene_data scene_data_block.data
 
+#ifdef USE_DOUBLE_PRECISION
+// Helper functions for emulating double precision when adding floats.
+vec3 quick_two_sum(vec3 a, vec3 b, out vec3 out_p) {
+	vec3 s = a + b;
+	out_p = b - (s - a);
+	return s;
+}
+
+vec3 two_sum(vec3 a, vec3 b, out vec3 out_p) {
+	vec3 s = a + b;
+	vec3 v = s - a;
+	out_p = (a - (s - v)) + (b - v);
+	return s;
+}
+
+vec3 double_add_vec3(vec3 base_a, vec3 prec_a, vec3 base_b, vec3 prec_b, out vec3 out_precision) {
+	vec3 s, t, se, te;
+	s = two_sum(base_a, base_b, se);
+	t = two_sum(prec_a, prec_b, te);
+	se += t;
+	s = quick_two_sum(s, se, se);
+	se += te;
+	s = quick_two_sum(s, se, out_precision);
+	return s;
+}
+#endif
+
 void main() {
 	vec4 instance_custom = vec4(0.0);
 #if defined(COLOR_USED)
@@ -132,6 +159,17 @@ void main() {
 	bool is_multimesh = bool(draw_call.flags & INSTANCE_FLAGS_MULTIMESH);
 
 	mat4 model_matrix = draw_call.transform;
+	mat4 inv_view_matrix = scene_data.inv_view_matrix;
+#ifdef USE_DOUBLE_PRECISION
+	vec3 model_precision = vec3(model_matrix[0][3], model_matrix[1][3], model_matrix[2][3]);
+	model_matrix[0][3] = 0.0;
+	model_matrix[1][3] = 0.0;
+	model_matrix[2][3] = 0.0;
+	vec3 view_precision = vec3(inv_view_matrix[0][3], inv_view_matrix[1][3], inv_view_matrix[2][3]);
+	inv_view_matrix[0][3] = 0.0;
+	inv_view_matrix[1][3] = 0.0;
+	inv_view_matrix[2][3] = 0.0;
+#endif
 
 	mat3 model_normal_matrix;
 	if (bool(draw_call.flags & INSTANCE_FLAGS_NON_UNIFORM_SCALE)) {
@@ -140,10 +178,11 @@ void main() {
 		model_normal_matrix = mat3(model_matrix);
 	}
 
+	mat4 matrix;
+	mat4 read_model_matrix = model_matrix;
+
 	if (is_multimesh) {
 		//multimesh, instances are for it
-
-		mat4 matrix;
 
 #ifdef USE_PARTICLE_TRAILS
 		uint trail_size = (draw_call.flags >> INSTANCE_FLAGS_PARTICLE_TRAIL_SHIFT) & INSTANCE_FLAGS_PARTICLE_TRAIL_MASK;
@@ -230,7 +269,15 @@ void main() {
 #endif
 		//transpose
 		matrix = transpose(matrix);
-		model_matrix = model_matrix * matrix;
+
+#if !defined(USE_DOUBLE_PRECISION) || defined(SKIP_TRANSFORM_USED) || defined(VERTEX_WORLD_COORDS_USED) || defined(MODEL_MATRIX_USED)
+		// Normally we can bake the multimesh transform into the model matrix, but when using double precision
+		// we avoid baking it in so we can emulate high precision.
+		read_model_matrix = model_matrix * matrix;
+#if !defined(USE_DOUBLE_PRECISION) || defined(SKIP_TRANSFORM_USED) || defined(VERTEX_WORLD_COORDS_USED)
+		model_matrix = read_model_matrix;
+#endif // !defined(USE_DOUBLE_PRECISION) || defined(SKIP_TRANSFORM_USED) || defined(VERTEX_WORLD_COORDS_USED)
+#endif // !defined(USE_DOUBLE_PRECISION) || defined(SKIP_TRANSFORM_USED) || defined(VERTEX_WORLD_COORDS_USED) || defined(MODEL_MATRIX_USED)
 		model_normal_matrix = model_normal_matrix * mat3(matrix);
 	}
 
@@ -297,7 +344,22 @@ void main() {
 // using local coordinates (default)
 #if !defined(SKIP_TRANSFORM_USED) && !defined(VERTEX_WORLD_COORDS_USED)
 
+#ifdef USE_DOUBLE_PRECISION
+	// We separate the basis from the origin because the basis is fine with single point precision.
+	// Then we combine the translations from the model matrix and the view matrix using emulated doubles.
+	// We add the result to the vertex and ignore the final lost precision.
+	vec3 model_origin = model_matrix[3].xyz;
+	if (is_multimesh) {
+		vertex = mat3(matrix) * vertex;
+		model_origin = double_add_vec3(model_origin, model_precision, matrix[3].xyz, vec3(0.0), model_precision);
+	}
+	vertex = mat3(model_matrix) * vertex;
+	vec3 temp_precision;
+	vertex += double_add_vec3(model_origin, model_precision, scene_data.inv_view_matrix[3].xyz, view_precision, temp_precision);
+	vertex = mat3(scene_data.view_matrix) * vertex;
+#else
 	vertex = (modelview * vec4(vertex, 1.0)).xyz;
+#endif
 #ifdef NORMAL_USED
 	normal = modelview_normal * normal;
 #endif
@@ -468,7 +530,6 @@ layout(location = 9) highp in float dp_clip;
 
 //defines to keep compatibility with vertex
 
-#define model_matrix draw_call.transform
 #ifdef USE_MULTIVIEW
 #define projection_matrix scene_data.projection_matrix_view[ViewIndex]
 #define inv_projection_matrix scene_data.inv_projection_matrix_view[ViewIndex]
@@ -685,6 +746,17 @@ void main() {
 	vec2 alpha_texture_coordinate = vec2(0.0, 0.0);
 #endif // ALPHA_ANTIALIASING_EDGE_USED
 
+	mat4 inv_view_matrix = scene_data.inv_view_matrix;
+	mat4 read_model_matrix = draw_call.transform;
+#ifdef USE_DOUBLE_PRECISION
+	read_model_matrix[0][3] = 0.0;
+	read_model_matrix[1][3] = 0.0;
+	read_model_matrix[2][3] = 0.0;
+	inv_view_matrix[0][3] = 0.0;
+	inv_view_matrix[1][3] = 0.0;
+	inv_view_matrix[2][3] = 0.0;
+#endif
+
 	{
 #CODE : FRAGMENT
 	}
@@ -707,7 +779,8 @@ void main() {
 
 // alpha hash can be used in unison with alpha antialiasing
 #ifdef ALPHA_HASH_USED
-	if (alpha < compute_alpha_hash_threshold(vertex, alpha_hash_scale)) {
+	vec3 object_pos = (inverse(read_model_matrix) * inv_view_matrix * vec4(vertex, 1.0)).xyz;
+	if (alpha < compute_alpha_hash_threshold(object_pos, alpha_hash_scale)) {
 		discard;
 	}
 #endif // ALPHA_HASH_USED
@@ -1100,8 +1173,14 @@ void main() {
 	} //Reflection probes
 
 	// finalize ambient light here
-	ambient_light *= albedo.rgb;
-	ambient_light *= ao;
+	{
+#if defined(AMBIENT_LIGHT_DISABLED)
+		ambient_light = vec3(0.0, 0.0, 0.0);
+#else
+		ambient_light *= albedo.rgb;
+		ambient_light *= ao;
+#endif // AMBIENT_LIGHT_DISABLED
+	}
 
 	// convert ao to direct light ao
 	ao = mix(1.0, ao, ao_light_affect);

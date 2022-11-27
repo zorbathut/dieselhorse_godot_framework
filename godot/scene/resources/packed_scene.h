@@ -108,7 +108,7 @@ protected:
 public:
 	enum {
 		FLAG_ID_IS_PATH = (1 << 30),
-		TYPE_INSTANCED = 0x7FFFFFFF,
+		TYPE_INSTANTIATED = 0x7FFFFFFF,
 		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),
 		FLAG_PATH_PROPERTY_IS_NODE = (1 << 30),
 		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_NODE - 1,
@@ -176,7 +176,7 @@ public:
 	int get_connection_unbinds(int p_idx) const;
 	Array get_connection_binds(int p_idx) const;
 
-	bool has_connection(const NodePath &p_node_from, const StringName &p_signal, const NodePath &p_node_to, const StringName &p_method);
+	bool has_connection(const NodePath &p_node_from, const StringName &p_signal, const NodePath &p_node_to, const StringName &p_method, bool p_no_inheritance = false);
 
 	Vector<NodePath> get_editable_instances() const;
 

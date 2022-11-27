@@ -44,6 +44,7 @@
 #include "node.h"
 #include "scene/animation/tween.h"
 #include "scene/debugger/scene_debugger.h"
+#include "scene/gui/control.h"
 #include "scene/main/multiplayer_api.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
@@ -105,10 +106,10 @@ bool SceneTreeTimer::is_ignore_time_scale() {
 }
 
 void SceneTreeTimer::release_connections() {
-	List<Connection> connections;
-	get_all_signal_connections(&connections);
+	List<Connection> signal_connections;
+	get_all_signal_connections(&signal_connections);
 
-	for (const Connection &connection : connections) {
+	for (const Connection &connection : signal_connections) {
 		disconnect(connection.signal.get_name(), connection.callable);
 	}
 }
@@ -122,6 +123,9 @@ void SceneTree::tree_changed() {
 
 void SceneTree::node_added(Node *p_node) {
 	emit_signal(node_added_name, p_node);
+	if (call_lock > 0) {
+		call_skip.erase(p_node->get_instance_id());
+	}
 }
 
 void SceneTree::node_removed(Node *p_node) {
@@ -130,7 +134,7 @@ void SceneTree::node_removed(Node *p_node) {
 	}
 	emit_signal(node_removed_name, p_node);
 	if (call_lock > 0) {
-		call_skip.insert(p_node);
+		call_skip.insert(p_node->get_instance_id());
 	}
 }
 
@@ -207,15 +211,15 @@ void SceneTree::_update_group_order(Group &g, bool p_use_priority) {
 		return;
 	}
 
-	Node **nodes = g.nodes.ptrw();
-	int node_count = g.nodes.size();
+	Node **gr_nodes = g.nodes.ptrw();
+	int gr_node_count = g.nodes.size();
 
 	if (p_use_priority) {
 		SortArray<Node *, Node::ComparatorWithPriority> node_sort;
-		node_sort.sort(nodes, node_count);
+		node_sort.sort(gr_nodes, gr_node_count);
 	} else {
 		SortArray<Node *, Node::Comparator> node_sort;
-		node_sort.sort(nodes, node_count);
+		node_sort.sort(gr_nodes, gr_node_count);
 	}
 	g.changed = false;
 }
@@ -253,36 +257,36 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName &p_gro
 	_update_group_order(g);
 
 	Vector<Node *> nodes_copy = g.nodes;
-	Node **nodes = nodes_copy.ptrw();
-	int node_count = nodes_copy.size();
+	Node **gr_nodes = nodes_copy.ptrw();
+	int gr_node_count = nodes_copy.size();
 
 	call_lock++;
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
-		for (int i = node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = gr_node_count - 1; i >= 0; i--) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
 				Callable::CallError ce;
-				nodes[i]->callp(p_function, p_args, p_argcount, ce);
+				gr_nodes[i]->callp(p_function, p_args, p_argcount, ce);
 			} else {
-				MessageQueue::get_singleton()->push_callp(nodes[i], p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(gr_nodes[i], p_function, p_args, p_argcount);
 			}
 		}
 
 	} else {
-		for (int i = 0; i < node_count; i++) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = 0; i < gr_node_count; i++) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
 				Callable::CallError ce;
-				nodes[i]->callp(p_function, p_args, p_argcount, ce);
+				gr_nodes[i]->callp(p_function, p_args, p_argcount, ce);
 			} else {
-				MessageQueue::get_singleton()->push_callp(nodes[i], p_function, p_args, p_argcount);
+				MessageQueue::get_singleton()->push_callp(gr_nodes[i], p_function, p_args, p_argcount);
 			}
 		}
 	}
@@ -306,34 +310,34 @@ void SceneTree::notify_group_flags(uint32_t p_call_flags, const StringName &p_gr
 	_update_group_order(g);
 
 	Vector<Node *> nodes_copy = g.nodes;
-	Node **nodes = nodes_copy.ptrw();
-	int node_count = nodes_copy.size();
+	Node **gr_nodes = nodes_copy.ptrw();
+	int gr_node_count = nodes_copy.size();
 
 	call_lock++;
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
-		for (int i = node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = gr_node_count - 1; i >= 0; i--) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				nodes[i]->notification(p_notification);
+				gr_nodes[i]->notification(p_notification);
 			} else {
-				MessageQueue::get_singleton()->push_notification(nodes[i], p_notification);
+				MessageQueue::get_singleton()->push_notification(gr_nodes[i], p_notification);
 			}
 		}
 
 	} else {
-		for (int i = 0; i < node_count; i++) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = 0; i < gr_node_count; i++) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				nodes[i]->notification(p_notification);
+				gr_nodes[i]->notification(p_notification);
 			} else {
-				MessageQueue::get_singleton()->push_notification(nodes[i], p_notification);
+				MessageQueue::get_singleton()->push_notification(gr_nodes[i], p_notification);
 			}
 		}
 	}
@@ -357,34 +361,34 @@ void SceneTree::set_group_flags(uint32_t p_call_flags, const StringName &p_group
 	_update_group_order(g);
 
 	Vector<Node *> nodes_copy = g.nodes;
-	Node **nodes = nodes_copy.ptrw();
-	int node_count = nodes_copy.size();
+	Node **gr_nodes = nodes_copy.ptrw();
+	int gr_node_count = nodes_copy.size();
 
 	call_lock++;
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
-		for (int i = node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = gr_node_count - 1; i >= 0; i--) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				nodes[i]->set(p_name, p_value);
+				gr_nodes[i]->set(p_name, p_value);
 			} else {
-				MessageQueue::get_singleton()->push_set(nodes[i], p_name, p_value);
+				MessageQueue::get_singleton()->push_set(gr_nodes[i], p_name, p_value);
 			}
 		}
 
 	} else {
-		for (int i = 0; i < node_count; i++) {
-			if (call_lock && call_skip.has(nodes[i])) {
+		for (int i = 0; i < gr_node_count; i++) {
+			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
 				continue;
 			}
 
 			if (!(p_call_flags & GROUP_CALL_DEFERRED)) {
-				nodes[i]->set(p_name, p_value);
+				gr_nodes[i]->set(p_name, p_value);
 			} else {
-				MessageQueue::get_singleton()->push_set(nodes[i], p_name, p_value);
+				MessageQueue::get_singleton()->push_set(gr_nodes[i], p_name, p_value);
 			}
 		}
 	}
@@ -484,7 +488,7 @@ bool SceneTree::process(double p_time) {
 #ifndef _3D_DISABLED
 	if (Engine::get_singleton()->is_editor_hint()) {
 		//simple hack to reload fallback environment if it changed from editor
-		String env_path = ProjectSettings::get_singleton()->get(SNAME("rendering/environment/defaults/default_environment"));
+		String env_path = GLOBAL_GET(SNAME("rendering/environment/defaults/default_environment"));
 		env_path = env_path.strip_edges(); //user may have added a space or two
 		String cpath;
 		Ref<Environment> fallback = get_root()->get_world_3d()->get_fallback_environment();
@@ -846,14 +850,14 @@ void SceneTree::_notify_group_pause(const StringName &p_group, int p_notificatio
 	//performance is not lost because only if something is added/removed the vector is copied.
 	Vector<Node *> nodes_copy = g.nodes;
 
-	int node_count = nodes_copy.size();
-	Node **nodes = nodes_copy.ptrw();
+	int gr_node_count = nodes_copy.size();
+	Node **gr_nodes = nodes_copy.ptrw();
 
 	call_lock++;
 
-	for (int i = 0; i < node_count; i++) {
-		Node *n = nodes[i];
-		if (call_lock && call_skip.has(n)) {
+	for (int i = 0; i < gr_node_count; i++) {
+		Node *n = gr_nodes[i];
+		if (call_lock && call_skip.has(n->get_instance_id())) {
 			continue;
 		}
 
@@ -865,7 +869,7 @@ void SceneTree::_notify_group_pause(const StringName &p_group, int p_notificatio
 		}
 
 		n->notification(p_notification);
-		//ERR_FAIL_COND(node_count != g.nodes.size());
+		//ERR_FAIL_COND(gr_node_count != g.nodes.size());
 	}
 
 	call_lock--;
@@ -890,18 +894,20 @@ void SceneTree::_call_input_pause(const StringName &p_group, CallInputType p_cal
 	//performance is not lost because only if something is added/removed the vector is copied.
 	Vector<Node *> nodes_copy = g.nodes;
 
-	int node_count = nodes_copy.size();
-	Node **nodes = nodes_copy.ptrw();
+	int gr_node_count = nodes_copy.size();
+	Node **gr_nodes = nodes_copy.ptrw();
 
 	call_lock++;
 
-	for (int i = node_count - 1; i >= 0; i--) {
+	Vector<ObjectID> no_context_node_ids; // Nodes may be deleted due to this shortcut input.
+
+	for (int i = gr_node_count - 1; i >= 0; i--) {
 		if (p_viewport->is_input_handled()) {
 			break;
 		}
 
-		Node *n = nodes[i];
-		if (call_lock && call_skip.has(n)) {
+		Node *n = gr_nodes[i];
+		if (call_lock && call_skip.has(n->get_instance_id())) {
 			continue;
 		}
 
@@ -913,15 +919,35 @@ void SceneTree::_call_input_pause(const StringName &p_group, CallInputType p_cal
 			case CALL_INPUT_TYPE_INPUT:
 				n->_call_input(p_input);
 				break;
-			case CALL_INPUT_TYPE_SHORTCUT_INPUT:
+			case CALL_INPUT_TYPE_SHORTCUT_INPUT: {
+				const Control *c = Object::cast_to<Control>(n);
+				if (c) {
+					// If calling shortcut input on a control, ensure it respects the shortcut context.
+					// Shortcut context (based on focus) only makes sense for controls (UI), so don't need to worry about it for nodes
+					if (c->get_shortcut_context() == nullptr) {
+						no_context_node_ids.append(n->get_instance_id());
+						continue;
+					}
+					if (!c->is_focus_owner_in_shortcut_context()) {
+						continue;
+					}
+				}
 				n->_call_shortcut_input(p_input);
 				break;
+			}
 			case CALL_INPUT_TYPE_UNHANDLED_INPUT:
 				n->_call_unhandled_input(p_input);
 				break;
 			case CALL_INPUT_TYPE_UNHANDLED_KEY_INPUT:
 				n->_call_unhandled_key_input(p_input);
 				break;
+		}
+	}
+
+	for (const ObjectID &id : no_context_node_ids) {
+		Node *n = Object::cast_to<Node>(ObjectDB::get_instance(id));
+		if (n) {
+			n->_call_shortcut_input(p_input);
 		}
 	}
 
@@ -1367,7 +1393,7 @@ SceneTree::SceneTree() {
 	root = memnew(Window);
 	root->set_process_mode(Node::PROCESS_MODE_PAUSABLE);
 	root->set_name("root");
-	root->set_title(ProjectSettings::get_singleton()->get("application/config/name"));
+	root->set_title(GLOBAL_GET("application/config/name"));
 
 #ifndef _3D_DISABLED
 	if (!root->get_world_3d().is_valid()) {
@@ -1389,6 +1415,9 @@ SceneTree::SceneTree() {
 	const int msaa_mode_3d = GLOBAL_DEF_BASIC("rendering/anti_aliasing/quality/msaa_3d", 0);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/anti_aliasing/quality/msaa_3d", PropertyInfo(Variant::INT, "rendering/anti_aliasing/quality/msaa_3d", PROPERTY_HINT_ENUM, String::utf8("Disabled (Fastest),2× (Average),4× (Slow),8× (Slowest)")));
 	root->set_msaa_3d(Viewport::MSAA(msaa_mode_3d));
+
+	const bool transparent_background = GLOBAL_DEF("rendering/transparent_background", false);
+	root->set_transparent_background(transparent_background);
 
 	const int ssaa_mode = GLOBAL_DEF_BASIC("rendering/anti_aliasing/quality/screen_space_aa", 0);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/anti_aliasing/quality/screen_space_aa", PropertyInfo(Variant::INT, "rendering/anti_aliasing/quality/screen_space_aa", PROPERTY_HINT_ENUM, "Disabled (Fastest),FXAA (Fast)"));

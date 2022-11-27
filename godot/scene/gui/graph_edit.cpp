@@ -92,8 +92,8 @@ void GraphEditMinimap::update_minimap() {
 Rect2 GraphEditMinimap::get_camera_rect() {
 	Vector2 camera_center = _convert_from_graph_position(camera_position + camera_size / 2) + minimap_offset;
 	Vector2 camera_viewport = _convert_from_graph_position(camera_size);
-	Vector2 camera_position = (camera_center - camera_viewport / 2);
-	return Rect2(camera_position, camera_viewport);
+	Vector2 camera_pos = (camera_center - camera_viewport / 2);
+	return Rect2(camera_pos, camera_viewport);
 }
 
 Vector2 GraphEditMinimap::_get_render_size() {
@@ -1385,16 +1385,16 @@ void GraphEdit::gui_input(const Ref<InputEvent> &p_ev) {
 	}
 
 	if (p_ev->is_pressed()) {
-		if (p_ev->is_action("ui_graph_duplicate")) {
+		if (p_ev->is_action("ui_graph_duplicate", true)) {
 			emit_signal(SNAME("duplicate_nodes_request"));
 			accept_event();
-		} else if (p_ev->is_action("ui_copy")) {
+		} else if (p_ev->is_action("ui_copy", true)) {
 			emit_signal(SNAME("copy_nodes_request"));
 			accept_event();
-		} else if (p_ev->is_action("ui_paste")) {
+		} else if (p_ev->is_action("ui_paste", true)) {
 			emit_signal(SNAME("paste_nodes_request"));
 			accept_event();
-		} else if (p_ev->is_action("ui_graph_delete")) {
+		} else if (p_ev->is_action("ui_graph_delete", true)) {
 			TypedArray<StringName> nodes;
 
 			for (int i = 0; i < get_child_count(); i++) {
@@ -1475,11 +1475,9 @@ void GraphEdit::force_connection_drag_end() {
 }
 
 bool GraphEdit::is_node_hover_valid(const StringName &p_from, const int p_from_port, const StringName &p_to, const int p_to_port) {
-	bool valid;
-	if (GDVIRTUAL_CALL(_is_node_hover_valid, p_from, p_from_port, p_to, p_to_port, valid)) {
-		return valid;
-	}
-	return true;
+	bool valid = true;
+	GDVIRTUAL_CALL(_is_node_hover_valid, p_from, p_from_port, p_to, p_to_port, valid);
+	return valid;
 }
 
 void GraphEdit::set_panning_scheme(PanningScheme p_scheme) {
@@ -2408,7 +2406,7 @@ void GraphEdit::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "zoom_step"), "set_zoom_step", "get_zoom_step");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_zoom_label"), "set_show_zoom_label", "is_showing_zoom_label");
 
-	ADD_GROUP("Minimap", "minimap");
+	ADD_GROUP("Minimap", "minimap_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "minimap_enabled"), "set_minimap_enabled", "is_minimap_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "minimap_size", PROPERTY_HINT_NONE, "suffix:px"), "set_minimap_size", "get_minimap_size");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "minimap_opacity"), "set_minimap_opacity", "get_minimap_opacity");

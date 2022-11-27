@@ -255,7 +255,7 @@ void ImporterMesh::set_surface_material(int p_surface, const Ref<Material> &p_ma
 }
 
 #define VERTEX_SKIN_FUNC(bone_count, vert_idx, read_array, write_array, transform_array, bone_array, weight_array) \
-	Vector3 transformed_vert = Vector3();                                                                          \
+	Vector3 transformed_vert;                                                                                      \
 	for (unsigned int weight_idx = 0; weight_idx < bone_count; weight_idx++) {                                     \
 		int bone_idx = bone_array[vert_idx * bone_count + weight_idx];                                             \
 		float w = weight_array[vert_idx * bone_count + weight_idx];                                                \
@@ -829,9 +829,9 @@ void ImporterMesh::_set_data(const Dictionary &p_data) {
 			ERR_CONTINUE(prim >= Mesh::PRIMITIVE_MAX);
 			Array arr = s["arrays"];
 			Dictionary lods;
-			String name;
+			String surf_name;
 			if (s.has("name")) {
-				name = s["name"];
+				surf_name = s["name"];
 			}
 			if (s.has("lods")) {
 				lods = s["lods"];
@@ -848,7 +848,7 @@ void ImporterMesh::_set_data(const Dictionary &p_data) {
 			if (s.has("flags")) {
 				flags = s["flags"];
 			}
-			add_surface(prim, arr, b_shapes, lods, material, name, flags);
+			add_surface(prim, arr, b_shapes, lods, material, surf_name, flags);
 		}
 	}
 }

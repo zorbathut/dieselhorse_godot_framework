@@ -240,7 +240,8 @@ static Ref<ImageTexture> editor_generate_icon(int p_index, float p_scale, float 
 	// with integer editor scales.
 	const bool upsample = !Math::is_equal_approx(Math::round(p_scale), p_scale);
 	ImageLoaderSVG img_loader;
-	img_loader.create_image_from_string(img, editor_icons_sources[p_index], p_scale, upsample, p_convert_colors);
+	Error err = img_loader.create_image_from_string(img, editor_icons_sources[p_index], p_scale, upsample, p_convert_colors);
+	ERR_FAIL_COND_V_MSG(err != OK, Ref<ImageTexture>(), "Failed generating icon, unsupported or invalid SVG data in editor theme.");
 	if (p_saturation != 1.0) {
 		img->adjust_bcs(1.0, 1.0, p_saturation);
 	}
@@ -286,7 +287,7 @@ void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme, f
 	saturation_exceptions.insert("Logo");
 
 	// Accent color conversion map.
-	// It is used on soem icons (checkbox, radio, toggle, etc.), regardless of the dark
+	// It is used on some icons (checkbox, radio, toggle, etc.), regardless of the dark
 	// or light mode.
 	HashMap<Color, Color> accent_color_map;
 	HashSet<StringName> accent_color_icons;
@@ -564,9 +565,9 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_color("readonly_color", "Editor", readonly_color);
 
 	if (!dark_theme) {
-		theme->set_color("vulkan_color", "Editor", Color::hex(0xad1128ff));
+		theme->set_color("highend_color", "Editor", Color::hex(0xad1128ff));
 	} else {
-		theme->set_color("vulkan_color", "Editor", Color(1.0, 0.0, 0.0));
+		theme->set_color("highend_color", "Editor", Color(1.0, 0.0, 0.0));
 	}
 	const int thumb_size = EDITOR_GET("filesystem/file_dialog/thumbnail_size");
 	theme->set_constant("scale", "Editor", EDSCALE);
@@ -1471,6 +1472,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_stylebox("slider", "HSlider", make_flat_stylebox(dark_color_3, 0, default_margin_size / 2, 0, default_margin_size / 2, corner_width));
 	theme->set_stylebox("grabber_area", "HSlider", make_flat_stylebox(contrast_color_1, 0, default_margin_size / 2, 0, default_margin_size / 2, corner_width));
 	theme->set_stylebox("grabber_area_highlight", "HSlider", make_flat_stylebox(contrast_color_1, 0, default_margin_size / 2, 0, default_margin_size / 2));
+	theme->set_constant("grabber_offset", "HSlider", 0);
 
 	// VSlider
 	theme->set_icon("grabber", "VSlider", theme->get_icon(SNAME("GuiSliderGrabber"), SNAME("EditorIcons")));
@@ -1478,6 +1480,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_stylebox("slider", "VSlider", make_flat_stylebox(dark_color_3, default_margin_size / 2, 0, default_margin_size / 2, 0, corner_width));
 	theme->set_stylebox("grabber_area", "VSlider", make_flat_stylebox(contrast_color_1, default_margin_size / 2, 0, default_margin_size / 2, 0, corner_width));
 	theme->set_stylebox("grabber_area_highlight", "VSlider", make_flat_stylebox(contrast_color_1, default_margin_size / 2, 0, default_margin_size / 2, 0));
+	theme->set_constant("grabber_offset", "VSlider", 0);
 
 	// RichTextLabel
 	theme->set_color("default_color", "RichTextLabel", font_color);
@@ -1489,6 +1492,11 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_stylebox("normal", "RichTextLabel", style_tree_bg);
 
 	// Editor help.
+	Ref<StyleBoxFlat> style_editor_help = style_default->duplicate();
+	style_editor_help->set_bg_color(dark_color_2);
+	style_editor_help->set_border_color(dark_color_3);
+	theme->set_stylebox("background", "EditorHelp", style_editor_help);
+
 	theme->set_color("title_color", "EditorHelp", accent_color);
 	theme->set_color("headline_color", "EditorHelp", mono_color);
 	theme->set_color("text_color", "EditorHelp", font_color);
@@ -1501,9 +1509,14 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_color("link_color", "EditorHelp", accent_color.lerp(mono_color, 0.8));
 	theme->set_color("code_color", "EditorHelp", accent_color.lerp(mono_color, 0.6));
 	theme->set_color("kbd_color", "EditorHelp", accent_color.lerp(property_color, 0.6));
+	theme->set_color("code_bg_color", "EditorHelp", dark_color_3);
+	theme->set_color("kbd_bg_color", "EditorHelp", dark_color_1);
+	theme->set_color("param_bg_color", "EditorHelp", dark_color_1);
 	theme->set_constant("line_separation", "EditorHelp", Math::round(6 * EDSCALE));
 	theme->set_constant("table_h_separation", "EditorHelp", 16 * EDSCALE);
 	theme->set_constant("table_v_separation", "EditorHelp", 6 * EDSCALE);
+	theme->set_constant("text_highlight_h_padding", "EditorHelp", 1 * EDSCALE);
+	theme->set_constant("text_highlight_v_padding", "EditorHelp", 2 * EDSCALE);
 
 	// Panel
 	theme->set_stylebox("panel", "Panel", make_flat_stylebox(dark_color_1, 6, 4, 6, 4, corner_width));
@@ -1714,6 +1727,9 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_constant("h_width", "ColorPicker", 30 * EDSCALE);
 	theme->set_constant("label_width", "ColorPicker", 10 * EDSCALE);
 	theme->set_icon("screen_picker", "ColorPicker", theme->get_icon(SNAME("ColorPick"), SNAME("EditorIcons")));
+	theme->set_icon("shape_circle", "ColorPicker", theme->get_icon(SNAME("PickerShapeCircle"), SNAME("EditorIcons")));
+	theme->set_icon("shape_rect", "ColorPicker", theme->get_icon(SNAME("PickerShapeRectangle"), SNAME("EditorIcons")));
+	theme->set_icon("shape_rect_wheel", "ColorPicker", theme->get_icon(SNAME("PickerShapeRectangleWheel"), SNAME("EditorIcons")));
 	theme->set_icon("add_preset", "ColorPicker", theme->get_icon(SNAME("Add"), SNAME("EditorIcons")));
 	theme->set_icon("sample_bg", "ColorPicker", theme->get_icon(SNAME("GuiMiniCheckerboard"), SNAME("EditorIcons")));
 	theme->set_icon("overbright_indicator", "ColorPicker", theme->get_icon(SNAME("OverbrightIndicator"), SNAME("EditorIcons")));
@@ -1796,7 +1812,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	const Color safe_line_number_color = dark_theme ? (dim_color * Color(1, 1.2, 1, 1.5)) : Color(0, 0.4, 0, 0.75);
 	const Color caret_color = mono_color;
 	const Color caret_background_color = mono_color.inverted();
-	const Color text_selected_color = dark_color_3;
+	const Color text_selected_color = Color(0, 0, 0, 0);
 	const Color brace_mismatch_color = dark_theme ? error_color : Color(1, 0.08, 0, 1);
 	const Color current_line_color = alpha1;
 	const Color line_length_guideline_color = dark_theme ? base_color : background_color;
@@ -1902,7 +1918,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 Ref<Theme> create_custom_theme(const Ref<Theme> p_theme) {
 	Ref<Theme> theme = create_editor_theme(p_theme);
 
-	const String custom_theme_path = EditorSettings::get_singleton()->get("interface/theme/custom_theme");
+	const String custom_theme_path = EDITOR_GET("interface/theme/custom_theme");
 	if (!custom_theme_path.is_empty()) {
 		Ref<Theme> custom_theme = ResourceLoader::load(custom_theme_path);
 		if (custom_theme.is_valid()) {

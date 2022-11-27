@@ -388,15 +388,15 @@ Projection WebXRInterfaceJS::get_projection_for_view(uint32_t p_view, double p_a
 	int k = 0;
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
-			eye.matrix[i][j] = js_matrix[k++];
+			eye.columns[i][j] = js_matrix[k++];
 		}
 	}
 
 	free(js_matrix);
 
 	// Copied from godot_oculus_mobile's ovr_mobile_session.cpp
-	eye.matrix[2][2] = -(p_z_far + p_z_near) / (p_z_far - p_z_near);
-	eye.matrix[3][2] = -(2.0f * p_z_far * p_z_near) / (p_z_far - p_z_near);
+	eye.columns[2][2] = -(p_z_far + p_z_near) / (p_z_far - p_z_near);
+	eye.columns[3][2] = -(2.0f * p_z_far * p_z_near) / (p_z_far - p_z_near);
 
 	return eye;
 }
@@ -415,8 +415,7 @@ Vector<BlitToScreen> WebXRInterfaceJS::post_draw_viewport(RID p_render_target, c
 
 	GLES3::RenderTarget *rt = texture_storage->get_render_target(p_render_target);
 
-	// @todo Support multiple eyes!
-	godot_webxr_commit_for_eye(1, rt->fbo);
+	godot_webxr_commit(rt->color);
 
 	return blit_to_screen;
 };
