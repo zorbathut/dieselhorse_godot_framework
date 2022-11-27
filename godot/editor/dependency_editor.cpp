@@ -430,7 +430,7 @@ void DependencyRemoveDialog::_find_localization_remaps_of_removed_files(Vector<R
 
 		// Look for dependencies in the translation remaps.
 		if (ProjectSettings::get_singleton()->has_setting("internationalization/locale/translation_remaps")) {
-			Dictionary remaps = ProjectSettings::get_singleton()->get("internationalization/locale/translation_remaps");
+			Dictionary remaps = GLOBAL_GET("internationalization/locale/translation_remaps");
 
 			if (remaps.has(path)) {
 				RemovedDependency dep;
@@ -544,28 +544,28 @@ void DependencyRemoveDialog::ok_pressed() {
 
 		// If the file we are deleting for e.g. the main scene, default environment,
 		// or audio bus layout, we must clear its definition in Project Settings.
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("application/config/icon"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("application/config/icon"))) {
 			ProjectSettings::get_singleton()->set("application/config/icon", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("application/run/main_scene"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("application/run/main_scene"))) {
 			ProjectSettings::get_singleton()->set("application/run/main_scene", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("application/boot_splash/image"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("application/boot_splash/image"))) {
 			ProjectSettings::get_singleton()->set("application/boot_splash/image", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("rendering/environment/defaults/default_environment"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("rendering/environment/defaults/default_environment"))) {
 			ProjectSettings::get_singleton()->set("rendering/environment/defaults/default_environment", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("display/mouse_cursor/custom_image"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("display/mouse_cursor/custom_image"))) {
 			ProjectSettings::get_singleton()->set("display/mouse_cursor/custom_image", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("gui/theme/custom"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("gui/theme/custom"))) {
 			ProjectSettings::get_singleton()->set("gui/theme/custom", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("gui/theme/custom_font"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("gui/theme/custom_font"))) {
 			ProjectSettings::get_singleton()->set("gui/theme/custom_font", "");
 		}
-		if (files_to_delete[i] == String(ProjectSettings::get_singleton()->get("audio/buses/default_bus_layout"))) {
+		if (files_to_delete[i] == String(GLOBAL_GET("audio/buses/default_bus_layout"))) {
 			ProjectSettings::get_singleton()->set("audio/buses/default_bus_layout", "");
 		}
 
@@ -792,14 +792,14 @@ void OrphanResourcesDialog::show() {
 	popup_centered_ratio(0.4);
 }
 
-void OrphanResourcesDialog::_find_to_delete(TreeItem *p_item, List<String> &paths) {
+void OrphanResourcesDialog::_find_to_delete(TreeItem *p_item, List<String> &r_paths) {
 	while (p_item) {
 		if (p_item->get_cell_mode(0) == TreeItem::CELL_MODE_CHECK && p_item->is_checked(0)) {
-			paths.push_back(p_item->get_metadata(0));
+			r_paths.push_back(p_item->get_metadata(0));
 		}
 
 		if (p_item->get_first_child()) {
-			_find_to_delete(p_item->get_first_child(), paths);
+			_find_to_delete(p_item->get_first_child(), r_paths);
 		}
 
 		p_item = p_item->get_next();

@@ -260,9 +260,9 @@ void EditorPropertyArray::update_property() {
 			HBoxContainer *hbox = memnew(HBoxContainer);
 			vbox->add_child(hbox);
 
-			Label *label = memnew(Label(TTR("Size:")));
-			label->set_h_size_flags(SIZE_EXPAND_FILL);
-			hbox->add_child(label);
+			Label *size_label = memnew(Label(TTR("Size:")));
+			size_label->set_h_size_flags(SIZE_EXPAND_FILL);
+			hbox->add_child(size_label);
 
 			size_slider = memnew(EditorSpinSlider);
 			size_slider->set_step(1);
@@ -293,7 +293,7 @@ void EditorPropertyArray::update_property() {
 					continue; // Don't remove the property that the user is moving.
 				}
 
-				child->queue_delete(); // Button still needed after pressed is called.
+				child->queue_free(); // Button still needed after pressed is called.
 				property_vbox->remove_child(child);
 			}
 		}
@@ -367,17 +367,17 @@ void EditorPropertyArray::update_property() {
 			bool is_untyped_array = array.get_type() == Variant::ARRAY && subtype == Variant::NIL;
 
 			if (is_untyped_array) {
-				Button *edit = memnew(Button);
-				edit->set_icon(get_theme_icon(SNAME("Edit"), SNAME("EditorIcons")));
-				hbox->add_child(edit);
-				edit->set_disabled(is_read_only());
-				edit->connect("pressed", callable_mp(this, &EditorPropertyArray::_change_type).bind(edit, i + offset));
+				Button *edit_btn = memnew(Button);
+				edit_btn->set_icon(get_theme_icon(SNAME("Edit"), SNAME("EditorIcons")));
+				hbox->add_child(edit_btn);
+				edit_btn->set_disabled(is_read_only());
+				edit_btn->connect("pressed", callable_mp(this, &EditorPropertyArray::_change_type).bind(edit_btn, i + offset));
 			} else {
-				Button *remove = memnew(Button);
-				remove->set_icon(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")));
-				remove->set_disabled(is_read_only());
-				remove->connect("pressed", callable_mp(this, &EditorPropertyArray::_remove_pressed).bind(i + offset));
-				hbox->add_child(remove);
+				Button *remove_btn = memnew(Button);
+				remove_btn->set_icon(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")));
+				remove_btn->set_disabled(is_read_only());
+				remove_btn->connect("pressed", callable_mp(this, &EditorPropertyArray::_remove_pressed).bind(i + offset));
+				hbox->add_child(remove_btn);
 			}
 
 			prop->update_property();
@@ -466,7 +466,7 @@ void EditorPropertyArray::drop_data_fw(const Point2 &p_point, const Variant &p_d
 
 		Variant array = object->get_array();
 
-		// Handle the case where array is not initialised yet.
+		// Handle the case where array is not initialized yet.
 		if (!array.is_array()) {
 			Callable::CallError ce;
 			Variant::construct(array_type, array, nullptr, 0, ce);
@@ -510,7 +510,7 @@ void EditorPropertyArray::_notification(int p_what) {
 			change_type->add_separator();
 			change_type->add_icon_item(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")), TTR("Remove Item"), Variant::VARIANT_MAX);
 
-			if (Object::cast_to<Button>(button_add_item)) {
+			if (button_add_item) {
 				button_add_item->set_icon(get_theme_icon(SNAME("Add"), SNAME("EditorIcons")));
 			}
 		} break;
@@ -861,7 +861,7 @@ void EditorPropertyDictionary::update_property() {
 		} else {
 			// Queue children for deletion, deleting immediately might cause errors.
 			for (int i = property_vbox->get_child_count() - 1; i >= 0; i--) {
-				property_vbox->get_child(i)->queue_delete();
+				property_vbox->get_child(i)->queue_free();
 			}
 		}
 
@@ -1155,11 +1155,11 @@ void EditorPropertyDictionary::update_property() {
 			}
 			hbox->add_child(prop);
 			prop->set_h_size_flags(SIZE_EXPAND_FILL);
-			Button *edit = memnew(Button);
-			edit->set_icon(get_theme_icon(SNAME("Edit"), SNAME("EditorIcons")));
-			edit->set_disabled(is_read_only());
-			hbox->add_child(edit);
-			edit->connect("pressed", callable_mp(this, &EditorPropertyDictionary::_change_type).bind(edit, change_index));
+			Button *edit_btn = memnew(Button);
+			edit_btn->set_icon(get_theme_icon(SNAME("Edit"), SNAME("EditorIcons")));
+			edit_btn->set_disabled(is_read_only());
+			hbox->add_child(edit_btn);
+			edit_btn->connect("pressed", callable_mp(this, &EditorPropertyDictionary::_change_type).bind(edit_btn, change_index));
 
 			prop->update_property();
 
@@ -1205,7 +1205,7 @@ void EditorPropertyDictionary::_notification(int p_what) {
 			change_type->add_separator();
 			change_type->add_icon_item(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")), TTR("Remove Item"), Variant::VARIANT_MAX);
 
-			if (Object::cast_to<Button>(button_add_item)) {
+			if (button_add_item) {
 				button_add_item->set_icon(get_theme_icon(SNAME("Add"), SNAME("EditorIcons")));
 			}
 		} break;
@@ -1349,7 +1349,7 @@ void EditorPropertyLocalizableString::update_property() {
 		} else {
 			// Queue children for deletion, deleting immediately might cause errors.
 			for (int i = property_vbox->get_child_count() - 1; i >= 0; i--) {
-				property_vbox->get_child(i)->queue_delete();
+				property_vbox->get_child(i)->queue_free();
 			}
 		}
 
@@ -1396,10 +1396,10 @@ void EditorPropertyLocalizableString::update_property() {
 			property_vbox->add_child(hbox);
 			hbox->add_child(prop);
 			prop->set_h_size_flags(SIZE_EXPAND_FILL);
-			Button *edit = memnew(Button);
-			edit->set_icon(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")));
-			hbox->add_child(edit);
-			edit->connect("pressed", callable_mp(this, &EditorPropertyLocalizableString::_remove_item).bind(edit, remove_index));
+			Button *edit_btn = memnew(Button);
+			edit_btn->set_icon(get_theme_icon(SNAME("Remove"), SNAME("EditorIcons")));
+			hbox->add_child(edit_btn);
+			edit_btn->connect("pressed", callable_mp(this, &EditorPropertyLocalizableString::_remove_item).bind(edit_btn, remove_index));
 
 			prop->update_property();
 		}
@@ -1431,7 +1431,7 @@ void EditorPropertyLocalizableString::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_ENTER_TREE: {
-			if (Object::cast_to<Button>(button_add_item)) {
+			if (button_add_item) {
 				button_add_item->set_icon(get_theme_icon(SNAME("Add"), SNAME("EditorIcons")));
 			}
 		} break;

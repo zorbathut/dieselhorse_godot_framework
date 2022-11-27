@@ -166,11 +166,11 @@ ObjectID EditorDebuggerInspector::add_object(const Array &p_arr) {
 				if (pinfo.hint_string == "Script") {
 					if (debug_obj->get_script() != var) {
 						debug_obj->set_script(Ref<RefCounted>());
-						Ref<Script> script(var);
-						if (!script.is_null()) {
-							ScriptInstance *script_instance = script->placeholder_instance_create(debug_obj);
-							if (script_instance) {
-								debug_obj->set_script_and_instance(var, script_instance);
+						Ref<Script> scr(var);
+						if (!scr.is_null()) {
+							ScriptInstance *scr_instance = scr->placeholder_instance_create(debug_obj);
+							if (scr_instance) {
+								debug_obj->set_script_and_instance(var, scr_instance);
 							}
 						}
 					}
@@ -230,7 +230,7 @@ void EditorDebuggerInspector::add_stack_variable(const Array &p_array) {
 	Variant v = var.value;
 
 	PropertyHint h = PROPERTY_HINT_NONE;
-	String hs = String();
+	String hs;
 
 	if (v.get_type() == Variant::OBJECT) {
 		v = Object::cast_to<EncodedObjectAsID>(v)->get_object_id();

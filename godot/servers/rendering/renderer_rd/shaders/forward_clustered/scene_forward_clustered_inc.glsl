@@ -4,14 +4,15 @@
 #define MAX_VOXEL_GI_INSTANCES 8
 #define MAX_VIEWS 2
 
+#ifndef MOLTENVK_USED
 #if defined(has_GL_KHR_shader_subgroup_ballot) && defined(has_GL_KHR_shader_subgroup_arithmetic)
 
 #extension GL_KHR_shader_subgroup_ballot : enable
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
 #define USE_SUBGROUPS
-
 #endif
+#endif // MOLTENVK_USED
 
 #if defined(USE_MULTIVIEW) && defined(has_VK_KHR_multiview)
 #extension GL_EXT_multiview : enable
@@ -62,13 +63,14 @@ layout(set = 0, binding = 3) uniform sampler decal_sampler;
 
 layout(set = 0, binding = 4) uniform sampler light_projector_sampler;
 
-#define INSTANCE_FLAGS_NON_UNIFORM_SCALE (1 << 5)
-#define INSTANCE_FLAGS_USE_GI_BUFFERS (1 << 6)
-#define INSTANCE_FLAGS_USE_SDFGI (1 << 7)
-#define INSTANCE_FLAGS_USE_LIGHTMAP_CAPTURE (1 << 8)
-#define INSTANCE_FLAGS_USE_LIGHTMAP (1 << 9)
-#define INSTANCE_FLAGS_USE_SH_LIGHTMAP (1 << 10)
-#define INSTANCE_FLAGS_USE_VOXEL_GI (1 << 11)
+#define INSTANCE_FLAGS_NON_UNIFORM_SCALE (1 << 4)
+#define INSTANCE_FLAGS_USE_GI_BUFFERS (1 << 5)
+#define INSTANCE_FLAGS_USE_SDFGI (1 << 6)
+#define INSTANCE_FLAGS_USE_LIGHTMAP_CAPTURE (1 << 7)
+#define INSTANCE_FLAGS_USE_LIGHTMAP (1 << 8)
+#define INSTANCE_FLAGS_USE_SH_LIGHTMAP (1 << 9)
+#define INSTANCE_FLAGS_USE_VOXEL_GI (1 << 10)
+#define INSTANCE_FLAGS_PARTICLES (1 << 11)
 #define INSTANCE_FLAGS_MULTIMESH (1 << 12)
 #define INSTANCE_FLAGS_MULTIMESH_FORMAT_2D (1 << 13)
 #define INSTANCE_FLAGS_MULTIMESH_HAS_COLOR (1 << 14)

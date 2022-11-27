@@ -3,6 +3,11 @@ import sys
 from methods import detect_darwin_sdk_path
 from platform_methods import detect_arch
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from SCons import Environment
+
 
 def is_active():
     return True
@@ -27,8 +32,6 @@ def get_opts():
         ("MACOS_SDK_PATH", "Path to the macOS SDK", ""),
         ("vulkan_sdk_path", "Path to the Vulkan SDK", ""),
         EnumVariable("macports_clang", "Build using Clang from MacPorts", "no", ("no", "5.0", "devel")),
-        BoolVariable("debug_symbols", "Add debugging symbols to release/release_debug builds", True),
-        BoolVariable("separate_debug_symbols", "Create a separate file containing debugging symbols", False),
         BoolVariable("use_ubsan", "Use LLVM/GCC compiler undefined behavior sanitizer (UBSAN)", False),
         BoolVariable("use_asan", "Use LLVM/GCC compiler address sanitizer (ASAN)", False),
         BoolVariable("use_tsan", "Use LLVM/GCC compiler thread sanitizer (TSAN)", False),
@@ -74,7 +77,7 @@ def get_mvk_sdk_path():
     return os.path.join(os.path.join(dirname, ver_file), "MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/")
 
 
-def configure(env):
+def configure(env: "Environment"):
     # Validate arch.
     supported_arches = ["x86_64", "arm64"]
     if env["arch"] not in supported_arches:
@@ -86,27 +89,10 @@ def configure(env):
 
     ## Build type
 
-    if env["target"] == "release":
-        if env["optimize"] == "speed":  # optimize for speed (default)
-            env.Prepend(CCFLAGS=["-O3"])
-        elif env["optimize"] == "size":  # optimize for size
-            env.Prepend(CCFLAGS=["-Os"])
+    if env["target"] == "template_release":
         if env["arch"] != "arm64":
             env.Prepend(CCFLAGS=["-msse2"])
-
-        if env["debug_symbols"]:
-            env.Prepend(CCFLAGS=["-g2"])
-
-    elif env["target"] == "release_debug":
-        if env["optimize"] == "speed":  # optimize for speed (default)
-            env.Prepend(CCFLAGS=["-O2"])
-        elif env["optimize"] == "size":  # optimize for size
-            env.Prepend(CCFLAGS=["-Os"])
-        if env["debug_symbols"]:
-            env.Prepend(CCFLAGS=["-g2"])
-
-    elif env["target"] == "debug":
-        env.Prepend(CCFLAGS=["-g3"])
+    elif env.dev_build:
         env.Prepend(LINKFLAGS=["-Xlinker", "-no_deduplicate"])
 
     ## Compiler configuration
@@ -237,6 +223,8 @@ def configure(env):
             "AVFoundation",
             "-framework",
             "CoreMedia",
+            "-framework",
+            "QuartzCore",
         ]
     )
     env.Append(LIBS=["pthread", "z"])
@@ -250,22 +238,28 @@ def configure(env):
 
     if env["vulkan"]:
         env.Append(CPPDEFINES=["VULKAN_ENABLED"])
-        env.Append(LINKFLAGS=["-framework", "Metal", "-framework", "QuartzCore", "-framework", "IOSurface"])
+        env.Append(LINKFLAGS=["-framework", "Metal", "-framework", "IOSurface"])
         if not env["use_volk"]:
             env.Append(LINKFLAGS=["-lMoltenVK"])
             mvk_found = False
+
+            mkv_list = [get_mvk_sdk_path(), "/opt/homebrew/lib", "/usr/local/homebrew/lib", "/opt/local/lib"]
             if env["vulkan_sdk_path"] != "":
-                mvk_path = os.path.join(
-                    os.path.expanduser(env["vulkan_sdk_path"]), "MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/"
+                mkv_list.insert(0, os.path.expanduser(env["vulkan_sdk_path"]))
+                mkv_list.insert(
+                    0,
+                    os.path.join(
+                        os.path.expanduser(env["vulkan_sdk_path"]), "MoltenVK/MoltenVK.xcframework/macos-arm64_x86_64/"
+                    ),
                 )
-                if os.path.isfile(os.path.join(mvk_path, "libMoltenVK.a")):
-                    mvk_found = True
-                    env.Append(LINKFLAGS=["-L" + mvk_path])
-            if not mvk_found:
-                mvk_path = get_mvk_sdk_path()
+
+            for mvk_path in mkv_list:
                 if mvk_path and os.path.isfile(os.path.join(mvk_path, "libMoltenVK.a")):
                     mvk_found = True
+                    print("MoltenVK found at: " + mvk_path)
                     env.Append(LINKFLAGS=["-L" + mvk_path])
+                    break
+
             if not mvk_found:
                 print(
                     "MoltenVK SDK installation directory not found, use 'vulkan_sdk_path' SCons parameter to specify SDK path."

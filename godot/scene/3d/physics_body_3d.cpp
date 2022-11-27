@@ -34,8 +34,8 @@
 #include "scene/scene_string_names.h"
 
 void PhysicsBody3D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("move_and_collide", "distance", "test_only", "safe_margin", "recovery_as_collision", "max_collisions"), &PhysicsBody3D::_move, DEFVAL(false), DEFVAL(0.001), DEFVAL(false), DEFVAL(1));
-	ClassDB::bind_method(D_METHOD("test_move", "from", "distance", "collision", "safe_margin", "recovery_as_collision", "max_collisions"), &PhysicsBody3D::test_move, DEFVAL(Variant()), DEFVAL(0.001), DEFVAL(false), DEFVAL(1));
+	ClassDB::bind_method(D_METHOD("move_and_collide", "motion", "test_only", "safe_margin", "recovery_as_collision", "max_collisions"), &PhysicsBody3D::_move, DEFVAL(false), DEFVAL(0.001), DEFVAL(false), DEFVAL(1));
+	ClassDB::bind_method(D_METHOD("test_move", "from", "motion", "collision", "safe_margin", "recovery_as_collision", "max_collisions"), &PhysicsBody3D::test_move, DEFVAL(Variant()), DEFVAL(0.001), DEFVAL(false), DEFVAL(1));
 
 	ClassDB::bind_method(D_METHOD("set_axis_lock", "axis", "lock"), &PhysicsBody3D::set_axis_lock);
 	ClassDB::bind_method(D_METHOD("get_axis_lock", "axis"), &PhysicsBody3D::get_axis_lock);
@@ -80,19 +80,19 @@ TypedArray<PhysicsBody3D> PhysicsBody3D::get_collision_exceptions() {
 void PhysicsBody3D::add_collision_exception_with(Node *p_node) {
 	ERR_FAIL_NULL(p_node);
 	CollisionObject3D *collision_object = Object::cast_to<CollisionObject3D>(p_node);
-	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two CollisionObject3Ds.");
+	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two nodes that inherit from CollisionObject3D (such as Area3D or PhysicsBody3D).");
 	PhysicsServer3D::get_singleton()->body_add_collision_exception(get_rid(), collision_object->get_rid());
 }
 
 void PhysicsBody3D::remove_collision_exception_with(Node *p_node) {
 	ERR_FAIL_NULL(p_node);
 	CollisionObject3D *collision_object = Object::cast_to<CollisionObject3D>(p_node);
-	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two CollisionObject3Ds.");
+	ERR_FAIL_COND_MSG(!collision_object, "Collision exception only works between two nodes that inherit from CollisionObject3D (such as Area3D or PhysicsBody3D).");
 	PhysicsServer3D::get_singleton()->body_remove_collision_exception(get_rid(), collision_object->get_rid());
 }
 
-Ref<KinematicCollision3D> PhysicsBody3D::_move(const Vector3 &p_distance, bool p_test_only, real_t p_margin, bool p_recovery_as_collision, int p_max_collisions) {
-	PhysicsServer3D::MotionParameters parameters(get_global_transform(), p_distance, p_margin);
+Ref<KinematicCollision3D> PhysicsBody3D::_move(const Vector3 &p_motion, bool p_test_only, real_t p_margin, bool p_recovery_as_collision, int p_max_collisions) {
+	PhysicsServer3D::MotionParameters parameters(get_global_transform(), p_motion, p_margin);
 	parameters.max_collisions = p_max_collisions;
 	parameters.recovery_as_collision = p_recovery_as_collision;
 
@@ -169,7 +169,7 @@ bool PhysicsBody3D::move_and_collide(const PhysicsServer3D::MotionParameters &p_
 	return colliding;
 }
 
-bool PhysicsBody3D::test_move(const Transform3D &p_from, const Vector3 &p_distance, const Ref<KinematicCollision3D> &r_collision, real_t p_margin, bool p_recovery_as_collision, int p_max_collisions) {
+bool PhysicsBody3D::test_move(const Transform3D &p_from, const Vector3 &p_motion, const Ref<KinematicCollision3D> &r_collision, real_t p_margin, bool p_recovery_as_collision, int p_max_collisions) {
 	ERR_FAIL_COND_V(!is_inside_tree(), false);
 
 	PhysicsServer3D::MotionResult *r = nullptr;
@@ -181,7 +181,7 @@ bool PhysicsBody3D::test_move(const Transform3D &p_from, const Vector3 &p_distan
 		r = &temp_result;
 	}
 
-	PhysicsServer3D::MotionParameters parameters(p_from, p_distance, p_margin);
+	PhysicsServer3D::MotionParameters parameters(p_from, p_motion, p_margin);
 	parameters.recovery_as_collision = p_recovery_as_collision;
 
 	return PhysicsServer3D::get_singleton()->body_test_motion(get_rid(), parameters, r);
@@ -522,28 +522,28 @@ void RigidBody3D::_body_state_changed(PhysicsDirectBodyState3D *p_state) {
 		//put the ones to add
 
 		for (int i = 0; i < p_state->get_contact_count(); i++) {
-			RID rid = p_state->get_contact_collider(i);
-			ObjectID obj = p_state->get_contact_collider_id(i);
+			RID col_rid = p_state->get_contact_collider(i);
+			ObjectID col_obj = p_state->get_contact_collider_id(i);
 			int local_shape = p_state->get_contact_local_shape(i);
-			int shape = p_state->get_contact_collider_shape(i);
+			int col_shape = p_state->get_contact_collider_shape(i);
 
-			HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(obj);
+			HashMap<ObjectID, BodyState>::Iterator E = contact_monitor->body_map.find(col_obj);
 			if (!E) {
-				toadd[toadd_count].rid = rid;
+				toadd[toadd_count].rid = col_rid;
 				toadd[toadd_count].local_shape = local_shape;
-				toadd[toadd_count].id = obj;
-				toadd[toadd_count].shape = shape;
+				toadd[toadd_count].id = col_obj;
+				toadd[toadd_count].shape = col_shape;
 				toadd_count++;
 				continue;
 			}
 
-			ShapePair sp(shape, local_shape);
+			ShapePair sp(col_shape, local_shape);
 			int idx = E->value.shapes.find(sp);
 			if (idx == -1) {
-				toadd[toadd_count].rid = rid;
+				toadd[toadd_count].rid = col_rid;
 				toadd[toadd_count].local_shape = local_shape;
-				toadd[toadd_count].id = obj;
-				toadd[toadd_count].shape = shape;
+				toadd[toadd_count].id = col_obj;
+				toadd[toadd_count].shape = col_shape;
 				toadd_count++;
 				continue;
 			}
@@ -1200,6 +1200,7 @@ bool CharacterBody3D::move_and_slide() {
 
 	if (!current_platform_velocity.is_zero_approx()) {
 		PhysicsServer3D::MotionParameters parameters(get_global_transform(), current_platform_velocity * delta, margin);
+		parameters.recovery_as_collision = true; // Also report collisions generated only from recovery.
 
 		parameters.exclude_bodies.insert(platform_rid);
 		if (platform_object_id.is_valid()) {
@@ -1264,6 +1265,7 @@ void CharacterBody3D::_move_and_slide_grounded(double p_delta, bool p_was_on_flo
 	for (int iteration = 0; iteration < max_slides; ++iteration) {
 		PhysicsServer3D::MotionParameters parameters(get_global_transform(), motion, margin);
 		parameters.max_collisions = 6; // There can be 4 collisions between 2 walls + 2 more for the floor.
+		parameters.recovery_as_collision = true; // Also report collisions generated only from recovery.
 
 		PhysicsServer3D::MotionResult result;
 		bool collided = move_and_collide(parameters, result, false, !sliding_enabled);
@@ -1508,6 +1510,7 @@ void CharacterBody3D::_move_and_slide_floating(double p_delta) {
 	bool first_slide = true;
 	for (int iteration = 0; iteration < max_slides; ++iteration) {
 		PhysicsServer3D::MotionParameters parameters(get_global_transform(), motion, margin);
+		parameters.recovery_as_collision = true; // Also report collisions generated only from recovery.
 
 		PhysicsServer3D::MotionResult result;
 		bool collided = move_and_collide(parameters, result, false, false);
@@ -1562,7 +1565,7 @@ void CharacterBody3D::_snap_on_floor(bool p_was_on_floor, bool p_vel_dir_facing_
 
 	PhysicsServer3D::MotionParameters parameters(get_global_transform(), -up_direction * length, margin);
 	parameters.max_collisions = 4;
-	parameters.recovery_as_collision = true; // Report margin recovery as collision to improve floor detection.
+	parameters.recovery_as_collision = true; // Also report collisions generated only from recovery.
 	parameters.collide_separation_ray = true;
 
 	PhysicsServer3D::MotionResult result;
@@ -1598,7 +1601,7 @@ bool CharacterBody3D::_on_floor_if_snapped(bool p_was_on_floor, bool p_vel_dir_f
 
 	PhysicsServer3D::MotionParameters parameters(get_global_transform(), -up_direction * length, margin);
 	parameters.max_collisions = 4;
-	parameters.recovery_as_collision = true; // Report margin recovery as collision to improve floor detection.
+	parameters.recovery_as_collision = true; // Also report collisions generated only from recovery.
 	parameters.collide_separation_ray = true;
 
 	PhysicsServer3D::MotionResult result;

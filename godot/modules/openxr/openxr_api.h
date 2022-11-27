@@ -84,8 +84,6 @@ private:
 	bool ext_vive_focus3_available = false;
 	bool ext_huawei_controller_available = false;
 
-	bool is_path_supported(const String &p_path);
-
 	// composition layer providers
 	Vector<OpenXRCompositionLayerProvider *> composition_layer_providers;
 
@@ -120,15 +118,28 @@ private:
 
 	OpenXRGraphicsExtensionWrapper *graphics_extension = nullptr;
 	XrSystemGraphicsProperties graphics_properties;
-	void *swapchain_graphics_data = nullptr;
-	uint32_t image_index = 0;
-	bool image_acquired = false;
 
 	uint32_t view_count = 0;
 	XrViewConfigurationView *view_configuration_views = nullptr;
 	XrView *views = nullptr;
 	XrCompositionLayerProjectionView *projection_views = nullptr;
-	XrSwapchain swapchain = XR_NULL_HANDLE;
+	XrCompositionLayerDepthInfoKHR *depth_views = nullptr; // Only used by Composition Layer Depth Extension if available
+
+	enum OpenXRSwapChainTypes {
+		OPENXR_SWAPCHAIN_COLOR,
+		OPENXR_SWAPCHAIN_DEPTH,
+		// OPENXR_SWAPCHAIN_VELOCITY,
+		OPENXR_SWAPCHAIN_MAX
+	};
+
+	struct OpenXRSwapChainInfo {
+		XrSwapchain swapchain = XR_NULL_HANDLE;
+		void *swapchain_graphics_data = nullptr;
+		uint32_t image_index = 0;
+		bool image_acquired = false;
+	};
+
+	OpenXRSwapChainInfo swapchains[OPENXR_SWAPCHAIN_MAX];
 
 	XrSpace play_space = XR_NULL_HANDLE;
 	XrSpace view_space = XR_NULL_HANDLE;
@@ -212,13 +223,13 @@ private:
 	bool setup_spaces();
 	bool load_supported_swapchain_formats();
 	bool is_swapchain_format_supported(int64_t p_swapchain_format);
-	bool create_main_swapchain();
+	bool create_swapchains();
 	void destroy_session();
 
 	// swapchains
-	bool create_swapchain(int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, XrSwapchain &r_swapchain, void **r_swapchain_graphics_data);
-	bool acquire_image(XrSwapchain p_swapchain, uint32_t &r_image_index);
-	bool release_image(XrSwapchain p_swapchain);
+	bool create_swapchain(XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, XrSwapchain &r_swapchain, void **r_swapchain_graphics_data);
+	bool acquire_image(OpenXRSwapChainInfo &p_swapchain);
+	bool release_image(OpenXRSwapChainInfo &p_swapchain);
 
 	// action map
 	struct Tracker { // Trackers represent tracked physical objects such as controllers, pucks, etc.
@@ -289,6 +300,7 @@ public:
 	void parse_velocities(const XrSpaceVelocity &p_velocity, Vector3 &r_linear_velocity, Vector3 &r_angular_velocity);
 
 	bool xr_result(XrResult result, const char *format, Array args = Array()) const;
+	bool is_path_supported(const String &p_path);
 
 	static bool openxr_is_enabled(bool p_check_run_in_editor = true);
 	static OpenXRAPI *get_singleton();
@@ -318,8 +330,15 @@ public:
 
 	void pre_render();
 	bool pre_draw_viewport(RID p_render_target);
+	RID get_color_texture();
+	RID get_depth_texture();
 	void post_draw_viewport(RID p_render_target);
 	void end_frame();
+
+	// Display refresh rate
+	float get_display_refresh_rate() const;
+	void set_display_refresh_rate(float p_refresh_rate);
+	Array get_available_display_refresh_rates() const;
 
 	// action map
 	String get_default_action_map_resource_name();

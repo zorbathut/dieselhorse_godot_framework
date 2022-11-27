@@ -632,8 +632,11 @@ void FileDialog::update_file_list() {
 		files.pop_front();
 	}
 
-	if (tree->get_root() && tree->get_root()->get_first_child() && tree->get_selected() == nullptr) {
-		tree->get_root()->get_first_child()->select(0);
+	if (mode != FILE_MODE_SAVE_FILE) {
+		// Select the first file from list if nothing is selected.
+		if (tree->get_root() && tree->get_root()->get_first_child() && tree->get_selected() == nullptr) {
+			tree->get_root()->get_first_child()->select(0);
+		}
 	}
 }
 
@@ -743,10 +746,10 @@ void FileDialog::set_current_path(const String &p_path) {
 	if (pos == -1) {
 		set_current_file(p_path);
 	} else {
-		String dir = p_path.substr(0, pos);
-		String file = p_path.substr(pos + 1, p_path.length());
-		set_current_dir(dir);
-		set_current_file(file);
+		String path_dir = p_path.substr(0, pos);
+		String path_file = p_path.substr(pos + 1, p_path.length());
+		set_current_dir(path_dir);
+		set_current_file(path_file);
 	}
 }
 
