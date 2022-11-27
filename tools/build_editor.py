@@ -30,7 +30,7 @@ def run():
             "scons",
             "-j", f"{cores}",
             f"p={platform}",
-            "target=release_debug",
+            "target=editor",
             "tools=yes",
             "module_mono_enabled=yes",
         ], check=True, cwd="godot")
