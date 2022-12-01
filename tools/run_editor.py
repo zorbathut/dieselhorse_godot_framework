@@ -11,7 +11,7 @@ util.cwdhack()
 
 def run():
     util.run([
-        "godot/" + util.godot_bin(),
+        os.path.join("godot", util.godot_bin()),
         "project/project.godot"
     ])
 
