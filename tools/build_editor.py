@@ -11,9 +11,10 @@ util.cwdhack()
 
 def run():
     # kick priority down to make builds smoother
-    # can't do this on linux, currently disabled
-    #proc = psutil.Process(os.getpid())
-    #proc.nice(psutil.IDLE_PRIORITY_CLASS)
+    # can't do this on linux unfortunately; shell out to a niced build_editor?
+    if util.platformswitch(linux = False, windows = True):
+        proc = psutil.Process(os.getpid())
+        proc.nice(psutil.IDLE_PRIORITY_CLASS)
 
     platform = util.platformswitch(linux = "linuxbsd", windows = "windows")
 
@@ -60,7 +61,8 @@ def run():
         ], check=True, cwd="godot")
 
     # priority back up
-    #proc.nice(psutil.NORMAL_PRIORITY_CLASS)
+    if util.platformswitch(linux = False, windows = True):
+        proc.nice(psutil.NORMAL_PRIORITY_CLASS)
 
 if __name__ == '__main__':
     run()
