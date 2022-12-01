@@ -26,4 +26,4 @@ def run(command, **kwargs):
 def godot_bin():
     return platformswitch(
         linux = "bin/godot.linuxbsd.editor.x86_64.mono",
-        windows = "bin/godot.windows.editor.x86_64.mono.exe")
+        windows = "bin\\godot.windows.editor.x86_64.mono.exe")
