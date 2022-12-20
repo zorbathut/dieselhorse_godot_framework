@@ -12,8 +12,8 @@
 
 # Manjaro initial setup
 
-* `pacman -S python3 poetry dotnet-sdk-6`
-
+* `pamac install python python-poetry dotnet-sdk-6.0` (you don't need the supporting ASP.NET packages)
+* at the moment there's a glitch in Manjaro that requires `python-tomli` as well
 
 
 # To run the editor:
