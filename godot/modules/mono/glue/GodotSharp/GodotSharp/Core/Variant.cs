@@ -109,16 +109,50 @@ public partial struct Variant : IDisposable
 
     public override string ToString() => AsString();
 
-    public object? Obj
-    {
-        get
+    public object? Obj =>
+        _obj ??= NativeVar.DangerousSelfRef.Type switch
         {
-            if (_obj == null)
-                _obj = Marshaling.ConvertVariantToManagedObject((godot_variant)NativeVar);
-
-            return _obj;
-        }
-    }
+            Type.Bool => AsBool(),
+            Type.Int => AsInt64(),
+            Type.Float => AsDouble(),
+            Type.String => AsString(),
+            Type.Vector2 => AsVector2(),
+            Type.Vector2i => AsVector2i(),
+            Type.Rect2 => AsRect2(),
+            Type.Rect2i => AsRect2i(),
+            Type.Vector3 => AsVector3(),
+            Type.Vector3i => AsVector3i(),
+            Type.Transform2d => AsTransform2D(),
+            Type.Vector4 => AsVector4(),
+            Type.Vector4i => AsVector4i(),
+            Type.Plane => AsPlane(),
+            Type.Quaternion => AsQuaternion(),
+            Type.Aabb => AsAABB(),
+            Type.Basis => AsBasis(),
+            Type.Transform3d => AsTransform3D(),
+            Type.Projection => AsProjection(),
+            Type.Color => AsColor(),
+            Type.StringName => AsStringName(),
+            Type.NodePath => AsNodePath(),
+            Type.Rid => AsRID(),
+            Type.Object => AsGodotObject(),
+            Type.Callable => AsCallable(),
+            Type.Signal => AsSignal(),
+            Type.Dictionary => AsGodotDictionary(),
+            Type.Array => AsGodotArray(),
+            Type.PackedByteArray => AsByteArray(),
+            Type.PackedInt32Array => AsInt32Array(),
+            Type.PackedInt64Array => AsInt64Array(),
+            Type.PackedFloat32Array => AsFloat32Array(),
+            Type.PackedFloat64Array => AsFloat64Array(),
+            Type.PackedStringArray => AsStringArray(),
+            Type.PackedVector2Array => AsVector2Array(),
+            Type.PackedVector3Array => AsVector3Array(),
+            Type.PackedColorArray => AsColorArray(),
+            Type.Nil => null,
+            Type.Max or _ =>
+                throw new InvalidOperationException($"Invalid Variant type: {NativeVar.DangerousSelfRef.Type}"),
+        };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Variant From<[MustBeVariant] T>(in T from) =>
@@ -249,8 +283,8 @@ public partial struct Variant : IDisposable
         VariantUtils.ConvertToCallableManaged((godot_variant)NativeVar);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SignalInfo AsSignalInfo() =>
-        VariantUtils.ConvertToSignalInfo((godot_variant)NativeVar);
+    public Signal AsSignal() =>
+        VariantUtils.ConvertToSignalManaged((godot_variant)NativeVar);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] AsByteArray() =>
@@ -430,7 +464,7 @@ public partial struct Variant : IDisposable
     public static explicit operator Callable(Variant from) => from.AsCallable();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static explicit operator SignalInfo(Variant from) => from.AsSignalInfo();
+    public static explicit operator Signal(Variant from) => from.AsSignal();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator byte[](Variant from) => from.AsByteArray();
@@ -580,7 +614,7 @@ public partial struct Variant : IDisposable
     public static Variant CreateFrom(Callable from) => from;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Variant CreateFrom(SignalInfo from) => from;
+    public static Variant CreateFrom(Signal from) => from;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Variant CreateFrom(Span<byte> from) => from;
@@ -770,8 +804,8 @@ public partial struct Variant : IDisposable
         CreateTakingOwnershipOfDisposableValue(VariantUtils.CreateFromCallable(from));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator Variant(SignalInfo from) =>
-        CreateTakingOwnershipOfDisposableValue(VariantUtils.CreateFromSignalInfo(from));
+    public static implicit operator Variant(Signal from) =>
+        CreateTakingOwnershipOfDisposableValue(VariantUtils.CreateFromSignal(from));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Variant(byte[] from) =>

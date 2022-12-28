@@ -37,7 +37,6 @@
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
-#include "core/io/stream_peer_tls.h"
 #include "core/object/class_db.h"
 #include "core/object/message_queue.h"
 #include "core/os/keyboard.h"
@@ -47,10 +46,7 @@
 #include "core/string/translation.h"
 #include "core/version.h"
 #include "main/main.h"
-#include "scene/3d/importer_mesh_instance_3d.h"
-#include "scene/gui/center_container.h"
 #include "scene/gui/color_picker.h"
-#include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/file_dialog.h"
 #include "scene/gui/link_button.h"
@@ -61,17 +57,13 @@
 #include "scene/gui/split_container.h"
 #include "scene/gui/tab_bar.h"
 #include "scene/gui/tab_container.h"
-#include "scene/gui/texture_progress_bar.h"
 #include "scene/main/window.h"
 #include "scene/resources/packed_scene.h"
 #include "servers/display_server.h"
-#include "servers/navigation_server_2d.h"
 #include "servers/navigation_server_3d.h"
 #include "servers/physics_server_2d.h"
-#include "servers/rendering/rendering_device.h"
 
 #include "editor/audio_stream_preview.h"
-#include "editor/debugger/debug_adapter/debug_adapter_server.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/dependency_editor.h"
 #include "editor/editor_about.h"
@@ -90,12 +82,13 @@
 #include "editor/editor_plugin.h"
 #include "editor/editor_properties.h"
 #include "editor/editor_property_name_processor.h"
+#include "editor/editor_quick_open.h"
+#include "editor/editor_resource_preview.h"
 #include "editor/editor_run.h"
 #include "editor/editor_run_native.h"
 #include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_settings_dialog.h"
-#include "editor/editor_spin_slider.h"
 #include "editor/editor_themes.h"
 #include "editor/editor_toaster.h"
 #include "editor/editor_translation_parser.h"
@@ -103,12 +96,12 @@
 #include "editor/export/editor_export.h"
 #include "editor/export/export_template_manager.h"
 #include "editor/export/project_export.h"
+#include "editor/fbx_importer_manager.h"
 #include "editor/filesystem_dock.h"
 #include "editor/history_dock.h"
 #include "editor/import/audio_stream_import_settings.h"
 #include "editor/import/dynamic_font_import_settings.h"
 #include "editor/import/editor_import_collada.h"
-#include "editor/import/editor_import_plugin.h"
 #include "editor/import/resource_importer_bitmask.h"
 #include "editor/import/resource_importer_bmfont.h"
 #include "editor/import/resource_importer_csv_translation.h"
@@ -123,6 +116,7 @@
 #include "editor/import/resource_importer_wav.h"
 #include "editor/import/scene_import_settings.h"
 #include "editor/import_dock.h"
+#include "editor/inspector_dock.h"
 #include "editor/multi_node_edit.h"
 #include "editor/node_dock.h"
 #include "editor/plugin_config_dialog.h"
@@ -130,6 +124,7 @@
 #include "editor/plugins/asset_library_editor_plugin.h"
 #include "editor/plugins/canvas_item_editor_plugin.h"
 #include "editor/plugins/debugger_editor_plugin.h"
+#include "editor/plugins/editor_preview_plugins.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 #include "editor/plugins/gdextension_export_plugin.h"
 #include "editor/plugins/material_editor_plugin.h"
@@ -443,8 +438,6 @@ void EditorNode::_update_from_settings() {
 	bool glow_bicubic = int(GLOBAL_GET("rendering/environment/glow/upscale_mode")) > 0;
 	RS::get_singleton()->environment_set_ssil_quality(RS::EnvironmentSSILQuality(int(GLOBAL_GET("rendering/environment/ssil/quality"))), GLOBAL_GET("rendering/environment/ssil/half_size"), GLOBAL_GET("rendering/environment/ssil/adaptive_target"), GLOBAL_GET("rendering/environment/ssil/blur_passes"), GLOBAL_GET("rendering/environment/ssil/fadeout_from"), GLOBAL_GET("rendering/environment/ssil/fadeout_to"));
 	RS::get_singleton()->environment_glow_set_use_bicubic_upscale(glow_bicubic);
-	bool glow_high_quality = GLOBAL_GET("rendering/environment/glow/use_high_quality");
-	RS::get_singleton()->environment_glow_set_use_high_quality(glow_high_quality);
 	RS::EnvironmentSSRRoughnessQuality ssr_roughness_quality = RS::EnvironmentSSRRoughnessQuality(int(GLOBAL_GET("rendering/environment/screen_space_reflection/roughness_quality")));
 	RS::get_singleton()->environment_set_ssr_roughness_quality(ssr_roughness_quality);
 	RS::SubSurfaceScatteringQuality sss_quality = RS::SubSurfaceScatteringQuality(int(GLOBAL_GET("rendering/environment/subsurface_scattering/subsurface_scattering_quality")));
@@ -1198,6 +1191,10 @@ Error EditorNode::load_resource(const String &p_resource, bool p_ignore_broken_d
 
 void EditorNode::edit_node(Node *p_node) {
 	push_item(p_node);
+}
+
+void EditorNode::edit_resource(const Ref<Resource> &p_resource) {
+	InspectorDock::get_singleton()->edit_resource(p_resource);
 }
 
 void EditorNode::save_resource_in_path(const Ref<Resource> &p_resource, const String &p_path) {
@@ -2276,7 +2273,9 @@ void EditorNode::_edit_current(bool p_skip_foreign) {
 	} else {
 		Node *selected_node = nullptr;
 
-		if (current_obj->is_class("MultiNodeEdit")) {
+		if (current_obj->is_class("EditorDebuggerRemoteObject")) {
+			disable_folding = true;
+		} else if (current_obj->is_class("MultiNodeEdit")) {
 			Node *scene = get_edited_scene();
 			if (scene) {
 				MultiNodeEdit *multi_node_edit = Object::cast_to<MultiNodeEdit>(current_obj);
@@ -2756,11 +2755,20 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				log->add_message(TTR("Can't undo while mouse buttons are pressed."), EditorLog::MSG_TYPE_EDITOR);
 			} else {
 				String action = editor_data.get_undo_redo()->get_current_action_name();
-
+				int id = editor_data.get_undo_redo()->get_current_action_history_id();
 				if (!editor_data.get_undo_redo()->undo()) {
 					log->add_message(TTR("Nothing to undo."), EditorLog::MSG_TYPE_EDITOR);
 				} else if (!action.is_empty()) {
-					log->add_message(vformat(TTR("Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+					switch (id) {
+						case EditorUndoRedoManager::GLOBAL_HISTORY:
+							log->add_message(vformat(TTR("Global Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							break;
+						case EditorUndoRedoManager::REMOTE_HISTORY:
+							log->add_message(vformat(TTR("Remote Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							break;
+						default:
+							log->add_message(vformat(TTR("Scene Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+					}
 				}
 			}
 		} break;
@@ -2772,7 +2780,20 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 					log->add_message(TTR("Nothing to redo."), EditorLog::MSG_TYPE_EDITOR);
 				} else {
 					String action = editor_data.get_undo_redo()->get_current_action_name();
-					log->add_message(vformat(TTR("Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+					if (action.is_empty()) {
+						break;
+					}
+
+					switch (editor_data.get_undo_redo()->get_current_action_history_id()) {
+						case EditorUndoRedoManager::GLOBAL_HISTORY:
+							log->add_message(vformat(TTR("Global Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							break;
+						case EditorUndoRedoManager::REMOTE_HISTORY:
+							log->add_message(vformat(TTR("Remote Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							break;
+						default:
+							log->add_message(vformat(TTR("Scene Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+					}
 				}
 			}
 		} break;
@@ -2961,7 +2982,11 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		} break;
 		case SETTINGS_MANAGE_EXPORT_TEMPLATES: {
 			export_template_manager->popup_manager();
-
+		} break;
+		case SETTINGS_MANAGE_FBX_IMPORTER: {
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+			fbx_importer_manager->show_dialog();
+#endif
 		} break;
 		case SETTINGS_INSTALL_ANDROID_BUILD_TEMPLATE: {
 			custom_build_manage_templates->hide();
@@ -3358,7 +3383,9 @@ void EditorNode::add_editor_plugin(EditorPlugin *p_editor, bool p_config_changed
 
 void EditorNode::remove_editor_plugin(EditorPlugin *p_editor, bool p_config_changed) {
 	if (p_editor->has_main_screen()) {
-		for (int i = 0; i < singleton->main_editor_buttons.size(); i++) {
+		// Remove the main editor button and update the bindings of
+		// all buttons behind it to point to the correct main window.
+		for (int i = singleton->main_editor_buttons.size() - 1; i >= 0; i--) {
 			if (p_editor->get_name() == singleton->main_editor_buttons[i]->get_text()) {
 				if (singleton->main_editor_buttons[i]->is_pressed()) {
 					singleton->editor_select(EDITOR_SCRIPT);
@@ -3368,6 +3395,9 @@ void EditorNode::remove_editor_plugin(EditorPlugin *p_editor, bool p_config_chan
 				singleton->main_editor_buttons.remove_at(i);
 
 				break;
+			} else {
+				singleton->main_editor_buttons[i]->disconnect("pressed", callable_mp(singleton, &EditorNode::editor_select));
+				singleton->main_editor_buttons[i]->connect("pressed", callable_mp(singleton, &EditorNode::editor_select).bind(i - 1));
 			}
 		}
 
@@ -5164,15 +5194,15 @@ void EditorNode::_layout_menu_option(int p_id) {
 			current_menu_option = p_id;
 			layout_dialog->set_title(TTR("Save Layout"));
 			layout_dialog->set_ok_button_text(TTR("Save"));
-			layout_dialog->popup_centered();
 			layout_dialog->set_name_line_enabled(true);
+			layout_dialog->popup_centered();
 		} break;
 		case SETTINGS_LAYOUT_DELETE: {
 			current_menu_option = p_id;
 			layout_dialog->set_title(TTR("Delete Layout"));
 			layout_dialog->set_ok_button_text(TTR("Delete"));
-			layout_dialog->popup_centered();
 			layout_dialog->set_name_line_enabled(false);
+			layout_dialog->popup_centered();
 		} break;
 		case SETTINGS_LAYOUT_DEFAULT: {
 			_load_docks_from_config(default_layout, "docks");
@@ -5879,10 +5909,6 @@ void EditorNode::_feature_profile_changed() {
 		node_tabs->set_tab_hidden(node_tabs->get_tab_idx_from_control(NodeDock::get_singleton()), false);
 		fs_tabs->set_tab_hidden(fs_tabs->get_tab_idx_from_control(FileSystemDock::get_singleton()), false);
 		history_tabs->set_tab_hidden(history_tabs->get_tab_idx_from_control(history_dock), false);
-		history_dock->set_visible(true);
-		ImportDock::get_singleton()->set_visible(true);
-		NodeDock::get_singleton()->set_visible(true);
-		FileSystemDock::get_singleton()->set_visible(true);
 		main_editor_buttons[EDITOR_3D]->set_visible(true);
 		main_editor_buttons[EDITOR_SCRIPT]->set_visible(true);
 		if (AssetLibraryEditorPlugin::is_available()) {
@@ -6037,14 +6063,7 @@ EditorNode::EditorNode() {
 	Input *id = Input::get_singleton();
 
 	if (id) {
-		bool found_touchscreen = false;
-		for (int i = 0; i < DisplayServer::get_singleton()->get_screen_count(); i++) {
-			if (DisplayServer::get_singleton()->screen_is_touchscreen(i)) {
-				found_touchscreen = true;
-			}
-		}
-
-		if (!found_touchscreen && Input::get_singleton()) {
+		if (!DisplayServer::get_singleton()->is_touchscreen_available() && Input::get_singleton()) {
 			// Only if no touchscreen ui hint, disable emulation just in case.
 			id->set_emulate_touch_from_mouse(false);
 		}
@@ -6610,6 +6629,11 @@ EditorNode::EditorNode() {
 	gui_base->add_child(about);
 	feature_profile_manager->connect("current_feature_profile_changed", callable_mp(this, &EditorNode::_feature_profile_changed));
 
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+	fbx_importer_manager = memnew(FBXImporterManager);
+	gui_base->add_child(fbx_importer_manager);
+#endif
+
 	warning = memnew(AcceptDialog);
 	warning->add_button(TTR("Copy Text"), true, "copy");
 	gui_base->add_child(warning);
@@ -6781,6 +6805,9 @@ EditorNode::EditorNode() {
 	settings_menu->add_item(TTR("Manage Editor Features..."), SETTINGS_MANAGE_FEATURE_PROFILES);
 #ifndef ANDROID_ENABLED
 	settings_menu->add_item(TTR("Manage Export Templates..."), SETTINGS_MANAGE_EXPORT_TEMPLATES);
+#endif
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+	settings_menu->add_item(TTR("Configure FBX Importer..."), SETTINGS_MANAGE_FBX_IMPORTER);
 #endif
 
 	help_menu = memnew(PopupMenu);
@@ -7235,6 +7262,7 @@ EditorNode::EditorNode() {
 	gui_base->add_child(disk_changed);
 
 	add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
+	add_editor_plugin(memnew(AnimationTrackKeyEditEditorPlugin));
 	add_editor_plugin(memnew(CanvasItemEditorPlugin));
 	add_editor_plugin(memnew(Node3DEditorPlugin));
 	add_editor_plugin(memnew(ScriptEditorPlugin));

@@ -35,8 +35,11 @@
 #include "core/math/face3.h"
 #include "core/math/triangle_mesh.h"
 #include "scene/resources/material.h"
-#include "scene/resources/shape_3d.h"
 #include "servers/rendering_server.h"
+
+class ConcavePolygonShape3D;
+class ConvexPolygonShape3D;
+class Shape3D;
 
 class Mesh : public Resource {
 	GDCLASS(Mesh, Resource);
@@ -211,8 +214,8 @@ public:
 	static ConvexDecompositionFunc convex_decomposition_function;
 
 	Vector<Ref<Shape3D>> convex_decompose(const ConvexDecompositionSettings &p_settings) const;
-	Ref<Shape3D> create_convex_shape(bool p_clean = true, bool p_simplify = false) const;
-	Ref<Shape3D> create_trimesh_shape() const;
+	Ref<ConvexPolygonShape3D> create_convex_shape(bool p_clean = true, bool p_simplify = false) const;
+	Ref<ConcavePolygonShape3D> create_trimesh_shape() const;
 
 	virtual int get_builtin_bind_pose_count() const;
 	virtual Transform3D get_builtin_bind_pose(int p_index) const;
@@ -259,6 +262,7 @@ protected:
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
+	bool surface_index_0 = false;
 
 	virtual void reset_state() override;
 

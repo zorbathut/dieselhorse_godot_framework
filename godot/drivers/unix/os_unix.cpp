@@ -152,12 +152,10 @@ Vector<String> OS_Unix::get_video_adapter_driver_info() const {
 String OS_Unix::get_stdin_string(bool p_block) {
 	if (p_block) {
 		char buff[1024];
-		String ret = stdin_buf + fgets(buff, 1024, stdin);
-		stdin_buf = "";
-		return ret;
+		return String::utf8(fgets(buff, 1024, stdin));
 	}
 
-	return "";
+	return String();
 }
 
 Error OS_Unix::get_entropy(uint8_t *r_buffer, int p_bytes) {
@@ -565,7 +563,7 @@ String OS_Unix::get_executable_path() const {
 		WARN_PRINT("MAXPATHLEN is too small");
 	}
 
-	String path(resolved_path);
+	String path = String::utf8(resolved_path);
 	delete[] resolved_path;
 
 	return path;

@@ -34,11 +34,17 @@
 #include "editor/editor_plugin.h"
 #include "editor/editor_properties.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
+#include "scene/resources/syntax_highlighter.h"
 #include "scene/resources/visual_shader.h"
 
+class CodeEdit;
 class CurveEditor;
 class GraphEdit;
 class GraphNode;
+class MenuButton;
+class PopupPanel;
+class RichTextLabel;
+class Tree;
 
 class VisualShaderEditor;
 
@@ -127,6 +133,7 @@ public:
 	void update_curve_xyz(int p_node_id);
 	void set_expression(VisualShader::Type p_type, int p_node_id, const String &p_expression);
 	int get_constant_index(float p_constant) const;
+	Ref<Script> get_node_script(int p_node_id) const;
 	void update_node_size(int p_node_id);
 	void update_theme();
 	VisualShader::Type get_shader_type() const;
@@ -183,6 +190,9 @@ class VisualShaderEditor : public VBoxContainer {
 	Ref<CodeHighlighter> syntax_highlighter = nullptr;
 	PanelContainer *error_panel = nullptr;
 	Label *error_label = nullptr;
+
+	bool _block_update_options_menu = false;
+	bool _block_rebuild_shader = false;
 
 	Point2 saved_node_pos;
 	bool saved_node_pos_dirty = false;
@@ -491,6 +501,9 @@ class VisualShaderEditor : public VBoxContainer {
 	void _update_parameter_refs(HashSet<String> &p_names);
 	void _update_varyings();
 
+	void _update_options_menu_deferred();
+	void _rebuild_shader_deferred();
+
 	void _visibility_changed();
 
 protected:
@@ -498,7 +511,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	void update_nodes();
 	void add_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);
 	void remove_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);
 
@@ -506,6 +518,9 @@ public:
 
 	void clear_custom_types();
 	void add_custom_type(const String &p_name, const Ref<Script> &p_script, const String &p_description, int p_return_icon_type, const String &p_category, bool p_highend);
+
+	Dictionary get_custom_node_data(Ref<VisualShaderNodeCustom> &p_custom_node);
+	void update_custom_type(const Ref<Resource> &p_resource);
 
 	virtual Size2 get_minimum_size() const override;
 	void edit(VisualShader *p_visual_shader);

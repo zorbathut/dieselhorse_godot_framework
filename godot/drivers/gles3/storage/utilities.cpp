@@ -156,6 +156,9 @@ bool Utilities::free(RID p_rid) {
 	} else if (GLES3::ParticlesStorage::get_singleton()->owns_particles_collision_instance(p_rid)) {
 		GLES3::ParticlesStorage::get_singleton()->particles_collision_instance_free(p_rid);
 		return true;
+	} else if (GLES3::MeshStorage::get_singleton()->owns_skeleton(p_rid)) {
+		GLES3::MeshStorage::get_singleton()->skeleton_free(p_rid);
+		return true;
 	} else {
 		return false;
 	}
@@ -281,7 +284,7 @@ String Utilities::get_captured_timestamp_name(uint32_t p_index) const {
 void Utilities::update_dirty_resources() {
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms();
 	MaterialStorage::get_singleton()->_update_queued_materials();
-	//MeshStorage::get_singleton()->_update_dirty_skeletons();
+	MeshStorage::get_singleton()->_update_dirty_skeletons();
 	MeshStorage::get_singleton()->_update_dirty_multimeshes();
 	TextureStorage::get_singleton()->update_texture_atlas();
 }
