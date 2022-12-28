@@ -22,7 +22,9 @@ def run():
     print(f"Running with {cores} cores")
     
     # Wipe out the GodotNuGetFallbackFolder because Godot does not properly update it
-    fallbackdir = os.path.expandvars("%APPDATA%/Godot/mono/GodotNuGetFallbackFolder")
+    fallbackdir = util.platformswitch(
+        windows = os.path.expandvars("%APPDATA%/Godot/mono/GodotNuGetFallbackFolder"),
+        linux = os.path.expanduser("~/.local/share/godot/mono/GodotNuGetFallbackFolder"))
     if os.path.exists(fallbackdir):
         shutil.rmtree(fallbackdir)
         os.makedirs(fallbackdir)
