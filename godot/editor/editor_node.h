@@ -32,12 +32,13 @@
 #define EDITOR_NODE_H
 
 #include "core/templates/safe_refcount.h"
+#include "editor/editor_data.h"
 #include "editor/editor_folding.h"
 #include "editor/editor_native_shader_source_visualizer.h"
+#include "editor/editor_plugin.h"
 #include "editor/editor_run.h"
 #include "editor/editor_title_bar.h"
 #include "editor/export/editor_export.h"
-#include "editor/inspector_dock.h"
 
 typedef void (*EditorNodeInitCallback)();
 typedef void (*EditorPluginInitializeCallback)();
@@ -46,8 +47,8 @@ typedef bool (*EditorBuildCallback)();
 class AcceptDialog;
 class AudioStreamPreviewGenerator;
 class BackgroundProgress;
-class Button;
 class CenterContainer;
+class CheckBox;
 class ColorPicker;
 class ConfirmationDialog;
 class Control;
@@ -59,22 +60,24 @@ class EditorCommandPalette;
 class EditorExport;
 class EditorExtensionManager;
 class EditorFeatureProfileManager;
+class EditorFileDialog;
 class EditorFileServer;
 class EditorFolding;
 class EditorInspector;
 class EditorLayoutsDialog;
 class EditorLog;
-class EditorPlugin;
 class EditorPluginList;
 class EditorQuickOpen;
 class EditorResourcePreview;
 class EditorResourceConversionPlugin;
 class EditorRun;
 class EditorRunNative;
+class EditorSelectionHistory;
 class EditorSettingsDialog;
 class EditorToaster;
 class EditorUndoRedoManager;
 class ExportTemplateManager;
+class FBXImporterManager;
 class FileDialog;
 class FileSystemDock;
 class HistoryDock;
@@ -84,6 +87,7 @@ class LinkButton;
 class MenuBar;
 class MenuButton;
 class NodeDock;
+class OptionButton;
 class OrphanResourcesDialog;
 class Panel;
 class PanelContainer;
@@ -98,7 +102,9 @@ class ScriptCreateDialog;
 class SubViewport;
 class TabBar;
 class TabContainer;
+class TextureRect;
 class TextureProgressBar;
+class Tree;
 class VSplitContainer;
 class Window;
 class EditorBuildProfileManager;
@@ -204,6 +210,7 @@ private:
 		SETTINGS_EDITOR_DATA_FOLDER,
 		SETTINGS_EDITOR_CONFIG_FOLDER,
 		SETTINGS_MANAGE_EXPORT_TEMPLATES,
+		SETTINGS_MANAGE_FBX_IMPORTER,
 		SETTINGS_MANAGE_FEATURE_PROFILES,
 		SETTINGS_INSTALL_ANDROID_BUILD_TEMPLATE,
 		SETTINGS_PICK_MAIN_SCENE,
@@ -279,6 +286,8 @@ private:
 
 	ProjectExportDialog *project_export = nullptr;
 	ProjectSettingsEditor *project_settings_editor = nullptr;
+
+	FBXImporterManager *fbx_importer_manager = nullptr;
 
 	Vector<EditorPlugin *> editor_plugins;
 	bool _initializing_plugins = false;
@@ -775,7 +784,7 @@ public:
 	bool is_movie_maker_enabled() const;
 
 	void edit_node(Node *p_node);
-	void edit_resource(const Ref<Resource> &p_resource) { InspectorDock::get_singleton()->edit_resource(p_resource); };
+	void edit_resource(const Ref<Resource> &p_resource);
 
 	void save_resource_in_path(const Ref<Resource> &p_resource, const String &p_path);
 	void save_resource(const Ref<Resource> &p_resource);

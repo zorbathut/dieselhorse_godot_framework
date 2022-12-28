@@ -218,7 +218,7 @@ License: glslang
 Files: ./thirdparty/graphite/
 Comment: Graphite engine
 Copyright: 2010, SIL International
-License: MPL-2.0
+License: Expat
 
 Files: ./thirdparty/harfbuzz/
 Comment: HarfBuzz text shaping library
@@ -293,7 +293,7 @@ License: CC0-1.0
 
 Files: ./thirdparty/miniupnpc/
 Comment: MiniUPnP Project
-Copyright: 2005-2021, Thomas Bernard
+Copyright: 2005-2022, Thomas Bernard
 License: BSD-3-clause
 
 Files: ./thirdparty/minizip/

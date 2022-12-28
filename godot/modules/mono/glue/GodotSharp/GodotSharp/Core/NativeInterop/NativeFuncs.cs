@@ -153,6 +153,8 @@ namespace Godot.NativeInterop
         internal static partial void godotsharp_callable_call_deferred(in godot_callable p_callable,
             godot_variant** p_args, int p_arg_count);
 
+        internal static partial Color godotsharp_color_from_ok_hsl(float p_h, float p_s, float p_l, float p_alpha);
+
         // GDNative functions
 
         // gdnative.h
@@ -413,21 +415,6 @@ namespace Godot.NativeInterop
         public static partial void godotsharp_dictionary_to_string(ref godot_dictionary p_self, out godot_string r_str);
 
         // StringExtensions
-
-        public static partial void godotsharp_string_md5_buffer(in godot_string p_self,
-            out godot_packed_byte_array r_md5_buffer);
-
-        public static partial void godotsharp_string_md5_text(in godot_string p_self, out godot_string r_md5_text);
-
-        public static partial int godotsharp_string_rfind(in godot_string p_self, in godot_string p_what, int p_from);
-
-        public static partial int godotsharp_string_rfindn(in godot_string p_self, in godot_string p_what, int p_from);
-
-        public static partial void godotsharp_string_sha256_buffer(in godot_string p_self,
-            out godot_packed_byte_array r_sha256_buffer);
-
-        public static partial void godotsharp_string_sha256_text(in godot_string p_self,
-            out godot_string r_sha256_text);
 
         public static partial void godotsharp_string_simplify_path(in godot_string p_self,
             out godot_string r_simplified_path);

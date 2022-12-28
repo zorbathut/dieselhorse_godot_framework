@@ -64,11 +64,6 @@ void Range::_changed_notify(const char *p_what) {
 	queue_redraw();
 }
 
-void Range::_validate_values() {
-	shared->max = MAX(shared->max, shared->min);
-	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
-}
-
 void Range::Shared::emit_changed(const char *p_what) {
 	for (Range *E : owners) {
 		Range *r = E;
@@ -90,7 +85,7 @@ void Range::set_value(double p_val) {
 
 void Range::set_value_no_signal(double p_val) {
 	if (shared->step > 0) {
-		p_val = Math::round(p_val / shared->step) * shared->step;
+		p_val = Math::round((p_val - shared->min) / shared->step) * shared->step + shared->min;
 	}
 
 	if (_rounded_values) {
@@ -118,8 +113,9 @@ void Range::set_min(double p_min) {
 	}
 
 	shared->min = p_min;
+	shared->max = MAX(shared->max, shared->min);
+	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
 	set_value(shared->val);
-	_validate_values();
 
 	shared->emit_changed("min");
 
@@ -127,13 +123,14 @@ void Range::set_min(double p_min) {
 }
 
 void Range::set_max(double p_max) {
-	if (shared->max == p_max) {
+	double max_validated = MAX(p_max, shared->min);
+	if (shared->max == max_validated) {
 		return;
 	}
 
-	shared->max = p_max;
+	shared->max = max_validated;
+	shared->page = CLAMP(shared->page, 0, shared->max - shared->min);
 	set_value(shared->val);
-	_validate_values();
 
 	shared->emit_changed("max");
 }
@@ -148,13 +145,13 @@ void Range::set_step(double p_step) {
 }
 
 void Range::set_page(double p_page) {
-	if (shared->page == p_page) {
+	double page_validated = CLAMP(p_page, 0, shared->max - shared->min);
+	if (shared->page == page_validated) {
 		return;
 	}
 
-	shared->page = p_page;
+	shared->page = page_validated;
 	set_value(shared->val);
-	_validate_values();
 
 	shared->emit_changed("page");
 }

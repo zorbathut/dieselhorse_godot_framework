@@ -35,6 +35,7 @@
 #include "editor/editor_node.h"
 #include "editor/editor_resource_preview.h"
 #include "editor/editor_scale.h"
+#include "editor/editor_settings.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/plugins/canvas_item_editor_plugin.h"
 
@@ -54,7 +55,7 @@ void TileMapEditorTilesPlugin::tile_set_changed() {
 }
 
 void TileMapEditorTilesPlugin::_on_random_tile_checkbox_toggled(bool p_pressed) {
-	scatter_spinbox->set_editable(p_pressed);
+	scatter_controls_container->set_visible(p_pressed);
 }
 
 void TileMapEditorTilesPlugin::_on_scattering_spinbox_changed(double p_value) {
@@ -155,7 +156,7 @@ void TileMapEditorTilesPlugin::_update_tile_set_sources_list() {
 
 		// Common to all type of sources.
 		if (!source->get_name().is_empty()) {
-			item_text = vformat(TTR("%s (id:%d)"), source->get_name(), source_id);
+			item_text = vformat(TTR("%s (ID: %d)"), source->get_name(), source_id);
 		}
 
 		// Atlas source.
@@ -164,7 +165,7 @@ void TileMapEditorTilesPlugin::_update_tile_set_sources_list() {
 			texture = atlas_source->get_texture();
 			if (item_text.is_empty()) {
 				if (texture.is_valid()) {
-					item_text = vformat("%s (ID: %d)", texture->get_path().get_file(), source_id);
+					item_text = vformat(TTR("%s (ID: %d)"), texture->get_path().get_file(), source_id);
 				} else {
 					item_text = vformat(TTR("No Texture Atlas Source (ID: %d)"), source_id);
 				}
@@ -471,6 +472,7 @@ void TileMapEditorTilesPlugin::_update_theme() {
 	random_tile_toggle->set_icon(tiles_bottom_panel->get_theme_icon(SNAME("RandomNumberGenerator"), SNAME("EditorIcons")));
 
 	missing_atlas_texture_icon = tiles_bottom_panel->get_theme_icon(SNAME("TileSet"), SNAME("EditorIcons"));
+	_update_tile_set_sources_list();
 }
 
 bool TileMapEditorTilesPlugin::forward_canvas_gui_input(const Ref<InputEvent> &p_event) {
@@ -922,6 +924,7 @@ void TileMapEditorTilesPlugin::forward_canvas_draw_over_viewport(Control *p_over
 							Color modulate = tile_data->get_modulate();
 							Color self_modulate = tile_map->get_self_modulate();
 							modulate *= self_modulate;
+							modulate *= tile_map->get_layer_modulate(tile_map_layer);
 
 							// Draw the tile.
 							p_overlay->draw_texture_rect_region(atlas_source->get_texture(), dest_rect, source_rect, modulate * Color(1.0, 1.0, 1.0, 0.5), transpose, tile_set->is_uv_clipping());
@@ -1163,7 +1166,7 @@ HashMap<Vector2i, TileMapCell> TileMapEditorTilesPlugin::_draw_bucket_fill(Vecto
 						}
 
 						// Get surrounding tiles (handles different tile shapes).
-						TypedArray<Vector2i> around = tile_map->get_surrounding_tiles(coords);
+						TypedArray<Vector2i> around = tile_map->get_surrounding_cells(coords);
 						for (int i = 0; i < around.size(); i++) {
 							to_check.push_back(around[i]);
 						}
@@ -1696,7 +1699,7 @@ void TileMapEditorTilesPlugin::_tile_atlas_control_draw() {
 				if (frame > 0) {
 					color.a *= 0.3;
 				}
-				tile_atlas_control->draw_rect(atlas->get_tile_texture_region(E.get_atlas_coords(), frame), color, false);
+				TilesEditorPlugin::draw_selection_rect(tile_atlas_control, atlas->get_tile_texture_region(E.get_atlas_coords(), frame), color);
 			}
 		}
 	}
@@ -1704,11 +1707,8 @@ void TileMapEditorTilesPlugin::_tile_atlas_control_draw() {
 	// Draw the hovered tile.
 	if (hovered_tile.get_atlas_coords() != TileSetSource::INVALID_ATLAS_COORDS && hovered_tile.alternative_tile == 0 && !tile_set_dragging_selection) {
 		for (int frame = 0; frame < atlas->get_tile_animation_frames_count(hovered_tile.get_atlas_coords()); frame++) {
-			Color color = Color(1.0, 1.0, 1.0);
-			if (frame > 0) {
-				color.a *= 0.3;
-			}
-			tile_atlas_control->draw_rect(atlas->get_tile_texture_region(hovered_tile.get_atlas_coords(), frame), color, false);
+			Color color = Color(1.0, 0.8, 0.0, frame == 0 ? 0.6 : 0.3);
+			TilesEditorPlugin::draw_selection_rect(tile_atlas_control, atlas->get_tile_texture_region(hovered_tile.get_atlas_coords(), frame), color);
 		}
 	}
 
@@ -1729,9 +1729,8 @@ void TileMapEditorTilesPlugin::_tile_atlas_control_draw() {
 				}
 			}
 		}
-		Color selection_rect_color = selection_color.lightened(0.2);
 		for (const Vector2i &E : to_draw) {
-			tile_atlas_control->draw_rect(atlas->get_tile_texture_region(E), selection_rect_color, false);
+			TilesEditorPlugin::draw_selection_rect(tile_atlas_control, atlas->get_tile_texture_region(E));
 		}
 	}
 }
@@ -1880,7 +1879,7 @@ void TileMapEditorTilesPlugin::_tile_alternatives_control_draw() {
 		if (E.source_id == source_id && E.get_atlas_coords() != TileSetSource::INVALID_ATLAS_COORDS && E.alternative_tile > 0) {
 			Rect2i rect = tile_atlas_view->get_alternative_tile_rect(E.get_atlas_coords(), E.alternative_tile);
 			if (rect != Rect2i()) {
-				alternative_tiles_control->draw_rect(rect, Color(0.2, 0.2, 1.0), false);
+				TilesEditorPlugin::draw_selection_rect(alternative_tiles_control, rect);
 			}
 		}
 	}
@@ -1889,7 +1888,7 @@ void TileMapEditorTilesPlugin::_tile_alternatives_control_draw() {
 	if (hovered_tile.get_atlas_coords() != TileSetSource::INVALID_ATLAS_COORDS && hovered_tile.alternative_tile > 0) {
 		Rect2i rect = tile_atlas_view->get_alternative_tile_rect(hovered_tile.get_atlas_coords(), hovered_tile.alternative_tile);
 		if (rect != Rect2i()) {
-			alternative_tiles_control->draw_rect(rect, Color(1.0, 1.0, 1.0), false);
+			TilesEditorPlugin::draw_selection_rect(alternative_tiles_control, rect, Color(1.0, 0.8, 0.0, 0.5));
 		}
 	}
 }
@@ -2126,10 +2125,12 @@ TileMapEditorTilesPlugin::TileMapEditorTilesPlugin() {
 	tools_settings->add_child(random_tile_toggle);
 
 	// Random tile scattering.
+	scatter_controls_container = memnew(HBoxContainer);
+
 	scatter_label = memnew(Label);
 	scatter_label->set_tooltip_text(TTR("Defines the probability of painting nothing instead of a randomly selected tile."));
 	scatter_label->set_text(TTR("Scattering:"));
-	tools_settings->add_child(scatter_label);
+	scatter_controls_container->add_child(scatter_label);
 
 	scatter_spinbox = memnew(SpinBox);
 	scatter_spinbox->set_min(0.0);
@@ -2138,7 +2139,8 @@ TileMapEditorTilesPlugin::TileMapEditorTilesPlugin() {
 	scatter_spinbox->set_tooltip_text(TTR("Defines the probability of painting nothing instead of a randomly selected tile."));
 	scatter_spinbox->get_line_edit()->add_theme_constant_override("minimum_character_width", 4);
 	scatter_spinbox->connect("value_changed", callable_mp(this, &TileMapEditorTilesPlugin::_on_scattering_spinbox_changed));
-	tools_settings->add_child(scatter_spinbox);
+	scatter_controls_container->add_child(scatter_spinbox);
+	tools_settings->add_child(scatter_controls_container);
 
 	_on_random_tile_checkbox_toggled(false);
 
@@ -2546,7 +2548,7 @@ RBSet<Vector2i> TileMapEditorTerrainsPlugin::_get_cells_for_bucket_fill(Vector2i
 					output.insert(coords);
 
 					// Get surrounding tiles (handles different tile shapes).
-					TypedArray<Vector2i> around = tile_map->get_surrounding_tiles(coords);
+					TypedArray<Vector2i> around = tile_map->get_surrounding_cells(coords);
 					for (int i = 0; i < around.size(); i++) {
 						to_check.push_back(around[i]);
 					}

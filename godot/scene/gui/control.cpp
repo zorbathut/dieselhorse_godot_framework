@@ -220,6 +220,10 @@ PackedStringArray Control::get_configuration_warnings() const {
 		warnings.push_back(RTR("The Hint Tooltip won't be displayed as the control's Mouse Filter is set to \"Ignore\". To solve this, set the Mouse Filter to \"Stop\" or \"Pass\"."));
 	}
 
+	if (get_z_index() != 0) {
+		warnings.push_back(RTR("Changing the Z index of a control only affects the drawing order, not the input event handling order."));
+	}
+
 	return warnings;
 }
 
@@ -253,36 +257,36 @@ bool Control::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_value.get_type() == Variant::NIL || (p_value.get_type() == Variant::OBJECT && (Object *)p_value == nullptr)) {
 		if (name.begins_with("theme_override_icons/")) {
 			String dname = name.get_slicec('/', 1);
-			if (data.icon_override.has(dname)) {
-				data.icon_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+			if (data.theme_icon_override.has(dname)) {
+				data.theme_icon_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 			}
-			data.icon_override.erase(dname);
+			data.theme_icon_override.erase(dname);
 			_notify_theme_override_changed();
 		} else if (name.begins_with("theme_override_styles/")) {
 			String dname = name.get_slicec('/', 1);
-			if (data.style_override.has(dname)) {
-				data.style_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+			if (data.theme_style_override.has(dname)) {
+				data.theme_style_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 			}
-			data.style_override.erase(dname);
+			data.theme_style_override.erase(dname);
 			_notify_theme_override_changed();
 		} else if (name.begins_with("theme_override_fonts/")) {
 			String dname = name.get_slicec('/', 1);
-			if (data.font_override.has(dname)) {
-				data.font_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+			if (data.theme_font_override.has(dname)) {
+				data.theme_font_override[dname]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 			}
-			data.font_override.erase(dname);
+			data.theme_font_override.erase(dname);
 			_notify_theme_override_changed();
 		} else if (name.begins_with("theme_override_font_sizes/")) {
 			String dname = name.get_slicec('/', 1);
-			data.font_size_override.erase(dname);
+			data.theme_font_size_override.erase(dname);
 			_notify_theme_override_changed();
 		} else if (name.begins_with("theme_override_colors/")) {
 			String dname = name.get_slicec('/', 1);
-			data.color_override.erase(dname);
+			data.theme_color_override.erase(dname);
 			_notify_theme_override_changed();
 		} else if (name.begins_with("theme_override_constants/")) {
 			String dname = name.get_slicec('/', 1);
-			data.constant_override.erase(dname);
+			data.theme_constant_override.erase(dname);
 			_notify_theme_override_changed();
 		} else {
 			return false;
@@ -322,22 +326,22 @@ bool Control::_get(const StringName &p_name, Variant &r_ret) const {
 
 	if (sname.begins_with("theme_override_icons/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.icon_override.has(name) ? Variant(data.icon_override[name]) : Variant();
+		r_ret = data.theme_icon_override.has(name) ? Variant(data.theme_icon_override[name]) : Variant();
 	} else if (sname.begins_with("theme_override_styles/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.style_override.has(name) ? Variant(data.style_override[name]) : Variant();
+		r_ret = data.theme_style_override.has(name) ? Variant(data.theme_style_override[name]) : Variant();
 	} else if (sname.begins_with("theme_override_fonts/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.font_override.has(name) ? Variant(data.font_override[name]) : Variant();
+		r_ret = data.theme_font_override.has(name) ? Variant(data.theme_font_override[name]) : Variant();
 	} else if (sname.begins_with("theme_override_font_sizes/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.font_size_override.has(name) ? Variant(data.font_size_override[name]) : Variant();
+		r_ret = data.theme_font_size_override.has(name) ? Variant(data.theme_font_size_override[name]) : Variant();
 	} else if (sname.begins_with("theme_override_colors/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.color_override.has(name) ? Variant(data.color_override[name]) : Variant();
+		r_ret = data.theme_color_override.has(name) ? Variant(data.theme_color_override[name]) : Variant();
 	} else if (sname.begins_with("theme_override_constants/")) {
 		String name = sname.get_slicec('/', 1);
-		r_ret = data.constant_override.has(name) ? Variant(data.constant_override[name]) : Variant();
+		r_ret = data.theme_constant_override.has(name) ? Variant(data.theme_constant_override[name]) : Variant();
 	} else {
 		return false;
 	}
@@ -346,16 +350,16 @@ bool Control::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void Control::_get_property_list(List<PropertyInfo> *p_list) const {
-	Ref<Theme> theme = ThemeDB::get_singleton()->get_default_theme();
+	Ref<Theme> default_theme = ThemeDB::get_singleton()->get_default_theme();
 
 	p_list->push_back(PropertyInfo(Variant::NIL, TTRC("Theme Overrides"), PROPERTY_HINT_NONE, "theme_override_", PROPERTY_USAGE_GROUP));
 
 	{
 		List<StringName> names;
-		theme->get_color_list(get_class_name(), &names);
+		default_theme->get_color_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.color_override.has(E)) {
+			if (data.theme_color_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -364,10 +368,10 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 	{
 		List<StringName> names;
-		theme->get_constant_list(get_class_name(), &names);
+		default_theme->get_constant_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.constant_override.has(E)) {
+			if (data.theme_constant_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -376,10 +380,10 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 	{
 		List<StringName> names;
-		theme->get_font_list(get_class_name(), &names);
+		default_theme->get_font_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.font_override.has(E)) {
+			if (data.theme_font_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -388,10 +392,10 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 	{
 		List<StringName> names;
-		theme->get_font_size_list(get_class_name(), &names);
+		default_theme->get_font_size_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.font_size_override.has(E)) {
+			if (data.theme_font_size_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -400,10 +404,10 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 	{
 		List<StringName> names;
-		theme->get_icon_list(get_class_name(), &names);
+		default_theme->get_icon_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.icon_override.has(E)) {
+			if (data.theme_icon_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -412,10 +416,10 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 	{
 		List<StringName> names;
-		theme->get_stylebox_list(get_class_name(), &names);
+		default_theme->get_stylebox_list(get_class_name(), &names);
 		for (const StringName &E : names) {
 			uint32_t usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.style_override.has(E)) {
+			if (data.theme_style_override.has(E)) {
 				usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
 			}
 
@@ -481,10 +485,10 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 		}
 	} else if (Object::cast_to<Container>(parent_node)) {
 		// If the parent is a container, display only container-related properties.
-		if (p_property.name.begins_with("anchor_") || p_property.name.begins_with("offset_") || p_property.name.begins_with("grow_") || p_property.name == "anchors_preset" ||
-				p_property.name == "position" || p_property.name == "rotation" || p_property.name == "scale" || p_property.name == "size" || p_property.name == "pivot_offset") {
-			p_property.usage ^= PROPERTY_USAGE_EDITOR;
-
+		if (p_property.name.begins_with("anchor_") || p_property.name.begins_with("offset_") || p_property.name.begins_with("grow_") || p_property.name == "anchors_preset") {
+			p_property.usage ^= PROPERTY_USAGE_DEFAULT;
+		} else if (p_property.name == "position" || p_property.name == "rotation" || p_property.name == "scale" || p_property.name == "size" || p_property.name == "pivot_offset") {
+			p_property.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
 		} else if (p_property.name == "layout_mode") {
 			// Set the layout mode to be disabled with the proper value.
 			p_property.hint_string = "Position,Anchors,Container,Uncontrolled";
@@ -1471,8 +1475,16 @@ void Control::set_rotation(real_t p_radians) {
 	_notify_transform();
 }
 
+void Control::set_rotation_degrees(real_t p_degrees) {
+	set_rotation(Math::deg_to_rad(p_degrees));
+}
+
 real_t Control::get_rotation() const {
 	return data.rotation;
+}
+
+real_t Control::get_rotation_degrees() const {
+	return Math::rad_to_deg(get_rotation());
 }
 
 void Control::set_pivot_offset(const Vector2 &p_pivot) {
@@ -1559,6 +1571,12 @@ void Control::set_custom_minimum_size(const Size2 &p_custom) {
 	if (p_custom == data.custom_minimum_size) {
 		return;
 	}
+
+	if (isnan(p_custom.x) || isnan(p_custom.y)) {
+		// Prevent infinite loop.
+		return;
+	}
+
 	data.custom_minimum_size = p_custom;
 	update_minimum_size();
 }
@@ -2377,7 +2395,7 @@ StringName Control::get_theme_type_variation() const {
 
 Ref<Texture2D> Control::get_theme_icon(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const Ref<Texture2D> *tex = data.icon_override.getptr(p_name);
+		const Ref<Texture2D> *tex = data.theme_icon_override.getptr(p_name);
 		if (tex) {
 			return *tex;
 		}
@@ -2396,7 +2414,7 @@ Ref<Texture2D> Control::get_theme_icon(const StringName &p_name, const StringNam
 
 Ref<StyleBox> Control::get_theme_stylebox(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const Ref<StyleBox> *style = data.style_override.getptr(p_name);
+		const Ref<StyleBox> *style = data.theme_style_override.getptr(p_name);
 		if (style) {
 			return *style;
 		}
@@ -2415,7 +2433,7 @@ Ref<StyleBox> Control::get_theme_stylebox(const StringName &p_name, const String
 
 Ref<Font> Control::get_theme_font(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const Ref<Font> *font = data.font_override.getptr(p_name);
+		const Ref<Font> *font = data.theme_font_override.getptr(p_name);
 		if (font) {
 			return *font;
 		}
@@ -2434,7 +2452,7 @@ Ref<Font> Control::get_theme_font(const StringName &p_name, const StringName &p_
 
 int Control::get_theme_font_size(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const int *font_size = data.font_size_override.getptr(p_name);
+		const int *font_size = data.theme_font_size_override.getptr(p_name);
 		if (font_size && (*font_size) > 0) {
 			return *font_size;
 		}
@@ -2453,7 +2471,7 @@ int Control::get_theme_font_size(const StringName &p_name, const StringName &p_t
 
 Color Control::get_theme_color(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const Color *color = data.color_override.getptr(p_name);
+		const Color *color = data.theme_color_override.getptr(p_name);
 		if (color) {
 			return *color;
 		}
@@ -2472,7 +2490,7 @@ Color Control::get_theme_color(const StringName &p_name, const StringName &p_the
 
 int Control::get_theme_constant(const StringName &p_name, const StringName &p_theme_type) const {
 	if (p_theme_type == StringName() || p_theme_type == get_class_name() || p_theme_type == data.theme_type_variation) {
-		const int *constant = data.constant_override.getptr(p_name);
+		const int *constant = data.theme_constant_override.getptr(p_name);
 		if (constant) {
 			return *constant;
 		}
@@ -2566,123 +2584,123 @@ bool Control::has_theme_constant(const StringName &p_name, const StringName &p_t
 void Control::add_theme_icon_override(const StringName &p_name, const Ref<Texture2D> &p_icon) {
 	ERR_FAIL_COND(!p_icon.is_valid());
 
-	if (data.icon_override.has(p_name)) {
-		data.icon_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_icon_override.has(p_name)) {
+		data.theme_icon_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.icon_override[p_name] = p_icon;
-	data.icon_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
+	data.theme_icon_override[p_name] = p_icon;
+	data.theme_icon_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();
 }
 
 void Control::add_theme_style_override(const StringName &p_name, const Ref<StyleBox> &p_style) {
 	ERR_FAIL_COND(!p_style.is_valid());
 
-	if (data.style_override.has(p_name)) {
-		data.style_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_style_override.has(p_name)) {
+		data.theme_style_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.style_override[p_name] = p_style;
-	data.style_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
+	data.theme_style_override[p_name] = p_style;
+	data.theme_style_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();
 }
 
 void Control::add_theme_font_override(const StringName &p_name, const Ref<Font> &p_font) {
 	ERR_FAIL_COND(!p_font.is_valid());
 
-	if (data.font_override.has(p_name)) {
-		data.font_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_font_override.has(p_name)) {
+		data.theme_font_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.font_override[p_name] = p_font;
-	data.font_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
+	data.theme_font_override[p_name] = p_font;
+	data.theme_font_override[p_name]->connect("changed", callable_mp(this, &Control::_notify_theme_override_changed), CONNECT_REFERENCE_COUNTED);
 	_notify_theme_override_changed();
 }
 
 void Control::add_theme_font_size_override(const StringName &p_name, int p_font_size) {
-	data.font_size_override[p_name] = p_font_size;
+	data.theme_font_size_override[p_name] = p_font_size;
 	_notify_theme_override_changed();
 }
 
 void Control::add_theme_color_override(const StringName &p_name, const Color &p_color) {
-	data.color_override[p_name] = p_color;
+	data.theme_color_override[p_name] = p_color;
 	_notify_theme_override_changed();
 }
 
 void Control::add_theme_constant_override(const StringName &p_name, int p_constant) {
-	data.constant_override[p_name] = p_constant;
+	data.theme_constant_override[p_name] = p_constant;
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_icon_override(const StringName &p_name) {
-	if (data.icon_override.has(p_name)) {
-		data.icon_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_icon_override.has(p_name)) {
+		data.theme_icon_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.icon_override.erase(p_name);
+	data.theme_icon_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_style_override(const StringName &p_name) {
-	if (data.style_override.has(p_name)) {
-		data.style_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_style_override.has(p_name)) {
+		data.theme_style_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.style_override.erase(p_name);
+	data.theme_style_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_font_override(const StringName &p_name) {
-	if (data.font_override.has(p_name)) {
-		data.font_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
+	if (data.theme_font_override.has(p_name)) {
+		data.theme_font_override[p_name]->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
-	data.font_override.erase(p_name);
+	data.theme_font_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_font_size_override(const StringName &p_name) {
-	data.font_size_override.erase(p_name);
+	data.theme_font_size_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_color_override(const StringName &p_name) {
-	data.color_override.erase(p_name);
+	data.theme_color_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 void Control::remove_theme_constant_override(const StringName &p_name) {
-	data.constant_override.erase(p_name);
+	data.theme_constant_override.erase(p_name);
 	_notify_theme_override_changed();
 }
 
 bool Control::has_theme_icon_override(const StringName &p_name) const {
-	const Ref<Texture2D> *tex = data.icon_override.getptr(p_name);
+	const Ref<Texture2D> *tex = data.theme_icon_override.getptr(p_name);
 	return tex != nullptr;
 }
 
 bool Control::has_theme_stylebox_override(const StringName &p_name) const {
-	const Ref<StyleBox> *style = data.style_override.getptr(p_name);
+	const Ref<StyleBox> *style = data.theme_style_override.getptr(p_name);
 	return style != nullptr;
 }
 
 bool Control::has_theme_font_override(const StringName &p_name) const {
-	const Ref<Font> *font = data.font_override.getptr(p_name);
+	const Ref<Font> *font = data.theme_font_override.getptr(p_name);
 	return font != nullptr;
 }
 
 bool Control::has_theme_font_size_override(const StringName &p_name) const {
-	const int *font_size = data.font_size_override.getptr(p_name);
+	const int *font_size = data.theme_font_size_override.getptr(p_name);
 	return font_size != nullptr;
 }
 
 bool Control::has_theme_color_override(const StringName &p_name) const {
-	const Color *color = data.color_override.getptr(p_name);
+	const Color *color = data.theme_color_override.getptr(p_name);
 	return color != nullptr;
 }
 
 bool Control::has_theme_constant_override(const StringName &p_name) const {
-	const int *constant = data.constant_override.getptr(p_name);
+	const int *constant = data.theme_constant_override.getptr(p_name);
 	return constant != nullptr;
 }
 
@@ -2935,7 +2953,7 @@ void Control::_notification(int p_notification) {
 			queue_redraw();
 
 			if (data.RI) {
-				get_viewport()->_gui_set_root_order_dirty();
+				get_viewport()->gui_set_root_order_dirty();
 			}
 		} break;
 
@@ -3032,6 +3050,7 @@ void Control::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_global_position", "position", "keep_offsets"), &Control::set_global_position, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("_set_global_position", "position"), &Control::_set_global_position);
 	ClassDB::bind_method(D_METHOD("set_rotation", "radians"), &Control::set_rotation);
+	ClassDB::bind_method(D_METHOD("set_rotation_degrees", "degrees"), &Control::set_rotation_degrees);
 	ClassDB::bind_method(D_METHOD("set_scale", "scale"), &Control::set_scale);
 	ClassDB::bind_method(D_METHOD("set_pivot_offset", "pivot_offset"), &Control::set_pivot_offset);
 	ClassDB::bind_method(D_METHOD("get_begin"), &Control::get_begin);
@@ -3039,6 +3058,7 @@ void Control::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_position"), &Control::get_position);
 	ClassDB::bind_method(D_METHOD("get_size"), &Control::get_size);
 	ClassDB::bind_method(D_METHOD("get_rotation"), &Control::get_rotation);
+	ClassDB::bind_method(D_METHOD("get_rotation_degrees"), &Control::get_rotation_degrees);
 	ClassDB::bind_method(D_METHOD("get_scale"), &Control::get_scale);
 	ClassDB::bind_method(D_METHOD("get_pivot_offset"), &Control::get_pivot_offset);
 	ClassDB::bind_method(D_METHOD("get_custom_minimum_size"), &Control::get_custom_minimum_size);
@@ -3207,6 +3227,7 @@ void Control::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "position", PROPERTY_HINT_NONE, "suffix:px", PROPERTY_USAGE_EDITOR), "_set_position", "get_position");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "global_position", PROPERTY_HINT_NONE, "suffix:px", PROPERTY_USAGE_NONE), "_set_global_position", "get_global_position");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation", PROPERTY_HINT_RANGE, "-360,360,0.1,or_less,or_greater,radians"), "set_rotation", "get_rotation");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_degrees", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_rotation_degrees", "get_rotation_degrees");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scale"), "set_scale", "get_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot_offset", PROPERTY_HINT_NONE, "suffix:px"), "set_pivot_offset", "get_pivot_offset");
 
@@ -3355,21 +3376,21 @@ Control::~Control() {
 	memdelete(data.theme_owner);
 
 	// Resources need to be disconnected.
-	for (KeyValue<StringName, Ref<Texture2D>> &E : data.icon_override) {
+	for (KeyValue<StringName, Ref<Texture2D>> &E : data.theme_icon_override) {
 		E.value->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
-	for (KeyValue<StringName, Ref<StyleBox>> &E : data.style_override) {
+	for (KeyValue<StringName, Ref<StyleBox>> &E : data.theme_style_override) {
 		E.value->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
-	for (KeyValue<StringName, Ref<Font>> &E : data.font_override) {
+	for (KeyValue<StringName, Ref<Font>> &E : data.theme_font_override) {
 		E.value->disconnect("changed", callable_mp(this, &Control::_notify_theme_override_changed));
 	}
 
 	// Then override maps can be simply cleared.
-	data.icon_override.clear();
-	data.style_override.clear();
-	data.font_override.clear();
-	data.font_size_override.clear();
-	data.color_override.clear();
-	data.constant_override.clear();
+	data.theme_icon_override.clear();
+	data.theme_style_override.clear();
+	data.theme_font_override.clear();
+	data.theme_font_size_override.clear();
+	data.theme_color_override.clear();
+	data.theme_constant_override.clear();
 }

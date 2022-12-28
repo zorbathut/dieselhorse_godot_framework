@@ -33,11 +33,13 @@
 #include "editor/editor_file_dialog.h"
 #include "editor/editor_node.h"
 #include "editor/editor_settings.h"
+#include "editor/inspector_dock.h"
 #include "main/main.h"
 #include "node_3d_editor_plugin.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/navigation_region_3d.h"
 #include "scene/3d/physics_body_3d.h"
+#include "scene/gui/menu_button.h"
 #include "scene/main/window.h"
 #include "scene/resources/packed_scene.h"
 
@@ -158,23 +160,23 @@ void MeshLibraryEditor::_import_scene(Node *p_scene, Ref<MeshLibrary> p_library,
 
 		p_library->set_item_shapes(id, collisions);
 
-		Ref<NavigationMesh> navmesh;
-		Transform3D navmesh_transform;
+		Ref<NavigationMesh> navigation_mesh;
+		Transform3D navigation_mesh_transform;
 		for (int j = 0; j < mi->get_child_count(); j++) {
 			Node *child2 = mi->get_child(j);
 			if (!Object::cast_to<NavigationRegion3D>(child2)) {
 				continue;
 			}
 			NavigationRegion3D *sb = Object::cast_to<NavigationRegion3D>(child2);
-			navmesh = sb->get_navigation_mesh();
-			navmesh_transform = sb->get_transform();
-			if (!navmesh.is_null()) {
+			navigation_mesh = sb->get_navigation_mesh();
+			navigation_mesh_transform = sb->get_transform();
+			if (!navigation_mesh.is_null()) {
 				break;
 			}
 		}
-		if (!navmesh.is_null()) {
-			p_library->set_item_navmesh(id, navmesh);
-			p_library->set_item_navmesh_transform(id, navmesh_transform);
+		if (!navigation_mesh.is_null()) {
+			p_library->set_item_navigation_mesh(id, navigation_mesh);
+			p_library->set_item_navigation_mesh_transform(id, navigation_mesh_transform);
 		}
 	}
 

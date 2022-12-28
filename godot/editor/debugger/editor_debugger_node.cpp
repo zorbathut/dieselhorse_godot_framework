@@ -35,6 +35,9 @@
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
+#include "editor/editor_settings.h"
+#include "editor/editor_undo_redo_manager.h"
+#include "editor/inspector_dock.h"
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/scene_tree_dock.h"
@@ -272,6 +275,7 @@ void EditorDebuggerNode::stop(bool p_force) {
 	});
 	_break_state_changed();
 	breakpoints.clear();
+	EditorNode::get_undo_redo()->clear_history(false, EditorUndoRedoManager::REMOTE_HISTORY);
 	set_process(false);
 }
 

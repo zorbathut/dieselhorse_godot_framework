@@ -34,6 +34,7 @@
 #include "core/io/marshalls.h"
 #include "editor/editor_properties.h"
 #include "editor/editor_scale.h"
+#include "editor/editor_settings.h"
 #include "editor/inspector_dock.h"
 
 bool EditorPropertyArrayObject::_set(const StringName &p_name, const Variant &p_value) {
@@ -692,6 +693,8 @@ void EditorPropertyArray::_reorder_button_up() {
 	reorder_mouse_y_delta = 0.0f;
 
 	Input::get_singleton()->set_mouse_mode(Input::MOUSE_MODE_VISIBLE);
+
+	ERR_FAIL_NULL(reorder_selected_button);
 	reorder_selected_button->warp_mouse(reorder_selected_button->get_size() / 2.0f);
 
 	reorder_selected_element_hbox = nullptr;
@@ -916,7 +919,7 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::INT: {
 					EditorPropertyInteger *editor = memnew(EditorPropertyInteger);
-					editor->setup(-100000, 100000, 1, true, true);
+					editor->setup(-100000, 100000, 1, false, true, true);
 					prop = editor;
 
 				} break;
@@ -939,7 +942,7 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::VECTOR2I: {
 					EditorPropertyVector2i *editor = memnew(EditorPropertyVector2i);
-					editor->setup(-100000, 100000, true);
+					editor->setup(-100000, 100000);
 					prop = editor;
 
 				} break;
@@ -951,7 +954,7 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::RECT2I: {
 					EditorPropertyRect2i *editor = memnew(EditorPropertyRect2i);
-					editor->setup(-100000, 100000, true);
+					editor->setup(-100000, 100000);
 					prop = editor;
 
 				} break;
@@ -963,7 +966,7 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::VECTOR3I: {
 					EditorPropertyVector3i *editor = memnew(EditorPropertyVector3i);
-					editor->setup(-100000, 100000, true);
+					editor->setup(-100000, 100000);
 					prop = editor;
 
 				} break;
@@ -975,7 +978,7 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::VECTOR4I: {
 					EditorPropertyVector4i *editor = memnew(EditorPropertyVector4i);
-					editor->setup(-100000, 100000, true);
+					editor->setup(-100000, 100000);
 					prop = editor;
 
 				} break;

@@ -46,6 +46,7 @@
 #include "editor/editor_property_name_processor.h"
 #include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
+#include "editor/inspector_dock.h"
 #include "editor/plugins/canvas_item_editor_plugin.h"
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
@@ -53,6 +54,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/debugger/scene_debugger.h"
 #include "scene/gui/dialogs.h"
+#include "scene/gui/grid_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/margin_container.h"
@@ -317,6 +319,7 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 			tabs->set_current_tab(0);
 		}
 		profiler->set_enabled(false, false);
+		visual_profiler->set_enabled(false);
 		inspector->clear_cache(); // Take a chance to force remote objects update.
 
 	} else if (p_msg == "debug_exit") {
@@ -326,8 +329,12 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		_update_buttons_state();
 		_set_reason_text(TTR("Execution resumed."), MESSAGE_SUCCESS);
 		emit_signal(SNAME("breaked"), false, false, "", false);
+
 		profiler->set_enabled(true, false);
 		profiler->disable_seeking();
+
+		visual_profiler->set_enabled(true);
+
 	} else if (p_msg == "set_pid") {
 		ERR_FAIL_COND(p_data.size() < 1);
 		remote_pid = p_data[0];
@@ -743,7 +750,16 @@ void ScriptEditorDebugger::_set_reason_text(const String &p_reason, MessageType 
 			reason->add_theme_color_override("font_color", get_theme_color(SNAME("success_color"), SNAME("Editor")));
 	}
 	reason->set_text(p_reason);
-	reason->set_tooltip_text(p_reason.word_wrap(80));
+
+	const PackedInt32Array boundaries = TS->string_get_word_breaks(p_reason, "", 80);
+	PackedStringArray lines;
+	for (int i = 0; i < boundaries.size(); i += 2) {
+		const int start = boundaries[i];
+		const int end = boundaries[i + 1];
+		lines.append(p_reason.substr(start, end - start + 1));
+	}
+
+	reason->set_tooltip_text(String("\n").join(lines));
 }
 
 void ScriptEditorDebugger::_notification(int p_what) {
@@ -884,6 +900,7 @@ void ScriptEditorDebugger::start(Ref<RemoteDebuggerPeer> p_peer) {
 	stop();
 
 	profiler->set_enabled(true, true);
+	visual_profiler->set_enabled(true);
 
 	peer = p_peer;
 	ERR_FAIL_COND(p_peer.is_null());
@@ -940,7 +957,11 @@ void ScriptEditorDebugger::stop() {
 	res_path_cache.clear();
 	profiler_signature.clear();
 
-	profiler->set_enabled(true, false);
+	profiler->set_enabled(false, false);
+	profiler->set_pressed(false);
+
+	visual_profiler->set_enabled(false);
+	visual_profiler->set_pressed(false);
 
 	inspector->edit(nullptr);
 	_update_buttons_state();

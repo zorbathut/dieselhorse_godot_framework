@@ -20,7 +20,7 @@ Files extracted from upstream source:
 ## basis_universal
 
 - Upstream: https://github.com/BinomialLLC/basis_universal
-- Version: git (1531cfaf9ed5232248a0a45736686a849ca3befc, 2022)
+- Version: git (a91e94c8495d7f470d3df326a364d49324cfd4a3, 2022)
 - License: Apache 2.0
 
 Files extracted from upstream source:
@@ -44,7 +44,7 @@ Files extracted from upstream source:
 ## certs
 
 - Upstream: Mozilla, via https://github.com/bagder/ca-bundle
-- Version: git (7f33e7eb8472dbcf31fdcf50cd216c89a282825d, 2022)
+- Version: git (b2f7415648411b6fd7c298c6c92d6552f0165f60, 2022)
 - License: MPL 2.0
 
 
@@ -217,8 +217,8 @@ Files extracted from upstream source:
 ## graphite
 
 - Upstream: https://github.com/silnrsi/graphite
-- Version: 1.3.14 (80c52493ef42e6fe605a69dcddd2a691cd8a1380, 2021)
-- License: MPL-2.0
+- Version: 1.3.14 (27572742003b93dc53dc02c01c237b72c6c25f54, 2022)
+- License: MIT
 
 Files extracted from upstream source:
 
@@ -230,7 +230,7 @@ Files extracted from upstream source:
 ## harfbuzz
 
 - Upstream: https://github.com/harfbuzz/harfbuzz
-- Version: 5.3.1 (970321db7bddbe8c579b73751fc655a924ea3ce6, 2022)
+- Version: 6.0.0 (afcae83a064843d71d47624bc162e121cc56c08b, 2022)
 - License: MIT
 
 Files extracted from upstream source:
@@ -345,7 +345,7 @@ Files extracted from upstream source:
 ## mbedtls
 
 - Upstream: https://github.com/Mbed-TLS/mbedtls
-- Version: 2.18.1 (dd79db10014d85b26d11fe57218431f2e5ede6f2, 2022)
+- Version: 2.18.2 (89f040a5c938985c5f30728baed21e49d0846a53, 2022)
 - License: Apache 2.0
 
 File extracted from upstream release tarball:
@@ -355,11 +355,9 @@ File extracted from upstream release tarball:
 - The `LICENSE` file.
 - Applied the patch in `patches/1453.diff` (upstream PR:
   https://github.com/ARMmbed/mbedtls/pull/1453).
+  Applied the patch in `patches/windows-arm64-hardclock.diff`
 - Added 2 files `godot_core_mbedtls_platform.c` and `godot_core_mbedtls_config.h`
   providing configuration for light bundling with core.
-
-Some changes have been made in order to fix Windows on ARM build errors.
-They are marked with `// -- GODOT start --` and `// -- GODOT end --`
 
 
 ## meshoptimizer
@@ -398,7 +396,7 @@ to solve some MSVC warnings. See the patches in the `patches` directory.
 ## miniupnpc
 
 - Upstream: https://github.com/miniupnp/miniupnp
-- Version: 2.2.3 (2df8120326ed4246e049a7a6de707539604cd514, 2021)
+- Version: 2.2.4 (7d1d8bc3868b08ad003bad235eee57562b95b76d, 2022)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
@@ -548,7 +546,7 @@ Patch files are provided in `oidn/patches/`.
 ## openxr
 
 - Upstream: https://github.com/KhronosGroup/OpenXR-SDK
-- Version: 1.0.25 (c16a18c99740ea5dd251e3af117e0e5aea4ceaa9, 2022)
+- Version: 1.0.26 (e2da9ce83a4388c9622da328bf48548471261290, 2022)
 - License: Apache 2.0
 
 Files extracted from upstream source:
@@ -591,7 +589,7 @@ in 10.40, it can be found in the `patches` folder.
 ## recastnavigation
 
 - Upstream: https://github.com/recastnavigation/recastnavigation
-- Version: git (5a870d427e47abd4a8e4ce58a95582ec049434d5, 2022)
+- Version: git (4fef0446609b23d6ac180ed822817571525528a1, 2022)
 - License: zlib
 
 Files extracted from upstream source:
@@ -668,7 +666,7 @@ instead of `miniz.h` as an external dependency.
 ## thorvg
 
 - Upstream: https://github.com/Samsung/thorvg
-- Version: 0.8.2 (496796f1e5e85bd5fbba36dae987edb1b3945592, 2022)
+- Version: 0.8.3 (a0fcf51f80a75f63a066df085f60cdaf715188b6, 2022)
 - License: MIT
 
 Files extracted from upstream source:

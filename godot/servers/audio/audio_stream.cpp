@@ -71,12 +71,9 @@ void AudioStreamPlayback::seek(double p_time) {
 }
 
 int AudioStreamPlayback::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
-	int ret;
-	if (GDVIRTUAL_REQUIRED_CALL(_mix, p_buffer, p_rate_scale, p_frames, ret)) {
-		return ret;
-	}
-
-	return 0;
+	int ret = 0;
+	GDVIRTUAL_REQUIRED_CALL(_mix, p_buffer, p_rate_scale, p_frames, ret);
+	return ret;
 }
 
 void AudioStreamPlayback::tag_used_streams() {
@@ -107,20 +104,14 @@ void AudioStreamPlaybackResampled::begin_resample() {
 }
 
 int AudioStreamPlaybackResampled::_mix_internal(AudioFrame *p_buffer, int p_frames) {
-	int ret;
-	if (GDVIRTUAL_REQUIRED_CALL(_mix_resampled, p_buffer, p_frames, ret)) {
-		return ret;
-	}
-
-	return 0;
+	int ret = 0;
+	GDVIRTUAL_REQUIRED_CALL(_mix_resampled, p_buffer, p_frames, ret);
+	return ret;
 }
 float AudioStreamPlaybackResampled::get_stream_sampling_rate() {
-	float ret;
-	if (GDVIRTUAL_REQUIRED_CALL(_get_stream_sampling_rate, ret)) {
-		return ret;
-	}
-
-	return 0;
+	float ret = 0;
+	GDVIRTUAL_REQUIRED_CALL(_get_stream_sampling_rate, ret);
+	return ret;
 }
 
 void AudioStreamPlaybackResampled::_bind_methods() {
@@ -419,12 +410,12 @@ AudioStreamPlaybackMicrophone::AudioStreamPlaybackMicrophone() {
 
 ////////////////////////////////
 
-void AudioStreamRandomizer::add_stream(int p_index) {
+void AudioStreamRandomizer::add_stream(int p_index, Ref<AudioStream> p_stream, float p_weight) {
 	if (p_index < 0) {
 		p_index = audio_stream_pool.size();
 	}
 	ERR_FAIL_COND(p_index > audio_stream_pool.size());
-	PoolEntry entry{ nullptr, 1.0f };
+	PoolEntry entry{ p_stream, p_weight };
 	audio_stream_pool.insert(p_index, entry);
 	emit_signal(SNAME("changed"));
 	notify_property_list_changed();
@@ -564,8 +555,9 @@ Ref<AudioStreamPlayback> AudioStreamRandomizer::instance_playback_no_repeats() {
 		}
 	}
 	if (local_pool.is_empty()) {
+		// There is only one sound to choose from.
+		// Always play a random sound while allowing repeats (which always plays the same sound).
 		playback = instance_playback_random();
-		WARN_PRINT("Playback stream pool is too small to prevent repeats.");
 		return playback;
 	}
 
@@ -717,7 +709,7 @@ void AudioStreamRandomizer::_get_property_list(List<PropertyInfo> *p_list) const
 }
 
 void AudioStreamRandomizer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_stream", "index"), &AudioStreamRandomizer::add_stream);
+	ClassDB::bind_method(D_METHOD("add_stream", "index", "stream", "weight"), &AudioStreamRandomizer::add_stream, DEFVAL(1.0));
 	ClassDB::bind_method(D_METHOD("move_stream", "index_from", "index_to"), &AudioStreamRandomizer::move_stream);
 	ClassDB::bind_method(D_METHOD("remove_stream", "index"), &AudioStreamRandomizer::remove_stream);
 

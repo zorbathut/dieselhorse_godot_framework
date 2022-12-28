@@ -32,15 +32,14 @@
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/math/geometry_2d.h"
 #include "core/os/keyboard.h"
-#include "core/string/print_string.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/editor_node.h"
 #include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_toaster.h"
 #include "editor/editor_undo_redo_manager.h"
+#include "editor/editor_zoom_widget.h"
 #include "editor/plugins/animation_player_editor_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/scene_tree_dock.h"
@@ -55,6 +54,7 @@
 #include "scene/gui/grid_container.h"
 #include "scene/gui/nine_patch_rect.h"
 #include "scene/gui/separator.h"
+#include "scene/gui/split_container.h"
 #include "scene/gui/subviewport_container.h"
 #include "scene/gui/view_panner.h"
 #include "scene/main/canvas_layer.h"
@@ -5504,6 +5504,11 @@ void CanvasItemEditorViewport::_create_preview(const Vector<String> &files) cons
 		Ref<Texture2D> texture = Ref<Texture2D>(Object::cast_to<Texture2D>(*res));
 		Ref<PackedScene> scene = Ref<PackedScene>(Object::cast_to<PackedScene>(*res));
 		if (texture != nullptr || scene != nullptr) {
+			bool root_node_selected = EditorNode::get_singleton()->get_editor_selection()->is_selected(EditorNode::get_singleton()->get_edited_scene());
+			String desc = TTR("Drag and drop to add as child of current scene's root node.") + "\n" + TTR("Hold Ctrl when dropping to add as child of selected node.");
+			if (!root_node_selected) {
+				desc += "\n" + TTR("Hold Shift when dropping to add as sibling of selected node.");
+			}
 			if (texture != nullptr) {
 				Sprite2D *sprite = memnew(Sprite2D);
 				sprite->set_texture(texture);
@@ -5511,14 +5516,15 @@ void CanvasItemEditorViewport::_create_preview(const Vector<String> &files) cons
 				preview_node->add_child(sprite);
 				label->show();
 				label_desc->show();
-				label_desc->set_text(TTR("Drag and drop to add as child of current scene's root node.\nHold Ctrl when dropping to add as child of selected node.\nHold Shift when dropping to add as sibling of selected node.\nHold Alt when dropping to add as a different node type."));
+				desc += "\n" + TTR("Hold Alt when dropping to add as a different node type.");
+				label_desc->set_text(desc);
 			} else {
 				if (scene.is_valid()) {
 					Node *instance = scene->instantiate();
 					if (instance) {
 						preview_node->add_child(instance);
 						label_desc->show();
-						label_desc->set_text(TTR("Drag and drop to add as child of current scene's root node.\nHold Ctrl when dropping to add as child of selected node.\nHold Shift when dropping to add as sibling of selected node."));
+						label_desc->set_text(desc);
 					}
 				}
 			}
@@ -5596,7 +5602,7 @@ void CanvasItemEditorViewport::_create_nodes(Node *parent, Node *child, String &
 	// make visible for certain node type
 	if (Object::cast_to<Control>(child)) {
 		Size2 texture_size = texture->get_size();
-		undo_redo->add_do_property(child, "rect_size", texture_size);
+		undo_redo->add_do_property(child, "size", texture_size);
 	} else if (Object::cast_to<Polygon2D>(child)) {
 		Size2 texture_size = texture->get_size();
 		Vector<Vector2> list = {
@@ -5611,6 +5617,11 @@ void CanvasItemEditorViewport::_create_nodes(Node *parent, Node *child, String &
 	// Compute the global position
 	Transform2D xform = canvas_item_editor->get_canvas_transform();
 	Point2 target_position = xform.affine_inverse().xform(p_point);
+
+	// Adjust position for Control and TouchScreenButton
+	if (Object::cast_to<Control>(child) || Object::cast_to<TouchScreenButton>(child)) {
+		target_position -= texture->get_size() / 2;
+	}
 
 	// there's nothing to be used as source position so snapping will work as absolute if enabled
 	target_position = canvas_item_editor->snap_point(target_position);

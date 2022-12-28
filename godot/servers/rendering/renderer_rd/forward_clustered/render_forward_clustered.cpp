@@ -348,6 +348,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 #endif
 				material_uniform_set = surf->material_uniform_set;
 				shader = surf->shader;
+				surf->material->set_as_used();
 #ifdef DEBUG_ENABLED
 			}
 #endif
@@ -830,8 +831,18 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list, con
 	for (int i = 0; i < (int)p_render_data->instances->size(); i++) {
 		GeometryInstanceForwardClustered *inst = static_cast<GeometryInstanceForwardClustered *>((*p_render_data->instances)[i]);
 
-		Vector3 support_min = inst->transformed_aabb.get_support(-near_plane.normal);
-		inst->depth = near_plane.distance_to(support_min);
+		Vector3 center = inst->transform.origin;
+		if (p_render_data->scene_data->cam_orthogonal) {
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.get_support(-near_plane.normal);
+			}
+			inst->depth = near_plane.distance_to(center) - inst->sorting_offset;
+		} else {
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.position + (inst->transformed_aabb.size * 0.5);
+			}
+			inst->depth = p_render_data->scene_data->cam_transform.origin.distance_to(center) - inst->sorting_offset;
+		}
 		uint32_t depth_layer = CLAMP(int(inst->depth * 16 / z_max), 0, 15);
 
 		uint32_t flags = inst->base_flags; //fill flags if appropriate
@@ -1622,7 +1633,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 	bool using_ssr = false;
 	bool using_sdfgi = false;
 	bool using_voxelgi = false;
-	bool reverse_cull = false;
+	bool reverse_cull = p_render_data->scene_data->cam_transform.basis.determinant() < 0;
 	bool using_ssil = p_render_data->environment.is_valid() && environment_get_ssil_enabled(p_render_data->environment);
 
 	if (rb.is_valid()) {
@@ -3378,6 +3389,7 @@ void RenderForwardClustered::_geometry_instance_add_surface_with_material(Geomet
 	sdcache->flags = flags;
 
 	sdcache->shader = p_material->shader_data;
+	sdcache->material = p_material;
 	sdcache->material_uniform_set = p_material->uniform_set;
 	sdcache->surface = mesh_storage->mesh_get_surface(p_mesh, p_surface);
 	sdcache->primitive = mesh_storage->mesh_surface_get_primitive(sdcache->surface);
@@ -3596,6 +3608,10 @@ void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance *p
 		}
 		ginstance->transforms_uniform_set = particles_storage->particles_get_instance_buffer_uniform_set(ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
 
+		if (particles_storage->particles_get_frame_counter(ginstance->data->base) == 0) {
+			// Particles haven't been cleared or updated, update once now to ensure they are ready to render.
+			particles_storage->update_particles();
+		}
 	} else if (ginstance->data->base_type == RS::INSTANCE_MESH) {
 		if (mesh_storage->skeleton_is_valid(ginstance->data->skeleton)) {
 			ginstance->transforms_uniform_set = mesh_storage->skeleton_get_3d_uniform_set(ginstance->data->skeleton, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);

@@ -49,6 +49,7 @@
 #include "editor/editor_vcs_interface.h"
 #include "main/main.h"
 #include "scene/gui/center_container.h"
+#include "scene/gui/check_box.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/margin_container.h"
 #include "scene/gui/panel_container.h"
@@ -93,6 +94,7 @@ private:
 	Container *path_container;
 	Container *install_path_container;
 	Container *renderer_container;
+	Label *renderer_info;
 	HBoxContainer *default_files_container;
 	Ref<ButtonGroup> renderer_button_group;
 	Label *msg;
@@ -425,6 +427,35 @@ private:
 		ok_pressed();
 	}
 
+	void _renderer_selected() {
+		String renderer_type = renderer_button_group->get_pressed_button()->get_meta(SNAME("rendering_method"));
+
+		if (renderer_type == "forward_plus") {
+			renderer_info->set_text(
+					String::utf8("•  ") + TTR("Supports desktop platforms only.") +
+					String::utf8("\n•  ") + TTR("Advanced 3D graphics available.") +
+					String::utf8("\n•  ") + TTR("Can scale to large complex scenes.") +
+					String::utf8("\n•  ") + TTR("Uses RenderingDevice backend.") +
+					String::utf8("\n•  ") + TTR("Slower rendering of simple scenes."));
+		} else if (renderer_type == "mobile") {
+			renderer_info->set_text(
+					String::utf8("•  ") + TTR("Supports desktop + mobile platforms.") +
+					String::utf8("\n•  ") + TTR("Less advanced 3D graphics.") +
+					String::utf8("\n•  ") + TTR("Less scalable for complex scenes.") +
+					String::utf8("\n•  ") + TTR("Uses RenderingDevice backend.") +
+					String::utf8("\n•  ") + TTR("Fast rendering of simple scenes."));
+		} else if (renderer_type == "gl_compatibility") {
+			renderer_info->set_text(
+					String::utf8("•  ") + TTR("Supports desktop, mobile + web platforms.") +
+					String::utf8("\n•  ") + TTR("Least advanced 3D graphics (currently work-in-progress).") +
+					String::utf8("\n•  ") + TTR("Intended for low-end/older devices.") +
+					String::utf8("\n•  ") + TTR("Uses OpenGL 3 backend (OpenGL 3.3/ES 3.0/WebGL2).") +
+					String::utf8("\n•  ") + TTR("Fastest rendering of simple scenes."));
+		} else {
+			WARN_PRINT("Unknown renderer type. Please report this as a bug on GitHub.");
+		}
+	}
+
 	void ok_pressed() override {
 		String dir = project_path->get_text();
 
@@ -435,17 +466,17 @@ private:
 				return;
 			}
 
-			ProjectSettings *current = memnew(ProjectSettings);
-
-			int err = current->setup(dir2, "");
+			// Load project.godot as ConfigFile to set the new name.
+			ConfigFile cfg;
+			String project_godot = dir2.path_join("project.godot");
+			Error err = cfg.load(project_godot);
 			if (err != OK) {
-				set_message(vformat(TTR("Couldn't load project.godot in project path (error %d). It may be missing or corrupted."), err), MESSAGE_ERROR);
+				set_message(vformat(TTR("Couldn't load project at '%s' (error %d). It may be missing or corrupted."), project_godot, err), MESSAGE_ERROR);
 			} else {
-				ProjectSettings::CustomMap edited_settings;
-				edited_settings["application/config/name"] = project_name->get_text().strip_edges();
-
-				if (current->save_custom(dir2.path_join("project.godot"), edited_settings, Vector<String>(), true) != OK) {
-					set_message(TTR("Couldn't edit project.godot in project path."), MESSAGE_ERROR);
+				cfg.set_value("application", "config/name", project_name->get_text().strip_edges());
+				err = cfg.save(project_godot);
+				if (err != OK) {
+					set_message(vformat(TTR("Couldn't save project at '%s' (error %d)."), project_godot, err), MESSAGE_ERROR);
 				}
 			}
 
@@ -482,10 +513,15 @@ private:
 					String renderer_type = renderer_button_group->get_pressed_button()->get_meta(SNAME("rendering_method"));
 					initial_settings["rendering/renderer/rendering_method"] = renderer_type;
 
+					EditorSettings::get_singleton()->set("project_manager/default_renderer", renderer_type);
+					EditorSettings::get_singleton()->save();
+
 					if (renderer_type == "forward_plus") {
 						project_features.push_back("Forward Plus");
 					} else if (renderer_type == "mobile") {
 						project_features.push_back("Mobile");
+					} else if (renderer_type == "gl_compatibility") {
+						project_features.push_back("GL Compatibility");
 					} else {
 						WARN_PRINT("Unknown renderer type. Please report this as a bug on GitHub.");
 					}
@@ -693,18 +729,19 @@ public:
 			default_files_container->hide();
 			get_ok_button()->set_disabled(false);
 
-			ProjectSettings *current = memnew(ProjectSettings);
-
-			int err = current->setup(project_path->get_text(), "");
+			// Fetch current name from project.godot to prefill the text input.
+			ConfigFile cfg;
+			String project_godot = project_path->get_text().path_join("project.godot");
+			Error err = cfg.load(project_godot);
 			if (err != OK) {
-				set_message(vformat(TTR("Couldn't load project.godot in project path (error %d). It may be missing or corrupted."), err), MESSAGE_ERROR);
+				set_message(vformat(TTR("Couldn't load project at '%s' (error %d). It may be missing or corrupted."), project_godot, err), MESSAGE_ERROR);
 				status_rect->show();
 				msg->show();
 				get_ok_button()->set_disabled(true);
-			} else if (current->has_setting("application/config/name")) {
-				String proj = current->get("application/config/name");
-				project_name->set_text(proj);
-				_text_changed(proj);
+			} else {
+				String cur_name = cfg.get_value("application", "config/name", "");
+				project_name->set_text(cur_name);
+				_text_changed(cur_name);
 			}
 
 			project_name->call_deferred(SNAME("grab_focus"));
@@ -858,42 +895,55 @@ public:
 		renderer_container->add_child(rshc);
 		renderer_button_group.instantiate();
 
+		// Left hand side, used for checkboxes to select renderer.
 		Container *rvb = memnew(VBoxContainer);
-		rvb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 		rshc->add_child(rvb);
+
+		String default_renderer_type = "forward_plus";
+		if (EditorSettings::get_singleton()->has_setting("project_manager/default_renderer")) {
+			default_renderer_type = EditorSettings::get_singleton()->get_setting("project_manager/default_renderer");
+		}
+
 		Button *rs_button = memnew(CheckBox);
 		rs_button->set_button_group(renderer_button_group);
 		rs_button->set_text(TTR("Forward+"));
 		rs_button->set_meta(SNAME("rendering_method"), "forward_plus");
-		rs_button->set_pressed(true);
+		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
 		rvb->add_child(rs_button);
-		l = memnew(Label);
-		l->set_text(
-				String::utf8("•  ") + TTR("Supports desktop platforms only.") +
-				String::utf8("\n•  ") + TTR("Advanced 3D graphics available.") +
-				String::utf8("\n•  ") + TTR("Can scale to large complex scenes.") +
-				String::utf8("\n•  ") + TTR("Slower rendering of simple scenes."));
-		l->set_modulate(Color(1, 1, 1, 0.7));
-		rvb->add_child(l);
+		if (default_renderer_type == "forward_plus") {
+			rs_button->set_pressed(true);
+		}
 
-		rshc->add_child(memnew(VSeparator));
-
-		rvb = memnew(VBoxContainer);
-		rvb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-		rshc->add_child(rvb);
 		rs_button = memnew(CheckBox);
 		rs_button->set_button_group(renderer_button_group);
 		rs_button->set_text(TTR("Mobile"));
 		rs_button->set_meta(SNAME("rendering_method"), "mobile");
+		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
 		rvb->add_child(rs_button);
-		l = memnew(Label);
-		l->set_text(
-				String::utf8("•  ") + TTR("Supports desktop + mobile platforms.") +
-				String::utf8("\n•  ") + TTR("Less advanced 3D graphics.") +
-				String::utf8("\n•  ") + TTR("Less scalable for complex scenes.") +
-				String::utf8("\n•  ") + TTR("Faster rendering of simple scenes."));
-		l->set_modulate(Color(1, 1, 1, 0.7));
-		rvb->add_child(l);
+		if (default_renderer_type == "mobile") {
+			rs_button->set_pressed(true);
+		}
+
+		rs_button = memnew(CheckBox);
+		rs_button->set_button_group(renderer_button_group);
+		rs_button->set_text(TTR("Compatibility"));
+		rs_button->set_meta(SNAME("rendering_method"), "gl_compatibility");
+		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
+		rvb->add_child(rs_button);
+		if (default_renderer_type == "gl_compatibility") {
+			rs_button->set_pressed(true);
+		}
+
+		rshc->add_child(memnew(VSeparator));
+
+		// Right hand side, used for text explaining each choice.
+		rvb = memnew(VBoxContainer);
+		rvb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+		rshc->add_child(rvb);
+		renderer_info = memnew(Label);
+		renderer_info->set_modulate(Color(1, 1, 1, 0.7));
+		rvb->add_child(renderer_info);
+		_renderer_selected();
 
 		l = memnew(Label);
 		l->set_text(TTR("The renderer can be changed later, but scenes may need to be adjusted."));
@@ -1251,7 +1301,6 @@ void ProjectList::migrate_config() {
 	if (FileAccess::exists(_config_path)) {
 		return;
 	}
-	print_line("Migrating legacy project list");
 
 	List<PropertyInfo> properties;
 	EditorSettings::get_singleton()->get_property_list(&properties);
@@ -1264,6 +1313,8 @@ void ProjectList::migrate_config() {
 		}
 
 		String path = EDITOR_GET(property_key);
+		print_line("Migrating legacy project '" + path + "'.");
+
 		String favoriteKey = "favorite_projects/" + property_key.get_slice("/", 1);
 		bool favorite = EditorSettings::get_singleton()->has_setting(favoriteKey);
 		add_project(path, favorite);

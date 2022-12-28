@@ -123,9 +123,6 @@ void SceneTree::tree_changed() {
 
 void SceneTree::node_added(Node *p_node) {
 	emit_signal(node_added_name, p_node);
-	if (call_lock > 0) {
-		call_skip.erase(p_node->get_instance_id());
-	}
 }
 
 void SceneTree::node_removed(Node *p_node) {
@@ -134,7 +131,7 @@ void SceneTree::node_removed(Node *p_node) {
 	}
 	emit_signal(node_removed_name, p_node);
 	if (call_lock > 0) {
-		call_skip.insert(p_node->get_instance_id());
+		call_skip.insert(p_node);
 	}
 }
 
@@ -264,7 +261,7 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName &p_gro
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
 		for (int i = gr_node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -278,7 +275,7 @@ void SceneTree::call_group_flagsp(uint32_t p_call_flags, const StringName &p_gro
 
 	} else {
 		for (int i = 0; i < gr_node_count; i++) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -317,7 +314,7 @@ void SceneTree::notify_group_flags(uint32_t p_call_flags, const StringName &p_gr
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
 		for (int i = gr_node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -330,7 +327,7 @@ void SceneTree::notify_group_flags(uint32_t p_call_flags, const StringName &p_gr
 
 	} else {
 		for (int i = 0; i < gr_node_count; i++) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -368,7 +365,7 @@ void SceneTree::set_group_flags(uint32_t p_call_flags, const StringName &p_group
 
 	if (p_call_flags & GROUP_CALL_REVERSE) {
 		for (int i = gr_node_count - 1; i >= 0; i--) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -381,7 +378,7 @@ void SceneTree::set_group_flags(uint32_t p_call_flags, const StringName &p_group
 
 	} else {
 		for (int i = 0; i < gr_node_count; i++) {
-			if (call_lock && call_skip.has(gr_nodes[i]->get_instance_id())) {
+			if (call_lock && call_skip.has(gr_nodes[i])) {
 				continue;
 			}
 
@@ -597,6 +594,12 @@ void SceneTree::finalize() {
 		timer->release_connections();
 	}
 	timers.clear();
+
+	// Cleanup tweens.
+	for (Ref<Tween> &tween : tweens) {
+		tween->clear();
+	}
+	tweens.clear();
 }
 
 void SceneTree::quit(int p_exit_code) {
@@ -857,7 +860,7 @@ void SceneTree::_notify_group_pause(const StringName &p_group, int p_notificatio
 
 	for (int i = 0; i < gr_node_count; i++) {
 		Node *n = gr_nodes[i];
-		if (call_lock && call_skip.has(n->get_instance_id())) {
+		if (call_lock && call_skip.has(n)) {
 			continue;
 		}
 
@@ -907,7 +910,7 @@ void SceneTree::_call_input_pause(const StringName &p_group, CallInputType p_cal
 		}
 
 		Node *n = gr_nodes[i];
-		if (call_lock && call_skip.has(n->get_instance_id())) {
+		if (call_lock && call_skip.has(n)) {
 			continue;
 		}
 
@@ -945,6 +948,9 @@ void SceneTree::_call_input_pause(const StringName &p_group, CallInputType p_cal
 	}
 
 	for (const ObjectID &id : no_context_node_ids) {
+		if (p_viewport->is_input_handled()) {
+			break;
+		}
 		Node *n = Object::cast_to<Node>(ObjectDB::get_instance(id));
 		if (n) {
 			n->_call_shortcut_input(p_input);
@@ -1416,7 +1422,7 @@ SceneTree::SceneTree() {
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/anti_aliasing/quality/msaa_3d", PropertyInfo(Variant::INT, "rendering/anti_aliasing/quality/msaa_3d", PROPERTY_HINT_ENUM, String::utf8("Disabled (Fastest),2× (Average),4× (Slow),8× (Slowest)")));
 	root->set_msaa_3d(Viewport::MSAA(msaa_mode_3d));
 
-	const bool transparent_background = GLOBAL_DEF("rendering/transparent_background", false);
+	const bool transparent_background = GLOBAL_DEF("rendering/viewport/transparent_background", false);
 	root->set_transparent_background(transparent_background);
 
 	const int ssaa_mode = GLOBAL_DEF_BASIC("rendering/anti_aliasing/quality/screen_space_aa", 0);
@@ -1450,7 +1456,7 @@ SceneTree::SceneTree() {
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/vrs/texture",
 			PropertyInfo(Variant::STRING,
 					"rendering/vrs/texture",
-					PROPERTY_HINT_FILE, "*.png"));
+					PROPERTY_HINT_FILE, "*.bmp,*.png,*.tga,*.webp"));
 	if (vrs_mode == 1 && !vrs_texture_path.is_empty()) {
 		Ref<Image> vrs_image;
 		vrs_image.instantiate();
