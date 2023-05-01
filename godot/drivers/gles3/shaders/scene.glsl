@@ -268,9 +268,11 @@ void main() {
 #ifdef USE_MULTIVIEW
 	mat4 projection_matrix = multiview_data.projection_matrix_view[ViewIndex];
 	mat4 inv_projection_matrix = multiview_data.inv_projection_matrix_view[ViewIndex];
+	vec3 eye_offset = multiview_data.eye_offset[ViewIndex].xyz;
 #else
 	mat4 projection_matrix = scene_data.projection_matrix;
 	mat4 inv_projection_matrix = scene_data.inv_projection_matrix;
+	vec3 eye_offset = vec3(0.0, 0.0, 0.0);
 #endif //USE_MULTIVIEW
 
 #ifdef USE_INSTANCING
@@ -564,10 +566,16 @@ uniform highp samplerCubeShadow positional_shadow; // texunit:-4
 
 #ifdef USE_MULTIVIEW
 uniform highp sampler2DArray depth_buffer; // texunit:-6
-uniform highp sampler2DArray screen_texture; // texunit:-5
+uniform highp sampler2DArray color_buffer; // texunit:-5
+vec3 multiview_uv(vec2 uv) {
+	return vec3(uv, ViewIndex);
+}
 #else
 uniform highp sampler2D depth_buffer; // texunit:-6
-uniform highp sampler2D screen_texture; // texunit:-5
+uniform highp sampler2D color_buffer; // texunit:-5
+vec2 multiview_uv(vec2 uv) {
+	return uv;
+}
 #endif
 
 uniform highp mat4 world_transform;
@@ -690,7 +698,8 @@ void light_compute(vec3 N, vec3 L, vec3 V, float A, vec3 light_color, float atte
 #endif
 
 #if defined(LIGHT_RIM_USED)
-		float rim_light = pow(max(0.0, 1.0 - cNdotV), max(0.0, (1.0 - roughness) * 16.0));
+		// Epsilon min to prevent pow(0, 0) singularity which results in undefined behavior.
+		float rim_light = pow(max(1e-4, 1.0 - cNdotV), max(0.0, (1.0 - roughness) * 16.0));
 		diffuse_light += rim_light * rim * mix(vec3(1.0), albedo, rim_tint) * light_color;
 #endif
 	}
@@ -923,9 +932,15 @@ void main() {
 	//lay out everything, whatever is unused is optimized away anyway
 	vec3 vertex = vertex_interp;
 #ifdef USE_MULTIVIEW
-	vec3 view = -normalize(vertex_interp - multiview_data.eye_offset[ViewIndex].xyz);
+	vec3 eye_offset = multiview_data.eye_offset[ViewIndex].xyz;
+	vec3 view = -normalize(vertex_interp - eye_offset);
+	mat4 projection_matrix = multiview_data.projection_matrix_view[ViewIndex];
+	mat4 inv_projection_matrix = multiview_data.inv_projection_matrix_view[ViewIndex];
 #else
+	vec3 eye_offset = vec3(0.0, 0.0, 0.0);
 	vec3 view = -normalize(vertex_interp);
+	mat4 projection_matrix = scene_data.projection_matrix;
+	mat4 inv_projection_matrix = scene_data.inv_projection_matrix;
 #endif
 	highp mat4 model_matrix = world_transform;
 	vec3 albedo = vec3(1.0);

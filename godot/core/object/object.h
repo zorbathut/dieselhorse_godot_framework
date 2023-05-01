@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  object.h                                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  object.h                                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef OBJECT_H
 #define OBJECT_H
@@ -74,14 +74,6 @@ enum PropertyHint {
 	PROPERTY_HINT_OBJECT_ID,
 	PROPERTY_HINT_TYPE_STRING, ///< a type string, the hint is the base type to choose
 	PROPERTY_HINT_NODE_PATH_TO_EDITED_NODE, ///< so something else can provide this (used in scripts)
-	PROPERTY_HINT_METHOD_OF_VARIANT_TYPE, ///< a method of a type
-	PROPERTY_HINT_METHOD_OF_BASE_TYPE, ///< a method of a base type
-	PROPERTY_HINT_METHOD_OF_INSTANCE, ///< a method of an instance
-	PROPERTY_HINT_METHOD_OF_SCRIPT, ///< a method of a script & base
-	PROPERTY_HINT_PROPERTY_OF_VARIANT_TYPE, ///< a property of a type
-	PROPERTY_HINT_PROPERTY_OF_BASE_TYPE, ///< a property of a base type
-	PROPERTY_HINT_PROPERTY_OF_INSTANCE, ///< a property of an instance
-	PROPERTY_HINT_PROPERTY_OF_SCRIPT, ///< a property of a script & base
 	PROPERTY_HINT_OBJECT_TOO_BIG, ///< object is too big to send
 	PROPERTY_HINT_NODE_PATH_VALID_TYPES,
 	PROPERTY_HINT_SAVE_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,". This opens a save dialog
@@ -95,16 +87,15 @@ enum PropertyHint {
 	PROPERTY_HINT_HIDE_QUATERNION_EDIT, /// Only Node3D::transform should hide the quaternion editor.
 	PROPERTY_HINT_PASSWORD,
 	PROPERTY_HINT_MAX,
-	// When updating PropertyHint, also sync the hardcoded list in VisualScriptEditorVariableEdit
 };
 
 enum PropertyUsageFlags {
 	PROPERTY_USAGE_NONE = 0,
 	PROPERTY_USAGE_STORAGE = 1 << 1,
 	PROPERTY_USAGE_EDITOR = 1 << 2,
-	PROPERTY_USAGE_CHECKABLE = 1 << 3, // Used for editing global variables.
-	PROPERTY_USAGE_CHECKED = 1 << 4, // Used for editing global variables.
-	PROPERTY_USAGE_INTERNATIONALIZED = 1 << 5, // Hint for internationalized strings.
+	PROPERTY_USAGE_INTERNAL = 1 << 3,
+	PROPERTY_USAGE_CHECKABLE = 1 << 4, // Used for editing global variables.
+	PROPERTY_USAGE_CHECKED = 1 << 5, // Used for editing global variables.
 	PROPERTY_USAGE_GROUP = 1 << 6, // Used for grouping props in the editor.
 	PROPERTY_USAGE_CATEGORY = 1 << 7,
 	PROPERTY_USAGE_SUBGROUP = 1 << 8,
@@ -117,20 +108,19 @@ enum PropertyUsageFlags {
 	PROPERTY_USAGE_SCRIPT_DEFAULT_VALUE = 1 << 15,
 	PROPERTY_USAGE_CLASS_IS_ENUM = 1 << 16,
 	PROPERTY_USAGE_NIL_IS_VARIANT = 1 << 17,
-	PROPERTY_USAGE_INTERNAL = 1 << 18,
-	PROPERTY_USAGE_DO_NOT_SHARE_ON_DUPLICATE = 1 << 19, // If the object is duplicated also this property will be duplicated.
-	PROPERTY_USAGE_HIGH_END_GFX = 1 << 20,
-	PROPERTY_USAGE_NODE_PATH_FROM_SCENE_ROOT = 1 << 21,
-	PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT = 1 << 22,
-	PROPERTY_USAGE_KEYING_INCREMENTS = 1 << 23, // Used in inspector to increment property when keyed in animation player.
-	PROPERTY_USAGE_DEFERRED_SET_RESOURCE = 1 << 24, // when loading, the resource for this property can be set at the end of loading.
-	PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT = 1 << 25, // For Object properties, instantiate them when creating in editor.
-	PROPERTY_USAGE_EDITOR_BASIC_SETTING = 1 << 26, //for project or editor settings, show when basic settings are selected.
-	PROPERTY_USAGE_READ_ONLY = 1 << 27, // Mark a property as read-only in the inspector.
-	PROPERTY_USAGE_ARRAY = 1 << 28, // Used in the inspector to group properties as elements of an array.
+	PROPERTY_USAGE_ARRAY = 1 << 18, // Used in the inspector to group properties as elements of an array.
+	PROPERTY_USAGE_ALWAYS_DUPLICATE = 1 << 19, // When duplicating a resource, always duplicate, even with subresource duplication disabled.
+	PROPERTY_USAGE_NEVER_DUPLICATE = 1 << 20, // When duplicating a resource, never duplicate, even with subresource duplication enabled.
+	PROPERTY_USAGE_HIGH_END_GFX = 1 << 21,
+	PROPERTY_USAGE_NODE_PATH_FROM_SCENE_ROOT = 1 << 22,
+	PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT = 1 << 23,
+	PROPERTY_USAGE_KEYING_INCREMENTS = 1 << 24, // Used in inspector to increment property when keyed in animation player.
+	PROPERTY_USAGE_DEFERRED_SET_RESOURCE = 1 << 25, // when loading, the resource for this property can be set at the end of loading.
+	PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT = 1 << 26, // For Object properties, instantiate them when creating in editor.
+	PROPERTY_USAGE_EDITOR_BASIC_SETTING = 1 << 27, //for project or editor settings, show when basic settings are selected.
+	PROPERTY_USAGE_READ_ONLY = 1 << 28, // Mark a property as read-only in the inspector.
 
 	PROPERTY_USAGE_DEFAULT = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-	PROPERTY_USAGE_DEFAULT_INTL = PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_INTERNATIONALIZED,
 	PROPERTY_USAGE_NO_EDITOR = PROPERTY_USAGE_STORAGE,
 };
 
@@ -233,6 +223,16 @@ struct MethodInfo {
 	int id = 0;
 	List<PropertyInfo> arguments;
 	Vector<Variant> default_arguments;
+	int return_val_metadata = 0;
+	Vector<int> arguments_metadata;
+
+	int get_argument_meta(int p_arg) const {
+		ERR_FAIL_COND_V(p_arg < -1 || p_arg > arguments.size(), 0);
+		if (p_arg == -1) {
+			return return_val_metadata;
+		}
+		return arguments_metadata.size() > p_arg ? arguments_metadata[p_arg] : 0;
+	}
 
 	inline bool operator==(const MethodInfo &p_method) const { return id == p_method.id; }
 	inline bool operator<(const MethodInfo &p_method) const { return id == p_method.id ? (name < p_method.name) : (id < p_method.id); }
@@ -893,8 +893,6 @@ public:
 
 	Variant::Type get_static_property_type(const StringName &p_property, bool *r_valid = nullptr) const;
 	Variant::Type get_static_property_type_indexed(const Vector<StringName> &p_path, bool *r_valid = nullptr) const;
-
-	virtual void get_translatable_strings(List<String> *p_strings) const;
 
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const;
 

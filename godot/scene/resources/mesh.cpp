@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  mesh.cpp                                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  mesh.cpp                                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "mesh.h"
 
@@ -75,7 +75,7 @@ Dictionary Mesh::surface_get_lods(int p_surface) const {
 	return ret;
 }
 
-uint32_t Mesh::surface_get_format(int p_idx) const {
+BitField<Mesh::ArrayFormat> Mesh::surface_get_format(int p_idx) const {
 	uint32_t ret = 0;
 	GDVIRTUAL_REQUIRED_CALL(_surface_get_format, p_idx, ret);
 	return ret;
@@ -189,6 +189,7 @@ Ref<TriangleMesh> Mesh::generate_triangle_mesh() const {
 			if (primitive == PRIMITIVE_TRIANGLES) {
 				for (int j = 0; j < ic; j++) {
 					int index = ir[j];
+					ERR_FAIL_COND_V(index >= vc, Ref<TriangleMesh>());
 					facesw[widx++] = vr[index];
 				}
 			} else { // PRIMITIVE_TRIANGLE_STRIP
@@ -525,6 +526,9 @@ Ref<Mesh> Mesh::create_outline(float p_margin) const {
 			vc = indices.size();
 			ir = indices.ptrw();
 			has_indices = true;
+		} else {
+			// Ensure there are enough vertices to construct at least one triangle.
+			ERR_FAIL_COND_V(vertices.size() % 3 != 0, Ref<ArrayMesh>());
 		}
 
 		HashMap<Vector3, Vector3> normal_accum;
@@ -614,6 +618,13 @@ Size2i Mesh::get_lightmap_size_hint() const {
 	return lightmap_size_hint;
 }
 
+Ref<Resource> Mesh::create_placeholder() const {
+	Ref<PlaceholderMesh> placeholder;
+	placeholder.instantiate();
+	placeholder->set_aabb(get_aabb());
+	return placeholder;
+}
+
 void Mesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_lightmap_size_hint", "size"), &Mesh::set_lightmap_size_hint);
 	ClassDB::bind_method(D_METHOD("get_lightmap_size_hint"), &Mesh::get_lightmap_size_hint);
@@ -626,6 +637,7 @@ void Mesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("surface_get_blend_shape_arrays", "surf_idx"), &Mesh::surface_get_blend_shape_arrays);
 	ClassDB::bind_method(D_METHOD("surface_set_material", "surf_idx", "material"), &Mesh::surface_set_material);
 	ClassDB::bind_method(D_METHOD("surface_get_material", "surf_idx"), &Mesh::surface_get_material);
+	ClassDB::bind_method(D_METHOD("create_placeholder"), &Mesh::create_placeholder);
 
 	BIND_ENUM_CONSTANT(PRIMITIVE_POINTS);
 	BIND_ENUM_CONSTANT(PRIMITIVE_LINES);
@@ -658,35 +670,36 @@ void Mesh::_bind_methods() {
 	BIND_ENUM_CONSTANT(ARRAY_CUSTOM_RGBA_FLOAT);
 	BIND_ENUM_CONSTANT(ARRAY_CUSTOM_MAX);
 
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_VERTEX);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_NORMAL);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_TANGENT);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_COLOR);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_TEX_UV);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_TEX_UV2);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM0);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM1);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM2);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM3);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_BONES);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_WEIGHTS);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_INDEX);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_VERTEX);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_NORMAL);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_TANGENT);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_COLOR);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_TEX_UV);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_TEX_UV2);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM0);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM1);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM2);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM3);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_BONES);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_WEIGHTS);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_INDEX);
 
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_BLEND_SHAPE_MASK);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_BLEND_SHAPE_MASK);
 
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM_BASE);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM_BITS);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM0_SHIFT);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM1_SHIFT);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM2_SHIFT);
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM3_SHIFT);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM_BASE);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM_BITS);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM0_SHIFT);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM1_SHIFT);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM2_SHIFT);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM3_SHIFT);
 
-	BIND_ENUM_CONSTANT(ARRAY_FORMAT_CUSTOM_MASK);
-	BIND_ENUM_CONSTANT(ARRAY_COMPRESS_FLAGS_BASE);
+	BIND_BITFIELD_FLAG(ARRAY_FORMAT_CUSTOM_MASK);
+	BIND_BITFIELD_FLAG(ARRAY_COMPRESS_FLAGS_BASE);
 
-	BIND_ENUM_CONSTANT(ARRAY_FLAG_USE_2D_VERTICES);
-	BIND_ENUM_CONSTANT(ARRAY_FLAG_USE_DYNAMIC_UPDATE);
-	BIND_ENUM_CONSTANT(ARRAY_FLAG_USE_8_BONE_WEIGHTS);
+	BIND_BITFIELD_FLAG(ARRAY_FLAG_USE_2D_VERTICES);
+	BIND_BITFIELD_FLAG(ARRAY_FLAG_USE_DYNAMIC_UPDATE);
+	BIND_BITFIELD_FLAG(ARRAY_FLAG_USE_8_BONE_WEIGHTS);
+	BIND_BITFIELD_FLAG(ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY);
 
 	BIND_ENUM_CONSTANT(BLEND_SHAPE_MODE_NORMALIZED);
 	BIND_ENUM_CONSTANT(BLEND_SHAPE_MODE_RELATIVE);
@@ -1120,17 +1133,6 @@ bool ArrayMesh::_set(const StringName &p_name, const Variant &p_value) {
 		}
 		int idx = sname.substr(8, sl - 8).to_int();
 
-		// This is a bit of a hack to ensure compatibility with older material
-		// overrides that start indexing at 1.
-		// We assume that idx 0 is always read first, if its not, this won't work.
-		if (idx == 0) {
-			surface_index_0 = true;
-		}
-		if (!surface_index_0) {
-			// This means the file was created when the indexing started at 1, so decrease by one.
-			idx--;
-		}
-
 		String what = sname.get_slicec('/', 1);
 		if (what == "material") {
 			surface_set_material(idx, p_value);
@@ -1554,7 +1556,8 @@ void ArrayMesh::_recompute_aabb() {
 }
 
 // TODO: Need to add binding to add_surface using future MeshSurfaceData object.
-void ArrayMesh::add_surface(uint32_t p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data, const Vector<AABB> &p_bone_aabbs, const Vector<RS::SurfaceData::LOD> &p_lods) {
+void ArrayMesh::add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data, const Vector<AABB> &p_bone_aabbs, const Vector<RS::SurfaceData::LOD> &p_lods) {
+	ERR_FAIL_COND(surfaces.size() == RS::MAX_MESH_SURFACES);
 	_create_if_empty();
 
 	Surface s;
@@ -1589,7 +1592,8 @@ void ArrayMesh::add_surface(uint32_t p_format, PrimitiveType p_primitive, const 
 	emit_changed();
 }
 
-void ArrayMesh::add_surface_from_arrays(PrimitiveType p_primitive, const Array &p_arrays, const TypedArray<Array> &p_blend_shapes, const Dictionary &p_lods, uint32_t p_flags) {
+void ArrayMesh::add_surface_from_arrays(PrimitiveType p_primitive, const Array &p_arrays, const TypedArray<Array> &p_blend_shapes, const Dictionary &p_lods, BitField<ArrayFormat> p_flags) {
+	ERR_FAIL_COND(p_blend_shapes.size() != blend_shapes.size());
 	ERR_FAIL_COND(p_arrays.size() != ARRAY_MAX);
 
 	RS::SurfaceData surface;
@@ -1705,7 +1709,7 @@ int ArrayMesh::surface_get_array_index_len(int p_idx) const {
 	return surfaces[p_idx].index_array_length;
 }
 
-uint32_t ArrayMesh::surface_get_format(int p_idx) const {
+BitField<Mesh::ArrayFormat> ArrayMesh::surface_get_format(int p_idx) const {
 	ERR_FAIL_INDEX_V(p_idx, surfaces.size(), 0);
 	return surfaces[p_idx].format;
 }
@@ -2058,7 +2062,7 @@ void ArrayMesh::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_blend_shape_mode", "mode"), &ArrayMesh::set_blend_shape_mode);
 	ClassDB::bind_method(D_METHOD("get_blend_shape_mode"), &ArrayMesh::get_blend_shape_mode);
 
-	ClassDB::bind_method(D_METHOD("add_surface_from_arrays", "primitive", "arrays", "blend_shapes", "lods", "compress_flags"), &ArrayMesh::add_surface_from_arrays, DEFVAL(Array()), DEFVAL(Dictionary()), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("add_surface_from_arrays", "primitive", "arrays", "blend_shapes", "lods", "flags"), &ArrayMesh::add_surface_from_arrays, DEFVAL(Array()), DEFVAL(Dictionary()), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("clear_surfaces"), &ArrayMesh::clear_surfaces);
 	ClassDB::bind_method(D_METHOD("surface_update_vertex_region", "surf_idx", "offset", "data"), &ArrayMesh::surface_update_vertex_region);
 	ClassDB::bind_method(D_METHOD("surface_update_attribute_region", "surf_idx", "offset", "data"), &ArrayMesh::surface_update_attribute_region);
@@ -2117,6 +2121,7 @@ ArrayMesh::ArrayMesh() {
 
 ArrayMesh::~ArrayMesh() {
 	if (mesh.is_valid()) {
+		ERR_FAIL_NULL(RenderingServer::get_singleton());
 		RenderingServer::get_singleton()->free(mesh);
 	}
 }
@@ -2132,5 +2137,6 @@ PlaceholderMesh::PlaceholderMesh() {
 }
 
 PlaceholderMesh::~PlaceholderMesh() {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	RS::get_singleton()->free(rid);
 }

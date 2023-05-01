@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  os_windows.cpp                                                       */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  os_windows.cpp                                                        */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "os_windows.h"
 
@@ -67,6 +67,11 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 #ifndef WM_POINTERUPDATE
 #define WM_POINTERUPDATE 0x0245
+#endif
+
+// Missing in MinGW headers before 8.0.
+#ifndef DWRITE_FONT_WEIGHT_SEMI_LIGHT
+#define DWRITE_FONT_WEIGHT_SEMI_LIGHT (DWRITE_FONT_WEIGHT)350
 #endif
 
 #if defined(__GNUC__)
@@ -210,6 +215,8 @@ void OS_Windows::initialize() {
 	} else if (!dwrite2_init) {
 		print_verbose("Unable to load IDWriteFactory2, automatic system font fallback is disabled.");
 	}
+
+	FileAccessWindows::initialize();
 }
 
 void OS_Windows::delete_main_loop() {
@@ -252,6 +259,8 @@ void OS_Windows::finalize() {
 }
 
 void OS_Windows::finalize_core() {
+	FileAccessWindows::finalize();
+
 	timeEndPeriod(1);
 
 	memdelete(process_map);
@@ -669,9 +678,8 @@ Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments,
 		}
 
 		CloseHandle(pipe[0]); // Close pipe read handle.
-	} else {
-		WaitForSingleObject(pi.pi.hProcess, INFINITE);
 	}
+	WaitForSingleObject(pi.pi.hProcess, INFINITE);
 
 	if (r_exitcode) {
 		DWORD ret2;
@@ -718,15 +726,23 @@ Error OS_Windows::create_process(const String &p_path, const List<String> &p_arg
 }
 
 Error OS_Windows::kill(const ProcessID &p_pid) {
-	ERR_FAIL_COND_V(!process_map->has(p_pid), FAILED);
+	int ret = 0;
+	if (process_map->has(p_pid)) {
+		const PROCESS_INFORMATION pi = (*process_map)[p_pid].pi;
+		process_map->erase(p_pid);
 
-	const PROCESS_INFORMATION pi = (*process_map)[p_pid].pi;
-	process_map->erase(p_pid);
+		ret = TerminateProcess(pi.hProcess, 0);
 
-	const int ret = TerminateProcess(pi.hProcess, 0);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	} else {
+		HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, false, (DWORD)p_pid);
+		if (hProcess != NULL) {
+			ret = TerminateProcess(hProcess, 0);
 
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
+			CloseHandle(hProcess);
+		}
+	}
 
 	return ret != 0 ? OK : FAILED;
 }
@@ -818,7 +834,7 @@ class FallbackTextAnalysisSource : public IDWriteTextAnalysisSource {
 	IDWriteNumberSubstitution *n_sub = nullptr;
 
 public:
-	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) {
+	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override {
 		if (IID_IUnknown == riid) {
 			AddRef();
 			*ppvInterface = (IUnknown *)this;
@@ -832,11 +848,11 @@ public:
 		return S_OK;
 	}
 
-	ULONG STDMETHODCALLTYPE AddRef() {
+	ULONG STDMETHODCALLTYPE AddRef() override {
 		return InterlockedIncrement(&_cRef);
 	}
 
-	ULONG STDMETHODCALLTYPE Release() {
+	ULONG STDMETHODCALLTYPE Release() override {
 		ULONG ulRef = InterlockedDecrement(&_cRef);
 		if (0 == ulRef) {
 			delete this;
@@ -1158,17 +1174,24 @@ String OS_Windows::get_environment(const String &p_var) const {
 	return "";
 }
 
-bool OS_Windows::set_environment(const String &p_var, const String &p_value) const {
-	return (bool)SetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), (LPCWSTR)(p_value.utf16().get_data()));
+void OS_Windows::set_environment(const String &p_var, const String &p_value) const {
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains("="), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+	Char16String var = p_var.utf16();
+	Char16String value = p_value.utf16();
+	ERR_FAIL_COND_MSG(var.length() + value.length() + 2 > 32767, vformat("Invalid definition for environment variable '%s', cannot exceed 32767 characters.", p_var));
+	SetEnvironmentVariableW((LPCWSTR)(var.get_data()), (LPCWSTR)(value.get_data()));
 }
 
-String OS_Windows::get_stdin_string(bool p_block) {
-	if (p_block) {
-		WCHAR buff[1024];
-		DWORD count = 0;
-		if (ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), buff, 1024, &count, nullptr)) {
-			return String::utf16((const char16_t *)buff, count);
-		}
+void OS_Windows::unset_environment(const String &p_var) const {
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains("="), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+	SetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr); // Null to delete.
+}
+
+String OS_Windows::get_stdin_string() {
+	WCHAR buff[1024];
+	DWORD count = 0;
+	if (ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), buff, 1024, &count, nullptr)) {
+		return String::utf16((const char16_t *)buff, count);
 	}
 
 	return String();

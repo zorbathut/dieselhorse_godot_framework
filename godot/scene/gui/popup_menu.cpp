@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  popup_menu.cpp                                                       */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  popup_menu.cpp                                                        */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "popup_menu.h"
 
@@ -59,6 +59,7 @@ Size2 PopupMenu::_get_contents_minimum_size() const {
 
 	for (int i = 0; i < items.size(); i++) {
 		Size2 item_size;
+		const_cast<PopupMenu *>(this)->_shape_item(i);
 
 		Size2 icon_size = items[i].get_icon_size();
 		item_size.height = _get_item_height(i);
@@ -395,10 +396,10 @@ void PopupMenu::gui_input(const Ref<InputEvent> &p_event) {
 			// Activate the item on release of either the left mouse button or
 			// any mouse button held down when the popup was opened.
 			// This allows for opening the popup and triggering an action in a single mouse click.
-			if (button_idx == MouseButton::LEFT || (initial_button_mask & mouse_button_to_mask(button_idx)) != MouseButton::NONE) {
+			if (button_idx == MouseButton::LEFT || initial_button_mask.has_flag(mouse_button_to_mask(button_idx))) {
 				bool was_during_grabbed_click = during_grabbed_click;
 				during_grabbed_click = false;
-				initial_button_mask = MouseButton::NONE;
+				initial_button_mask.clear();
 
 				// Disable clicks under a time threshold to avoid selection right when opening the popup.
 				uint64_t now = OS::get_singleton()->get_ticks_msec();
@@ -594,17 +595,17 @@ void PopupMenu::_draw_items() {
 				int content_left = content_center - content_size / 2;
 				int content_right = content_center + content_size / 2;
 				if (content_left > item_ofs.x) {
-					int sep_h = theme_cache.labeled_separator_left->get_center_size().height + theme_cache.labeled_separator_left->get_minimum_size().height;
+					int sep_h = theme_cache.labeled_separator_left->get_minimum_size().height;
 					int sep_ofs = Math::floor((h - sep_h) / 2.0);
 					theme_cache.labeled_separator_left->draw(ci, Rect2(item_ofs + Point2(0, sep_ofs), Size2(MAX(0, content_left - item_ofs.x), sep_h)));
 				}
 				if (content_right < display_width) {
-					int sep_h = theme_cache.labeled_separator_right->get_center_size().height + theme_cache.labeled_separator_right->get_minimum_size().height;
+					int sep_h = theme_cache.labeled_separator_right->get_minimum_size().height;
 					int sep_ofs = Math::floor((h - sep_h) / 2.0);
 					theme_cache.labeled_separator_right->draw(ci, Rect2(Point2(content_right, item_ofs.y + sep_ofs), Size2(MAX(0, display_width - content_right), sep_h)));
 				}
 			} else {
-				int sep_h = theme_cache.separator_style->get_center_size().height + theme_cache.separator_style->get_minimum_size().height;
+				int sep_h = theme_cache.separator_style->get_minimum_size().height;
 				int sep_ofs = Math::floor((h - sep_h) / 2.0);
 				theme_cache.separator_style->draw(ci, Rect2(item_ofs + Point2(0, sep_ofs), Size2(display_width, sep_h)));
 			}
@@ -839,6 +840,9 @@ void PopupMenu::_notification(int p_what) {
 				// Inherit submenu's popup delay time from parent menu.
 				float pm_delay = pm->get_submenu_popup_delay();
 				set_submenu_popup_delay(pm_delay);
+			}
+			if (!is_embedded()) {
+				set_flag(FLAG_NO_FOCUS, true);
 			}
 		} break;
 
@@ -1839,14 +1843,6 @@ String PopupMenu::get_tooltip(const Point2 &p_pos) const {
 
 void PopupMenu::set_parent_rect(const Rect2 &p_rect) {
 	parent_rect = p_rect;
-}
-
-void PopupMenu::get_translatable_strings(List<String> *p_strings) const {
-	for (int i = 0; i < items.size(); i++) {
-		if (!items[i].xl_text.is_empty()) {
-			p_strings->push_back(items[i].xl_text);
-		}
-	}
 }
 
 void PopupMenu::add_autohide_area(const Rect2 &p_area) {

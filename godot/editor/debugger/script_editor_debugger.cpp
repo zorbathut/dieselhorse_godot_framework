@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  script_editor_debugger.cpp                                           */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  script_editor_debugger.cpp                                            */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "script_editor_debugger.h"
 
@@ -308,6 +308,7 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		String error = p_data[1];
 		bool has_stackdump = p_data[2];
 		breaked = true;
+		can_request_idle_draw = true;
 		can_debug = can_continue;
 		_update_buttons_state();
 		_set_reason_text(error, MESSAGE_ERROR);
@@ -378,6 +379,8 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		vmem_total->set_tooltip_text(TTR("Bytes:") + " " + itos(total));
 		vmem_total->set_text(String::humanize_size(total));
 
+	} else if (p_msg == "servers:drawn") {
+		can_request_idle_draw = true;
 	} else if (p_msg == "stack_dump") {
 		DebuggerMarshalls::ScriptStackDump stack;
 		stack.deserialize(p_data);
@@ -506,6 +509,11 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		String tooltip = oe.warning ? TTR("Warning:") : TTR("Error:");
 
 		TreeItem *error = error_tree->create_item(r);
+		if (oe.warning) {
+			error->set_meta("_is_warning", true);
+		} else {
+			error->set_meta("_is_error", true);
+		}
 		error->set_collapsed(true);
 
 		error->set_icon(0, get_theme_icon(oe.warning ? SNAME("Warning") : SNAME("Error"), SNAME("EditorIcons")));
@@ -516,21 +524,39 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		error->set_custom_color(0, color);
 		error->set_custom_color(1, color);
 
-		String error_title = "";
-		
+		String error_title;
+		if (oe.callstack.size() > 0) {
+			// If available, use the script's stack in the error title.
+			error_title = _format_frame_text(&oe.callstack[0]) + ": ";
+		} else if (!oe.source_func.is_empty()) {
+			// Otherwise try to use the C++ source function.
+			error_title += oe.source_func + ": ";
+		}
 		// If we have a (custom) error message, use it as title, and add a C++ Error
 		// item with the original error condition.
 		error_title += oe.error_descr.is_empty() ? oe.error : oe.error_descr;
 		error->set_text(1, error_title);
 		tooltip += " " + error_title + "\n";
 
+		// Find the language of the error's source file.
+		String source_language_name = "C++"; // Default value is the old hard-coded one.
+		const String source_file_extension = oe.source_file.get_extension();
+		for (int i = 0; i < ScriptServer::get_language_count(); ++i) {
+			ScriptLanguage *script_language = ScriptServer::get_language(i);
+			if (source_file_extension == script_language->get_extension()) {
+				source_language_name = script_language->get_name();
+				break;
+			}
+		}
+
 		if (!oe.error_descr.is_empty()) {
 			// Add item for C++ error condition.
 			TreeItem *cpp_cond = error_tree->create_item(error);
-			cpp_cond->set_text(0, "<" + TTR("C++ Error") + ">");
+			// TRANSLATORS: %s is the name of a language, e.g. C++.
+			cpp_cond->set_text(0, "<" + vformat(TTR("%s Error"), source_language_name) + ">");
 			cpp_cond->set_text(1, oe.error);
 			cpp_cond->set_text_alignment(0, HORIZONTAL_ALIGNMENT_LEFT);
-			tooltip += TTR("C++ Error:") + " " + oe.error + "\n";
+			tooltip += vformat(TTR("%s Error:"), source_language_name) + " " + oe.error + "\n";
 			if (source_is_project_file) {
 				cpp_cond->set_metadata(0, source_meta);
 			}
@@ -541,14 +567,18 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		// Source of the error.
 		String source_txt = (source_is_project_file ? oe.source_file.get_file() : oe.source_file) + ":" + itos(oe.source_line);
 		if (!oe.source_func.is_empty()) {
-			source_txt += " @ " + oe.source_func + "()";
+			source_txt += " @ " + oe.source_func;
+			if (!oe.source_func.ends_with(")")) {
+				source_txt += "()";
+			}
 		}
 
 		TreeItem *cpp_source = error_tree->create_item(error);
-		cpp_source->set_text(0, "<" + (source_is_project_file ? TTR("Source") : TTR("C++ Source")) + ">");
+		// TRANSLATORS: %s is the name of a language, e.g. C++.
+		cpp_source->set_text(0, "<" + vformat(TTR("%s Source"), source_language_name) + ">");
 		cpp_source->set_text(1, source_txt);
 		cpp_source->set_text_alignment(0, HORIZONTAL_ALIGNMENT_LEFT);
-		tooltip += (source_is_project_file ? TTR("Source:") : TTR("C++ Source:")) + " " + source_txt + "\n";
+		tooltip += vformat(TTR("%s Source:"), source_language_name) + " " + source_txt + "\n";
 
 		// Set metadata to highlight error line in scripts.
 		if (source_is_project_file) {
@@ -575,7 +605,7 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 				tooltip += TTR("Stack Trace:") + "\n";
 			}
 
-			String frame_txt = infos[i].file.get_file() + ":" + itos(infos[i].line) + " @ " + infos[i].func + "()";
+			String frame_txt = _format_frame_text(&infos[i]);
 			tooltip += frame_txt + "\n";
 			stack_trace->set_text(1, frame_txt);
 		}
@@ -773,6 +803,8 @@ void ScriptEditorDebugger::_notification(int p_what) {
 			[[fallthrough]];
 		}
 		case NOTIFICATION_THEME_CHANGED: {
+			tabs->add_theme_style_override("panel", get_theme_stylebox(SNAME("DebuggerPanel"), SNAME("EditorStyles")));
+
 			skip_breakpoints->set_icon(get_theme_icon(skip_breakpoints_value ? SNAME("DebugSkipBreakpointsOn") : SNAME("DebugSkipBreakpointsOff"), SNAME("EditorIcons")));
 			copy->set_icon(get_theme_icon(SNAME("ActionCopy"), SNAME("EditorIcons")));
 			step->set_icon(get_theme_icon(SNAME("DebugStep"), SNAME("EditorIcons")));
@@ -784,6 +816,24 @@ void ScriptEditorDebugger::_notification(int p_what) {
 			search->set_right_icon(get_theme_icon(SNAME("Search"), SNAME("EditorIcons")));
 
 			reason->add_theme_color_override("font_color", get_theme_color(SNAME("error_color"), SNAME("Editor")));
+
+			TreeItem *error_root = error_tree->get_root();
+			if (error_root) {
+				TreeItem *error = error_root->get_first_child();
+				while (error) {
+					if (error->has_meta("_is_warning")) {
+						error->set_icon(0, get_theme_icon(SNAME("Warning"), SNAME("EditorIcons")));
+						error->set_custom_color(0, get_theme_color(SNAME("warning_color"), SNAME("Editor")));
+						error->set_custom_color(1, get_theme_color(SNAME("warning_color"), SNAME("Editor")));
+					} else if (error->has_meta("_is_error")) {
+						error->set_icon(0, get_theme_icon(SNAME("Error"), SNAME("EditorIcons")));
+						error->set_custom_color(0, get_theme_color(SNAME("error_color"), SNAME("Editor")));
+						error->set_custom_color(1, get_theme_color(SNAME("error_color"), SNAME("Editor")));
+					}
+
+					error = error->get_next();
+				}
+			}
 		} break;
 
 		case NOTIFICATION_PROCESS: {
@@ -821,8 +871,9 @@ void ScriptEditorDebugger::_notification(int p_what) {
 					msg.push_back(cam->get_far());
 					_put_msg("scene:override_camera_3D:transform", msg);
 				}
-				if (breaked) {
+				if (breaked && can_request_idle_draw) {
 					_put_msg("servers:draw", Array());
+					can_request_idle_draw = false;
 				}
 			}
 
@@ -844,21 +895,6 @@ void ScriptEditorDebugger::_notification(int p_what) {
 				_stop_and_notify();
 				break;
 			};
-		} break;
-
-		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
-			if (tabs->has_theme_stylebox_override("panel")) {
-				tabs->add_theme_style_override("panel", EditorNode::get_singleton()->get_gui_base()->get_theme_stylebox(SNAME("DebuggerPanel"), SNAME("EditorStyles")));
-			}
-
-			copy->set_icon(get_theme_icon(SNAME("ActionCopy"), SNAME("EditorIcons")));
-			step->set_icon(get_theme_icon(SNAME("DebugStep"), SNAME("EditorIcons")));
-			next->set_icon(get_theme_icon(SNAME("DebugNext"), SNAME("EditorIcons")));
-			dobreak->set_icon(get_theme_icon(SNAME("Pause"), SNAME("EditorIcons")));
-			docontinue->set_icon(get_theme_icon(SNAME("DebugContinue"), SNAME("EditorIcons")));
-			vmem_refresh->set_icon(get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")));
-			vmem_export->set_icon(get_theme_icon(SNAME("Save"), SNAME("EditorIcons")));
-			search->set_right_icon(get_theme_icon(SNAME("Search"), SNAME("EditorIcons")));
 		} break;
 	}
 }
@@ -893,6 +929,14 @@ void ScriptEditorDebugger::_breakpoint_tree_clicked() {
 	if (selected->has_meta("line")) {
 		emit_signal(SNAME("breakpoint_selected"), selected->get_parent()->get_text(0), int(selected->get_meta("line")));
 	}
+}
+
+String ScriptEditorDebugger::_format_frame_text(const ScriptLanguage::StackInfo *info) {
+	String text = info->file.get_file() + ":" + itos(info->line) + " @ " + info->func;
+	if (!text.ends_with(")")) {
+		text += "()";
+	}
+	return text;
 }
 
 void ScriptEditorDebugger::start(Ref<RemoteDebuggerPeer> p_peer) {
@@ -1523,9 +1567,9 @@ void ScriptEditorDebugger::_item_menu_id_pressed(int p_option) {
 
 			String type;
 
-			if (ti->get_icon(0) == get_theme_icon(SNAME("Warning"), SNAME("EditorIcons"))) {
+			if (ti->has_meta("_is_warning")) {
 				type = "W ";
-			} else if (ti->get_icon(0) == get_theme_icon(SNAME("Error"), SNAME("EditorIcons"))) {
+			} else if (ti->has_meta("_is_error")) {
 				type = "E ";
 			}
 
@@ -1666,10 +1710,8 @@ void ScriptEditorDebugger::toggle_profiler(const String &p_profiler, bool p_enab
 
 ScriptEditorDebugger::ScriptEditorDebugger() {
 	tabs = memnew(TabContainer);
-	tabs->add_theme_style_override("panel", EditorNode::get_singleton()->get_gui_base()->get_theme_stylebox(SNAME("DebuggerPanel"), SNAME("EditorStyles")));
-	tabs->connect("tab_changed", callable_mp(this, &ScriptEditorDebugger::_tab_changed));
-
 	add_child(tabs);
+	tabs->connect("tab_changed", callable_mp(this, &ScriptEditorDebugger::_tab_changed));
 
 	InspectorDock::get_inspector_singleton()->connect("object_id_selected", callable_mp(this, &ScriptEditorDebugger::_remote_object_selected));
 

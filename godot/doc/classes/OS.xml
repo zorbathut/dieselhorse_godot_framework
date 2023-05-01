@@ -4,7 +4,7 @@
 		Operating System functions.
 	</brief_description>
 	<description>
-		Operating System functions. [OS] wraps the most common functionality to communicate with the host operating system, such as the clipboard, video driver, delays, environment variables, execution of binaries, command line, etc.
+		Operating System functions. [OS] wraps the most common functionality to communicate with the host operating system, such as the video driver, delays, environment variables, execution of binaries, command line, etc.
 		[b]Note:[/b] In Godot 4, [OS] functions related to window management were moved to the [DisplayServer] singleton.
 	</description>
 	<tutorials>
@@ -498,7 +498,7 @@
 			<description>
 				Returns [code]true[/code] if the Godot binary used to run the project is a [i]debug[/i] export template, or when running in the editor.
 				Returns [code]false[/code] if the Godot binary used to run the project is a [i]release[/i] export template.
-				To check whether the Godot binary used to run the project is an export template (debug or release), use [code]OS.has_feature("standalone")[/code] instead.
+				To check whether the Godot binary used to run the project is an export template (debug or release), use [code]OS.has_feature("template")[/code] instead.
 			</description>
 		</method>
 		<method name="is_keycode_unicode" qualifiers="const">
@@ -553,11 +553,11 @@
 				[b]Note:[/b] If the user has disabled the recycle bin on their system, the file will be permanently deleted instead.
 				[codeblocks]
 				[gdscript]
-				var file_to_remove = "user://slot1.sav"
+				var file_to_remove = "user://slot1.save"
 				OS.move_to_trash(ProjectSettings.globalize_path(file_to_remove))
 				[/gdscript]
 				[csharp]
-				var fileToRemove = "user://slot1.sav";
+				var fileToRemove = "user://slot1.save";
 				OS.MoveToTrash(ProjectSettings.GlobalizePath(fileToRemove));
 				[/csharp]
 				[/codeblocks]
@@ -566,16 +566,15 @@
 		<method name="open_midi_inputs">
 			<return type="void" />
 			<description>
-				Initialises the singleton for the system MIDI driver.
+				Initializes the singleton for the system MIDI driver.
 				[b]Note:[/b] This method is implemented on Linux, macOS and Windows.
 			</description>
 		</method>
 		<method name="read_string_from_stdin">
 			<return type="String" />
-			<param index="0" name="block" type="bool" default="true" />
 			<description>
-				Reads a user input string from the standard input (usually the terminal).
-				[b]Note:[/b] This method is implemented on Linux, macOS and Windows. Non-blocking reads are not currently supported on any platform.
+				Reads a user input string from the standard input (usually the terminal). This operation is [i]blocking[/i], which causes the window to freeze if [method read_string_from_stdin] is called on the main thread. The thread calling [method read_string_from_stdin] will block until the program receives a line break in standard input (usually by the user pressing [kbd]Enter[/kbd]).
+				[b]Note:[/b] This method is implemented on Linux, macOS and Windows.
 			</description>
 		</method>
 		<method name="request_permission">
@@ -593,12 +592,12 @@
 			</description>
 		</method>
 		<method name="set_environment" qualifiers="const">
-			<return type="bool" />
+			<return type="void" />
 			<param index="0" name="variable" type="String" />
 			<param index="1" name="value" type="String" />
 			<description>
 				Sets the value of the environment variable [param variable] to [param value]. The environment variable will be set for the Godot process and any process executed with [method execute] after running [method set_environment]. The environment variable will [i]not[/i] persist to processes run after the Godot process was terminated.
-				[b]Note:[/b] Double-check the casing of [param variable]. Environment variable names are case-sensitive on all platforms except Windows.
+				[b]Note:[/b] Environment variable names are case-sensitive on all platforms except Windows. The [param variable] name cannot be empty or include the [code]=[/code] character. On Windows, there is a 32767 characters limit for the combined length of [param variable], [param value], and the [code]=[/code] and null terminator characters that will be registered in the environment block.
 			</description>
 		</method>
 		<method name="set_restart_on_exit">
@@ -635,7 +634,16 @@
 				- [code]OS.shell_open("https://godotengine.org")[/code] opens the default web browser on the official Godot website.
 				- [code]OS.shell_open("mailto:example@example.com")[/code] opens the default email client with the "To" field set to [code]example@example.com[/code]. See [url=https://datatracker.ietf.org/doc/html/rfc2368]RFC 2368 - The [code]mailto[/code] URL scheme[/url] for a list of fields that can be added.
 				Use [method ProjectSettings.globalize_path] to convert a [code]res://[/code] or [code]user://[/code] path into a system path for use with this method.
+				[b]Note:[/b] Use [method String.uri_encode] to encode characters within URLs in a URL-safe, portable way. This is especially required for line breaks. Otherwise, [method shell_open] may not work correctly in a project exported to the Web platform.
 				[b]Note:[/b] This method is implemented on Android, iOS, Web, Linux, macOS and Windows.
+			</description>
+		</method>
+		<method name="unset_environment" qualifiers="const">
+			<return type="void" />
+			<param index="0" name="variable" type="String" />
+			<description>
+				Removes the environment [param variable] from the current environment, if it exists. The environment variable will be removed for the Godot process and any process executed with [method execute] after running [method unset_environment]. The removal of the environment variable will [i]not[/i] persist to processes run after the Godot process was terminated.
+				[b]Note:[/b] Environment variable names are case-sensitive on all platforms except Windows. The [param variable] name cannot be empty or include the [code]=[/code] character.
 			</description>
 		</method>
 	</methods>
@@ -653,63 +661,6 @@
 		</constant>
 		<constant name="RENDERING_DRIVER_OPENGL3" value="1" enum="RenderingDriver">
 			The OpenGL 3 rendering driver. It uses OpenGL 3.3 Core Profile on desktop platforms, OpenGL ES 3.0 on mobile devices, and WebGL 2.0 on Web.
-		</constant>
-		<constant name="DAY_SUNDAY" value="0" enum="Weekday">
-			Sunday.
-		</constant>
-		<constant name="DAY_MONDAY" value="1" enum="Weekday">
-			Monday.
-		</constant>
-		<constant name="DAY_TUESDAY" value="2" enum="Weekday">
-			Tuesday.
-		</constant>
-		<constant name="DAY_WEDNESDAY" value="3" enum="Weekday">
-			Wednesday.
-		</constant>
-		<constant name="DAY_THURSDAY" value="4" enum="Weekday">
-			Thursday.
-		</constant>
-		<constant name="DAY_FRIDAY" value="5" enum="Weekday">
-			Friday.
-		</constant>
-		<constant name="DAY_SATURDAY" value="6" enum="Weekday">
-			Saturday.
-		</constant>
-		<constant name="MONTH_JANUARY" value="1" enum="Month">
-			January.
-		</constant>
-		<constant name="MONTH_FEBRUARY" value="2" enum="Month">
-			February.
-		</constant>
-		<constant name="MONTH_MARCH" value="3" enum="Month">
-			March.
-		</constant>
-		<constant name="MONTH_APRIL" value="4" enum="Month">
-			April.
-		</constant>
-		<constant name="MONTH_MAY" value="5" enum="Month">
-			May.
-		</constant>
-		<constant name="MONTH_JUNE" value="6" enum="Month">
-			June.
-		</constant>
-		<constant name="MONTH_JULY" value="7" enum="Month">
-			July.
-		</constant>
-		<constant name="MONTH_AUGUST" value="8" enum="Month">
-			August.
-		</constant>
-		<constant name="MONTH_SEPTEMBER" value="9" enum="Month">
-			September.
-		</constant>
-		<constant name="MONTH_OCTOBER" value="10" enum="Month">
-			October.
-		</constant>
-		<constant name="MONTH_NOVEMBER" value="11" enum="Month">
-			November.
-		</constant>
-		<constant name="MONTH_DECEMBER" value="12" enum="Month">
-			December.
 		</constant>
 		<constant name="SYSTEM_DIR_DESKTOP" value="0" enum="SystemDir">
 			Desktop directory path.

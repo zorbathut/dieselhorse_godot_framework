@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  editor_properties.cpp                                                */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  editor_properties.cpp                                                 */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "editor_properties.h"
 
@@ -68,7 +68,7 @@ EditorPropertyNil::EditorPropertyNil() {
 
 void EditorPropertyText::_set_read_only(bool p_read_only) {
 	text->set_editable(!p_read_only);
-};
+}
 
 void EditorPropertyText::_text_submitted(const String &p_string) {
 	if (updating) {
@@ -133,7 +133,7 @@ EditorPropertyText::EditorPropertyText() {
 void EditorPropertyMultilineText::_set_read_only(bool p_read_only) {
 	text->set_editable(!p_read_only);
 	open_big_text->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyMultilineText::_big_text_changed() {
 	text->set_text(big_text->get_text());
@@ -236,7 +236,7 @@ EditorPropertyMultilineText::EditorPropertyMultilineText(bool p_expression) {
 void EditorPropertyTextEnum::_set_read_only(bool p_read_only) {
 	option_button->set_disabled(p_read_only);
 	edit_button->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyTextEnum::_emit_changed_value(String p_string) {
 	if (string_name) {
@@ -268,7 +268,7 @@ void EditorPropertyTextEnum::_custom_value_accepted() {
 	_custom_value_submitted(new_value);
 }
 
-void EditorPropertyTextEnum::_custom_value_cancelled() {
+void EditorPropertyTextEnum::_custom_value_canceled() {
 	custom_value_edit->set_text(get_edited_object()->get(get_edited_property()));
 
 	edit_custom_layout->hide();
@@ -342,12 +342,17 @@ void EditorPropertyTextEnum::_notification(int p_what) {
 }
 
 EditorPropertyTextEnum::EditorPropertyTextEnum() {
+	HBoxContainer *hb = memnew(HBoxContainer);
+	add_child(hb);
+
 	default_layout = memnew(HBoxContainer);
-	add_child(default_layout);
+	default_layout->set_h_size_flags(SIZE_EXPAND_FILL);
+	hb->add_child(default_layout);
 
 	edit_custom_layout = memnew(HBoxContainer);
+	edit_custom_layout->set_h_size_flags(SIZE_EXPAND_FILL);
 	edit_custom_layout->hide();
-	add_child(edit_custom_layout);
+	hb->add_child(edit_custom_layout);
 
 	option_button = memnew(OptionButton);
 	option_button->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -375,7 +380,7 @@ EditorPropertyTextEnum::EditorPropertyTextEnum() {
 	cancel_button = memnew(Button);
 	cancel_button->set_flat(true);
 	edit_custom_layout->add_child(cancel_button);
-	cancel_button->connect("pressed", callable_mp(this, &EditorPropertyTextEnum::_custom_value_cancelled));
+	cancel_button->connect("pressed", callable_mp(this, &EditorPropertyTextEnum::_custom_value_canceled));
 
 	add_focusable(option_button);
 	add_focusable(edit_button);
@@ -450,7 +455,7 @@ EditorPropertyLocale::EditorPropertyLocale() {
 void EditorPropertyPath::_set_read_only(bool p_read_only) {
 	path->set_editable(!p_read_only);
 	path_edit->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyPath::_path_selected(const String &p_path) {
 	emit_changed(get_edited_property(), p_path);
@@ -561,15 +566,13 @@ bool EditorPropertyPath::_can_drop_data_fw(const Point2 &p_point, const Variant 
 }
 
 void EditorPropertyPath::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_can_drop_data_fw", "position", "data", "from"), &EditorPropertyPath::_can_drop_data_fw);
-	ClassDB::bind_method(D_METHOD("_drop_data_fw", "position", "data", "from"), &EditorPropertyPath::_drop_data_fw);
 }
 
 EditorPropertyPath::EditorPropertyPath() {
 	HBoxContainer *path_hb = memnew(HBoxContainer);
 	add_child(path_hb);
 	path = memnew(LineEdit);
-	path->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_CDU(path, EditorPropertyPath);
 	path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
 	path_hb->add_child(path);
 	path->connect("text_submitted", callable_mp(this, &EditorPropertyPath::_path_selected));
@@ -588,7 +591,7 @@ EditorPropertyPath::EditorPropertyPath() {
 
 void EditorPropertyClassName::_set_read_only(bool p_read_only) {
 	property->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyClassName::setup(const String &p_base_type, const String &p_selected_type) {
 	base_type = p_base_type;
@@ -629,112 +632,11 @@ EditorPropertyClassName::EditorPropertyClassName() {
 	add_child(dialog);
 }
 
-///////////////////// MEMBER /////////////////////////
-
-void EditorPropertyMember::_set_read_only(bool p_read_only) {
-	property->set_disabled(p_read_only);
-};
-
-void EditorPropertyMember::_property_selected(const String &p_selected) {
-	emit_changed(get_edited_property(), p_selected);
-	update_property();
-}
-
-void EditorPropertyMember::_property_select() {
-	if (!selector) {
-		selector = memnew(PropertySelector);
-		selector->connect("selected", callable_mp(this, &EditorPropertyMember::_property_selected));
-		add_child(selector);
-	}
-
-	String current = get_edited_object()->get(get_edited_property());
-
-	if (hint == MEMBER_METHOD_OF_VARIANT_TYPE) {
-		Variant::Type type = Variant::NIL;
-		for (int i = 0; i < Variant::VARIANT_MAX; i++) {
-			if (hint_text == Variant::get_type_name(Variant::Type(i))) {
-				type = Variant::Type(i);
-			}
-		}
-		if (type != Variant::NIL) {
-			selector->select_method_from_basic_type(type, current);
-		}
-
-	} else if (hint == MEMBER_METHOD_OF_BASE_TYPE) {
-		selector->select_method_from_base_type(hint_text, current);
-
-	} else if (hint == MEMBER_METHOD_OF_INSTANCE) {
-		Object *instance = ObjectDB::get_instance(ObjectID(hint_text.to_int()));
-		if (instance) {
-			selector->select_method_from_instance(instance, current);
-		}
-
-	} else if (hint == MEMBER_METHOD_OF_SCRIPT) {
-		Object *obj = ObjectDB::get_instance(ObjectID(hint_text.to_int()));
-		if (Object::cast_to<Script>(obj)) {
-			selector->select_method_from_script(Object::cast_to<Script>(obj), current);
-		}
-
-	} else if (hint == MEMBER_PROPERTY_OF_VARIANT_TYPE) {
-		Variant::Type type = Variant::NIL;
-		String tname = hint_text;
-		if (tname.contains(".")) {
-			tname = tname.get_slice(".", 0);
-		}
-		for (int i = 0; i < Variant::VARIANT_MAX; i++) {
-			if (tname == Variant::get_type_name(Variant::Type(i))) {
-				type = Variant::Type(Variant::Type(i));
-			}
-		}
-
-		if (type != Variant::NIL) {
-			selector->select_property_from_basic_type(type, current);
-		}
-
-	} else if (hint == MEMBER_PROPERTY_OF_BASE_TYPE) {
-		selector->select_property_from_base_type(hint_text, current);
-
-	} else if (hint == MEMBER_PROPERTY_OF_INSTANCE) {
-		Object *instance = ObjectDB::get_instance(ObjectID(hint_text.to_int()));
-		if (instance) {
-			selector->select_property_from_instance(instance, current);
-		}
-
-	} else if (hint == MEMBER_PROPERTY_OF_SCRIPT) {
-		Object *obj = ObjectDB::get_instance(ObjectID(hint_text.to_int()));
-		if (Object::cast_to<Script>(obj)) {
-			selector->select_property_from_script(Object::cast_to<Script>(obj), current);
-		}
-	}
-}
-
-void EditorPropertyMember::setup(Type p_hint, const String &p_hint_text) {
-	hint = p_hint;
-	hint_text = p_hint_text;
-}
-
-void EditorPropertyMember::update_property() {
-	String full_path = get_edited_object()->get(get_edited_property());
-	property->set_text(full_path);
-}
-
-void EditorPropertyMember::_bind_methods() {
-}
-
-EditorPropertyMember::EditorPropertyMember() {
-	selector = nullptr;
-	property = memnew(Button);
-	property->set_clip_text(true);
-	add_child(property);
-	add_focusable(property);
-	property->connect("pressed", callable_mp(this, &EditorPropertyMember::_property_select));
-}
-
 ///////////////////// CHECK /////////////////////////
 
 void EditorPropertyCheck::_set_read_only(bool p_read_only) {
 	checkbox->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyCheck::_checkbox_pressed() {
 	emit_changed(get_edited_property(), checkbox->is_pressed());
@@ -761,7 +663,7 @@ EditorPropertyCheck::EditorPropertyCheck() {
 
 void EditorPropertyEnum::_set_read_only(bool p_read_only) {
 	options->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyEnum::_option_selected(int p_which) {
 	int64_t val = options->get_item_metadata(p_which);
@@ -820,7 +722,7 @@ void EditorPropertyFlags::_set_read_only(bool p_read_only) {
 	for (CheckBox *check : flags) {
 		check->set_disabled(p_read_only);
 	}
-};
+}
 
 void EditorPropertyFlags::_flag_toggled(int p_index) {
 	uint32_t value = get_edited_object()->get(get_edited_property());
@@ -1186,7 +1088,7 @@ void EditorPropertyLayers::_notification(int p_what) {
 void EditorPropertyLayers::_set_read_only(bool p_read_only) {
 	button->set_disabled(p_read_only);
 	grid->set_read_only(p_read_only);
-};
+}
 
 void EditorPropertyLayers::_grid_changed(uint32_t p_grid) {
 	emit_changed(get_edited_property(), p_grid);
@@ -1308,7 +1210,7 @@ void EditorPropertyLayers::_button_pressed() {
 
 void EditorPropertyLayers::_menu_pressed(int p_menu) {
 	if (p_menu == grid->layer_count) {
-		ProjectSettingsEditor::get_singleton()->popup_project_settings();
+		ProjectSettingsEditor::get_singleton()->popup_project_settings(true);
 		ProjectSettingsEditor::get_singleton()->set_general_page(basename);
 	} else {
 		if (grid->value & (1 << p_menu)) {
@@ -1359,7 +1261,7 @@ EditorPropertyLayers::EditorPropertyLayers() {
 
 void EditorPropertyInteger::_set_read_only(bool p_read_only) {
 	spin->set_read_only(p_read_only);
-};
+}
 
 void EditorPropertyInteger::_value_changed(int64_t val) {
 	if (setting) {
@@ -1406,7 +1308,7 @@ EditorPropertyInteger::EditorPropertyInteger() {
 
 void EditorPropertyObjectID::_set_read_only(bool p_read_only) {
 	edit->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyObjectID::_edit_pressed() {
 	emit_signal(SNAME("object_id_selected"), get_edited_property(), get_edited_object()->get(get_edited_property()));
@@ -1421,10 +1323,12 @@ void EditorPropertyObjectID::update_property() {
 	ObjectID id = get_edited_object()->get(get_edited_property());
 	if (id.is_valid()) {
 		edit->set_text(type + " ID: " + uitos(id));
+		edit->set_tooltip_text(type + " ID: " + uitos(id));
 		edit->set_disabled(false);
 		edit->set_icon(EditorNode::get_singleton()->get_class_icon(type));
 	} else {
 		edit->set_text(TTR("<empty>"));
+		edit->set_tooltip_text("");
 		edit->set_disabled(true);
 		edit->set_icon(Ref<Texture2D>());
 	}
@@ -1441,6 +1345,7 @@ EditorPropertyObjectID::EditorPropertyObjectID() {
 	edit = memnew(Button);
 	add_child(edit);
 	add_focusable(edit);
+	edit->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 	edit->connect("pressed", callable_mp(this, &EditorPropertyObjectID::_edit_pressed));
 }
 
@@ -1496,7 +1401,7 @@ EditorPropertyCallable::EditorPropertyCallable() {
 
 void EditorPropertyFloat::_set_read_only(bool p_read_only) {
 	spin->set_read_only(p_read_only);
-};
+}
 
 void EditorPropertyFloat::_value_changed(double val) {
 	if (setting) {
@@ -1546,7 +1451,7 @@ EditorPropertyFloat::EditorPropertyFloat() {
 
 void EditorPropertyEasing::_set_read_only(bool p_read_only) {
 	spin->set_read_only(p_read_only);
-};
+}
 
 void EditorPropertyEasing::_drag_easing(const Ref<InputEvent> &p_ev) {
 	if (is_read_only()) {
@@ -1577,7 +1482,7 @@ void EditorPropertyEasing::_drag_easing(const Ref<InputEvent> &p_ev) {
 
 	const Ref<InputEventMouseMotion> mm = p_ev;
 
-	if (dragging && mm.is_valid() && (mm->get_button_mask() & MouseButton::MASK_LEFT) != MouseButton::NONE) {
+	if (dragging && mm.is_valid() && (mm->get_button_mask().has_flag(MouseButtonMask::LEFT))) {
 		float rel = mm->get_relative().x;
 		if (rel == 0) {
 			return;
@@ -1769,7 +1674,7 @@ void EditorPropertyVector2::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 2; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector2::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -1900,7 +1805,7 @@ void EditorPropertyRect2::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 4; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyRect2::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2003,7 +1908,7 @@ void EditorPropertyVector3::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 3; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector3::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2182,7 +2087,7 @@ void EditorPropertyVector2i::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 2; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector2i::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2312,7 +2217,7 @@ void EditorPropertyRect2i::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 4; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyRect2i::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2414,7 +2319,7 @@ void EditorPropertyVector3i::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 3; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector3i::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2564,7 +2469,7 @@ void EditorPropertyPlane::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 4; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyPlane::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2660,7 +2565,7 @@ void EditorPropertyQuaternion::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 3; i++) {
 		euler[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyQuaternion::_edit_custom_value() {
 	if (edit_button->is_pressed()) {
@@ -2873,7 +2778,7 @@ void EditorPropertyVector4::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 4; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector4::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -2963,7 +2868,7 @@ void EditorPropertyVector4i::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 4; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyVector4i::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3052,7 +2957,7 @@ void EditorPropertyAABB::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 6; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyAABB::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3135,7 +3040,7 @@ void EditorPropertyTransform2D::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 6; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyTransform2D::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3226,7 +3131,7 @@ void EditorPropertyBasis::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 9; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyBasis::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3316,7 +3221,7 @@ void EditorPropertyTransform3D::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 12; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyTransform3D::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3414,7 +3319,7 @@ void EditorPropertyProjection::_set_read_only(bool p_read_only) {
 	for (int i = 0; i < 12; i++) {
 		spin[i]->set_read_only(p_read_only);
 	}
-};
+}
 
 void EditorPropertyProjection::_value_changed(double val, const String &p_name) {
 	if (setting) {
@@ -3517,7 +3422,7 @@ EditorPropertyProjection::EditorPropertyProjection() {
 
 void EditorPropertyColor::_set_read_only(bool p_read_only) {
 	picker->set_disabled(p_read_only);
-};
+}
 
 void EditorPropertyColor::_color_changed(const Color &p_color) {
 	// Cancel the color change if the current color is identical to the new one.
@@ -3774,8 +3679,6 @@ void EditorPropertyNodePath::_notification(int p_what) {
 }
 
 void EditorPropertyNodePath::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_can_drop_data_fw", "position", "data", "from"), &EditorPropertyNodePath::can_drop_data_fw);
-	ClassDB::bind_method(D_METHOD("_drop_data_fw", "position", "data", "from"), &EditorPropertyNodePath::drop_data_fw);
 }
 
 EditorPropertyNodePath::EditorPropertyNodePath() {
@@ -3787,7 +3690,7 @@ EditorPropertyNodePath::EditorPropertyNodePath() {
 	assign->set_h_size_flags(SIZE_EXPAND_FILL);
 	assign->set_clip_text(true);
 	assign->connect("pressed", callable_mp(this, &EditorPropertyNodePath::_node_assign));
-	assign->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_CD(assign, EditorPropertyNodePath);
 	hbc->add_child(assign);
 
 	clear = memnew(Button);
@@ -3819,7 +3722,7 @@ EditorPropertyRID::EditorPropertyRID() {
 
 void EditorPropertyResource::_set_read_only(bool p_read_only) {
 	resource_picker->set_editable(!p_read_only);
-};
+}
 
 void EditorPropertyResource::_resource_selected(const Ref<Resource> &p_resource, bool p_inspect) {
 	if (p_resource->is_built_in() && !p_resource->get_path().is_empty()) {
@@ -3847,13 +3750,93 @@ void EditorPropertyResource::_resource_selected(const Ref<Resource> &p_resource,
 	}
 }
 
+static bool _find_recursive_resources(const Variant &v, HashSet<Resource *> &resources_found) {
+	switch (v.get_type()) {
+		case Variant::ARRAY: {
+			Array a = v;
+			for (int i = 0; i < a.size(); i++) {
+				Variant v2 = a[i];
+				if (v2.get_type() != Variant::ARRAY && v2.get_type() != Variant::DICTIONARY && v2.get_type() != Variant::OBJECT) {
+					continue;
+				}
+				if (_find_recursive_resources(v2, resources_found)) {
+					return true;
+				}
+			}
+		} break;
+		case Variant::DICTIONARY: {
+			Dictionary d = v;
+			List<Variant> keys;
+			d.get_key_list(&keys);
+			for (const Variant &k : keys) {
+				if (k.get_type() == Variant::ARRAY || k.get_type() == Variant::DICTIONARY || k.get_type() == Variant::OBJECT) {
+					if (_find_recursive_resources(k, resources_found)) {
+						return true;
+					}
+				}
+				Variant v2 = d[k];
+				if (v2.get_type() == Variant::ARRAY || v2.get_type() == Variant::DICTIONARY || v2.get_type() == Variant::OBJECT) {
+					if (_find_recursive_resources(v2, resources_found)) {
+						return true;
+					}
+				}
+			}
+		} break;
+		case Variant::OBJECT: {
+			Ref<Resource> r = v;
+
+			if (r.is_null()) {
+				return false;
+			}
+
+			if (resources_found.has(r.ptr())) {
+				return true;
+			}
+
+			resources_found.insert(r.ptr());
+
+			List<PropertyInfo> plist;
+			r->get_property_list(&plist);
+			for (const PropertyInfo &pinfo : plist) {
+				if (!(pinfo.usage & PROPERTY_USAGE_STORAGE)) {
+					continue;
+				}
+
+				if (pinfo.type != Variant::ARRAY && pinfo.type != Variant::DICTIONARY && pinfo.type != Variant::OBJECT) {
+					continue;
+				}
+				if (_find_recursive_resources(r->get(pinfo.name), resources_found)) {
+					return true;
+				}
+			}
+
+			resources_found.erase(r.ptr());
+		} break;
+		default: {
+		}
+	}
+	return false;
+}
+
 void EditorPropertyResource::_resource_changed(const Ref<Resource> &p_resource) {
-	// Make visual script the correct type.
-	Ref<Script> s = p_resource;
+	Resource *r = Object::cast_to<Resource>(get_edited_object());
+	if (r) {
+		// Check for recursive setting of resource
+		HashSet<Resource *> resources_found;
+		resources_found.insert(r);
+		bool found = _find_recursive_resources(p_resource, resources_found);
+		if (found) {
+			EditorNode::get_singleton()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
+			emit_changed(get_edited_property(), Ref<Resource>());
+			update_property();
+			return;
+		}
+	}
 
 	// The bool is_script applies only to an object's main script.
 	// Changing the value of Script-type exported variables of the main script should not trigger saving/reloading properties.
 	bool is_script = false;
+	Ref<Script> s = p_resource;
 	if (get_edited_object() && s.is_valid() && get_edited_property() == CoreStringNames::get_singleton()->_script) {
 		is_script = true;
 		InspectorDock::get_singleton()->store_script_properties(get_edited_object());
@@ -3863,7 +3846,7 @@ void EditorPropertyResource::_resource_changed(const Ref<Resource> &p_resource) 
 	// Prevent the creation of invalid ViewportTextures when possible.
 	Ref<ViewportTexture> vpt = p_resource;
 	if (vpt.is_valid()) {
-		Resource *r = Object::cast_to<Resource>(get_edited_object());
+		r = Object::cast_to<Resource>(get_edited_object());
 		if (r && r->get_path().is_resource_file()) {
 			EditorNode::get_singleton()->show_warning(TTR("Can't create a ViewportTexture on resources saved as a file.\nResource needs to belong to a scene."));
 			emit_changed(get_edited_property(), Ref<Resource>());
@@ -3925,40 +3908,7 @@ void EditorPropertyResource::_open_editor_pressed() {
 	Ref<Resource> res = get_edited_object()->get(get_edited_property());
 	if (res.is_valid()) {
 		// May clear the editor so do it deferred.
-		EditorNode::get_singleton()->call_deferred(SNAME("edit_item_resource"), res);
-	}
-}
-
-void EditorPropertyResource::_fold_other_editors(Object *p_self) {
-	if (this == p_self) {
-		return;
-	}
-
-	Ref<Resource> res = get_edited_object()->get(get_edited_property());
-	if (!res.is_valid()) {
-		return;
-	}
-
-	bool use_editor = false;
-	for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
-		EditorPlugin *ep = EditorNode::get_editor_data().get_editor_plugin(i);
-		if (ep->handles(res.ptr())) {
-			use_editor = true;
-			break;
-		}
-	}
-	if (!use_editor) {
-		return;
-	}
-
-	opened_editor = false;
-
-	bool unfolded = get_edited_object()->editor_is_section_unfolded(get_edited_property());
-	if (unfolded) {
-		// Refold.
-		resource_picker->set_toggle_pressed(false);
-		get_edited_object()->editor_set_section_unfold(get_edited_property(), false);
-		update_property();
+		callable_mp(EditorNode::get_singleton(), &EditorNode::edit_item).bind(res.ptr(), this).call_deferred();
 	}
 }
 
@@ -4111,20 +4061,17 @@ void EditorPropertyResource::update_property() {
 				sub_inspector_vbox->add_child(sub_inspector);
 				resource_picker->set_toggle_pressed(true);
 
-				bool use_editor = false;
+				Array editor_list;
 				for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
 					EditorPlugin *ep = EditorNode::get_editor_data().get_editor_plugin(i);
 					if (ep->handles(res.ptr())) {
-						use_editor = true;
+						editor_list.push_back(ep);
 					}
 				}
 
-				if (use_editor) {
-					// Open editor directly and hide other such editors which are currently open.
+				if (!editor_list.is_empty()) {
+					// Open editor directly.
 					_open_editor_pressed();
-					if (is_inside_tree()) {
-						get_tree()->call_deferred(SNAME("call_group"), "_editor_resource_properties", "_fold_other_editors", this);
-					}
 					opened_editor = true;
 				}
 
@@ -4143,7 +4090,7 @@ void EditorPropertyResource::update_property() {
 				sub_inspector_vbox = nullptr;
 
 				if (opened_editor) {
-					EditorNode::get_singleton()->hide_top_editors();
+					EditorNode::get_singleton()->hide_unused_editors();
 					opened_editor = false;
 				}
 
@@ -4177,6 +4124,15 @@ void EditorPropertyResource::set_use_sub_inspector(bool p_enable) {
 	use_sub_inspector = p_enable;
 }
 
+void EditorPropertyResource::fold_resource() {
+	bool unfolded = get_edited_object()->editor_is_section_unfolded(get_edited_property());
+	if (unfolded) {
+		resource_picker->set_toggle_pressed(false);
+		get_edited_object()->editor_set_section_unfold(get_edited_property(), false);
+		update_property();
+	}
+}
+
 void EditorPropertyResource::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
@@ -4185,18 +4141,18 @@ void EditorPropertyResource::_notification(int p_what) {
 				_update_property_bg();
 			}
 		} break;
-	}
-}
 
-void EditorPropertyResource::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_open_editor_pressed"), &EditorPropertyResource::_open_editor_pressed);
-	ClassDB::bind_method(D_METHOD("_fold_other_editors"), &EditorPropertyResource::_fold_other_editors);
+		case NOTIFICATION_EXIT_TREE: {
+			const EditorInspector *ei = get_parent_inspector();
+			if (ei && !ei->is_main_editor_inspector()) {
+				fold_resource();
+			}
+		} break;
+	}
 }
 
 EditorPropertyResource::EditorPropertyResource() {
 	use_sub_inspector = bool(EDITOR_GET("interface/inspector/open_resources_in_current_inspector"));
-
-	add_to_group("_editor_resource_properties");
 }
 
 ////////////// DEFAULT PLUGIN //////////////////////
@@ -4205,7 +4161,7 @@ bool EditorInspectorDefaultPlugin::can_handle(Object *p_object) {
 	return true; // Can handle everything.
 }
 
-bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide) {
+bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide) {
 	Control *editor = EditorInspectorDefaultPlugin::get_editor_for_property(p_object, p_type, p_path, p_hint, p_hint_text, p_usage, p_wide);
 	if (editor) {
 		add_property_editor(p_path, editor);
@@ -4225,9 +4181,12 @@ struct EditorPropertyRangeHint {
 	bool radians = false;
 };
 
-static EditorPropertyRangeHint _parse_range_hint(PropertyHint p_hint, const String &p_hint_text, double p_default_step) {
+static EditorPropertyRangeHint _parse_range_hint(PropertyHint p_hint, const String &p_hint_text, double p_default_step, bool is_int = false) {
 	EditorPropertyRangeHint hint;
 	hint.step = p_default_step;
+	if (is_int) {
+		hint.hide_slider = false; // Always show slider for ints, unless specified in hint range.
+	}
 	Vector<String> slices = p_hint_text.split(",");
 	if (p_hint == PROPERTY_HINT_RANGE) {
 		ERR_FAIL_COND_V_MSG(slices.size() < 2, hint,
@@ -4279,7 +4238,7 @@ static EditorPropertyRangeHint _parse_range_hint(PropertyHint p_hint, const Stri
 	return hint;
 }
 
-EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const uint32_t p_usage, const bool p_wide) {
+EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide) {
 	double default_float_step = EDITOR_GET("interface/inspector/default_float_step");
 
 	switch (p_type) {
@@ -4345,7 +4304,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 			} else {
 				EditorPropertyInteger *editor = memnew(EditorPropertyInteger);
 
-				EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1);
+				EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1, true);
 				editor->setup(hint.min, hint.max, hint.step, hint.hide_slider, hint.or_greater, hint.or_less, hint.suffix);
 
 				return editor;
@@ -4410,45 +4369,6 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 					editor->set_save_mode();
 				}
 				return editor;
-			} else if (p_hint == PROPERTY_HINT_METHOD_OF_VARIANT_TYPE ||
-					p_hint == PROPERTY_HINT_METHOD_OF_BASE_TYPE ||
-					p_hint == PROPERTY_HINT_METHOD_OF_INSTANCE ||
-					p_hint == PROPERTY_HINT_METHOD_OF_SCRIPT ||
-					p_hint == PROPERTY_HINT_PROPERTY_OF_VARIANT_TYPE ||
-					p_hint == PROPERTY_HINT_PROPERTY_OF_BASE_TYPE ||
-					p_hint == PROPERTY_HINT_PROPERTY_OF_INSTANCE ||
-					p_hint == PROPERTY_HINT_PROPERTY_OF_SCRIPT) {
-				EditorPropertyMember *editor = memnew(EditorPropertyMember);
-
-				EditorPropertyMember::Type type = EditorPropertyMember::MEMBER_METHOD_OF_BASE_TYPE;
-				switch (p_hint) {
-					case PROPERTY_HINT_METHOD_OF_BASE_TYPE:
-						type = EditorPropertyMember::MEMBER_METHOD_OF_BASE_TYPE;
-						break;
-					case PROPERTY_HINT_METHOD_OF_INSTANCE:
-						type = EditorPropertyMember::MEMBER_METHOD_OF_INSTANCE;
-						break;
-					case PROPERTY_HINT_METHOD_OF_SCRIPT:
-						type = EditorPropertyMember::MEMBER_METHOD_OF_SCRIPT;
-						break;
-					case PROPERTY_HINT_PROPERTY_OF_VARIANT_TYPE:
-						type = EditorPropertyMember::MEMBER_PROPERTY_OF_VARIANT_TYPE;
-						break;
-					case PROPERTY_HINT_PROPERTY_OF_BASE_TYPE:
-						type = EditorPropertyMember::MEMBER_PROPERTY_OF_BASE_TYPE;
-						break;
-					case PROPERTY_HINT_PROPERTY_OF_INSTANCE:
-						type = EditorPropertyMember::MEMBER_PROPERTY_OF_INSTANCE;
-						break;
-					case PROPERTY_HINT_PROPERTY_OF_SCRIPT:
-						type = EditorPropertyMember::MEMBER_PROPERTY_OF_SCRIPT;
-						break;
-					default: {
-					}
-				}
-				editor->setup(type, p_hint_text);
-				return editor;
-
 			} else {
 				EditorPropertyText *editor = memnew(EditorPropertyText);
 				if (p_hint == PROPERTY_HINT_PLACEHOLDER_TEXT) {
@@ -4473,7 +4393,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		} break;
 		case Variant::VECTOR2I: {
 			EditorPropertyVector2i *editor = memnew(EditorPropertyVector2i(p_wide));
-			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1);
+			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1, true);
 			editor->setup(hint.min, hint.max, p_hint == PROPERTY_HINT_LINK, hint.suffix);
 			return editor;
 
@@ -4486,7 +4406,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		} break;
 		case Variant::RECT2I: {
 			EditorPropertyRect2i *editor = memnew(EditorPropertyRect2i(p_wide));
-			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1);
+			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1, true);
 			editor->setup(hint.min, hint.max, hint.suffix);
 
 			return editor;
@@ -4500,7 +4420,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		} break;
 		case Variant::VECTOR3I: {
 			EditorPropertyVector3i *editor = memnew(EditorPropertyVector3i(p_wide));
-			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1);
+			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1, true);
 			editor->setup(hint.min, hint.max, p_hint == PROPERTY_HINT_LINK, hint.suffix);
 			return editor;
 
@@ -4514,7 +4434,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		} break;
 		case Variant::VECTOR4I: {
 			EditorPropertyVector4i *editor = memnew(EditorPropertyVector4i);
-			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1);
+			EditorPropertyRangeHint hint = _parse_range_hint(p_hint, p_hint_text, 1, true);
 			editor->setup(hint.min, hint.max, hint.suffix);
 			return editor;
 
@@ -4647,6 +4567,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 				return editor;
 			} else {
 				EditorPropertyDictionary *editor = memnew(EditorPropertyDictionary);
+				editor->setup(p_hint);
 				return editor;
 			}
 		} break;
@@ -4682,7 +4603,7 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 		} break;
 		case Variant::PACKED_STRING_ARRAY: {
 			EditorPropertyArray *editor = memnew(EditorPropertyArray);
-			editor->setup(Variant::PACKED_STRING_ARRAY);
+			editor->setup(Variant::PACKED_STRING_ARRAY, p_hint_text);
 			return editor;
 		} break;
 		case Variant::PACKED_VECTOR2_ARRAY: {

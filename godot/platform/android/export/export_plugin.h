@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  export_plugin.h                                                      */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  export_plugin.h                                                       */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef ANDROID_EXPORT_PLUGIN_H
 #define ANDROID_EXPORT_PLUGIN_H
@@ -74,7 +74,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 
 	Vector<PluginConfigAndroid> plugins;
 	String last_plugin_names;
-	uint64_t last_custom_build_time = 0;
+	uint64_t last_gradle_build_time = 0;
 	SafeFlag plugins_changed;
 	Mutex plugins_lock;
 	Vector<Device> devices;
@@ -91,9 +91,12 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 
 	String get_package_name(const String &p_package) const;
 
+	String get_valid_basename() const;
+
 	String get_assets_directory(const Ref<EditorExportPreset> &p_preset, int p_export_format) const;
 
 	bool is_package_name_valid(const String &p_package, String *r_error = nullptr) const;
+	bool is_project_name_valid() const;
 
 	static bool _should_compress_asset(const String &p_path, const Vector<uint8_t> &p_data);
 
@@ -169,6 +172,8 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 
 	static Vector<ABI> get_enabled_abis(const Ref<EditorExportPreset> &p_preset);
 
+	static bool _uses_vulkan();
+
 public:
 	typedef Error (*EditorExportSaveFunction)(void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key);
 
@@ -201,7 +206,7 @@ public:
 
 	static String get_adb_path();
 
-	static String get_apksigner_path();
+	static String get_apksigner_path(int p_target_sdk = -1, bool p_check_executes = false);
 
 	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates) const override;
 	virtual bool has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const override;
@@ -210,14 +215,14 @@ public:
 
 	inline bool is_clean_build_required(Vector<PluginConfigAndroid> enabled_plugins) {
 		String plugin_names = PluginConfigAndroid::get_plugins_names(enabled_plugins);
-		bool first_build = last_custom_build_time == 0;
+		bool first_build = last_gradle_build_time == 0;
 		bool have_plugins_changed = false;
 
 		if (!first_build) {
 			have_plugins_changed = plugin_names != last_plugin_names;
 			if (!have_plugins_changed) {
 				for (int i = 0; i < enabled_plugins.size(); i++) {
-					if (enabled_plugins.get(i).last_updated > last_custom_build_time) {
+					if (enabled_plugins.get(i).last_updated > last_gradle_build_time) {
 						have_plugins_changed = true;
 						break;
 					}
@@ -225,7 +230,7 @@ public:
 			}
 		}
 
-		last_custom_build_time = OS::get_singleton()->get_unix_time();
+		last_gradle_build_time = OS::get_singleton()->get_unix_time();
 		last_plugin_names = plugin_names;
 
 		return have_plugins_changed || first_build;

@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  node.cpp                                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  node.cpp                                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "node.h"
 
@@ -39,6 +39,7 @@
 #include "scene/animation/tween.h"
 #include "scene/debugger/scene_debugger.h"
 #include "scene/main/multiplayer_api.h"
+#include "scene/main/window.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h"
 #include "viewport.h"
@@ -278,7 +279,10 @@ void Node::_propagate_exit_tree() {
 	//block while removing children
 
 #ifdef DEBUG_ENABLED
-	SceneDebugger::remove_from_cache(data.scene_file_path, this);
+	if (!data.scene_file_path.is_empty()) {
+		// Only remove if file path is set (optimization).
+		SceneDebugger::remove_from_cache(data.scene_file_path, this);
+	}
 #endif
 	data.blocked++;
 
@@ -304,7 +308,6 @@ void Node::_propagate_exit_tree() {
 	}
 
 	// exit groups
-
 	for (KeyValue<StringName, GroupData> &E : data.grouped) {
 		data.tree->remove_from_group(E.key, this);
 		E.value.group = nullptr;
@@ -943,7 +946,7 @@ String Node::validate_child_name(Node *p_child) {
 #endif
 
 String Node::adjust_name_casing(const String &p_name) {
-	switch (GLOBAL_GET("editor/node_naming/name_casing").operator int()) {
+	switch (GLOBAL_GET("editor/naming/node_name_casing").operator int()) {
 		case NAME_CASING_PASCAL_CASE:
 			return p_name.to_pascal_case();
 		case NAME_CASING_CAMEL_CASE:
@@ -1165,7 +1168,7 @@ void Node::add_sibling(Node *p_sibling, bool p_force_readable_name) {
 
 void Node::remove_child(Node *p_child) {
 	ERR_FAIL_NULL(p_child);
-	ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, `remove_child()` failed. Consider using `remove_child.call_deferred(child)` instead.");
+	ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy adding/removing children, `remove_child()` can't be called at this time. Consider using `remove_child.call_deferred(child)` instead.");
 
 	int child_count = data.children.size();
 	Node **children = data.children.ptrw();
@@ -1196,11 +1199,13 @@ void Node::remove_child(Node *p_child) {
 		data.internal_children_back--;
 	}
 
+	data.blocked++;
 	p_child->_set_tree(nullptr);
 	//}
 
 	remove_child_notify(p_child);
 	p_child->notification(NOTIFICATION_UNPARENTED);
+	data.blocked--;
 
 	data.children.remove_at(idx);
 
@@ -1439,6 +1444,18 @@ TypedArray<Node> Node::find_children(const String &p_pattern, const String &p_ty
 	return ret;
 }
 
+void Node::reparent(Node *p_parent, bool p_keep_global_transform) {
+	ERR_FAIL_NULL(p_parent);
+	ERR_FAIL_NULL_MSG(data.parent, "Node needs a parent to be reparented.");
+
+	if (p_parent == data.parent) {
+		return;
+	}
+
+	data.parent->remove_child(this);
+	p_parent->add_child(this);
+}
+
 Node *Node::get_parent() const {
 	return data.parent;
 }
@@ -1452,6 +1469,14 @@ Node *Node::find_parent(const String &p_pattern) const {
 		p = p->data.parent;
 	}
 
+	return nullptr;
+}
+
+Window *Node::get_window() const {
+	Viewport *vp = get_viewport();
+	if (vp) {
+		return vp->get_base_window();
+	}
 	return nullptr;
 }
 
@@ -1962,7 +1987,16 @@ String Node::get_scene_file_path() const {
 }
 
 void Node::set_editor_description(const String &p_editor_description) {
+	if (data.editor_description == p_editor_description) {
+		return;
+	}
+
 	data.editor_description = p_editor_description;
+
+	if (Engine::get_singleton()->is_editor_hint() && is_inside_tree()) {
+		// Update tree so the tooltip in the Scene tree dock is also updated in the editor.
+		get_tree()->tree_changed();
+	}
 }
 
 String Node::get_editor_description() const {
@@ -2101,13 +2135,13 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 	} else if ((p_flags & DUPLICATE_USE_INSTANTIATION) && !get_scene_file_path().is_empty()) {
 		Ref<PackedScene> res = ResourceLoader::load(get_scene_file_path());
 		ERR_FAIL_COND_V(res.is_null(), nullptr);
-		PackedScene::GenEditState ges = PackedScene::GEN_EDIT_STATE_DISABLED;
+		PackedScene::GenEditState edit_state = PackedScene::GEN_EDIT_STATE_DISABLED;
 #ifdef TOOLS_ENABLED
 		if (p_flags & DUPLICATE_FROM_EDITOR) {
-			ges = PackedScene::GEN_EDIT_STATE_INSTANCE;
+			edit_state = PackedScene::GEN_EDIT_STATE_INSTANCE;
 		}
 #endif
-		node = res->instantiate(ges);
+		node = res->instantiate(edit_state);
 		ERR_FAIL_COND_V(!node, nullptr);
 		node->set_scene_instance_load_placeholder(get_scene_instance_load_placeholder());
 
@@ -2188,7 +2222,7 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 
 			Variant value = N->get()->get(name).duplicate(true);
 
-			if (E.usage & PROPERTY_USAGE_DO_NOT_SHARE_ON_DUPLICATE) {
+			if (E.usage & PROPERTY_USAGE_ALWAYS_DUPLICATE) {
 				Resource *res = Object::cast_to<Resource>(value);
 				if (res) { // Duplicate only if it's a resource
 					current_node->set(name, res->duplicate());
@@ -2774,10 +2808,8 @@ void Node::unhandled_key_input(const Ref<InputEvent> &p_key_event) {
 }
 
 void Node::_bind_methods() {
-	GLOBAL_DEF("editor/node_naming/name_num_separator", 0);
-	ProjectSettings::get_singleton()->set_custom_property_info("editor/node_naming/name_num_separator", PropertyInfo(Variant::INT, "editor/node_naming/name_num_separator", PROPERTY_HINT_ENUM, "None,Space,Underscore,Dash"));
-	GLOBAL_DEF("editor/node_naming/name_casing", NAME_CASING_PASCAL_CASE);
-	ProjectSettings::get_singleton()->set_custom_property_info("editor/node_naming/name_casing", PropertyInfo(Variant::INT, "editor/node_naming/name_casing", PROPERTY_HINT_ENUM, "PascalCase,camelCase,snake_case"));
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/node_name_num_separator", PROPERTY_HINT_ENUM, "None,Space,Underscore,Dash"), 0);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/node_name_casing", PROPERTY_HINT_ENUM, "PascalCase,camelCase,snake_case"), NAME_CASING_PASCAL_CASE);
 
 	ClassDB::bind_static_method("Node", D_METHOD("print_orphan_nodes"), &Node::print_orphan_nodes);
 	ClassDB::bind_method(D_METHOD("add_sibling", "sibling", "force_readable_name"), &Node::add_sibling, DEFVAL(false));
@@ -2786,6 +2818,7 @@ void Node::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_name"), &Node::get_name);
 	ClassDB::bind_method(D_METHOD("add_child", "node", "force_readable_name", "internal"), &Node::add_child, DEFVAL(false), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("remove_child", "node"), &Node::remove_child);
+	ClassDB::bind_method(D_METHOD("reparent", "new_parent", "keep_global_transform"), &Node::reparent, DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("get_child_count", "include_internal"), &Node::get_child_count, DEFVAL(false)); // Note that the default value bound for include_internal is false, while the method is declared with true. This is because internal nodes are irrelevant for GDSCript.
 	ClassDB::bind_method(D_METHOD("get_children", "include_internal"), &Node::_get_children, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_child", "idx", "include_internal"), &Node::get_child, DEFVAL(false));
@@ -2847,6 +2880,7 @@ void Node::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_physics_process_internal", "enable"), &Node::set_physics_process_internal);
 	ClassDB::bind_method(D_METHOD("is_physics_processing_internal"), &Node::is_physics_processing_internal);
 
+	ClassDB::bind_method(D_METHOD("get_window"), &Node::get_window);
 	ClassDB::bind_method(D_METHOD("get_tree"), &Node::get_tree);
 	ClassDB::bind_method(D_METHOD("create_tween"), &Node::create_tween);
 
@@ -2922,6 +2956,7 @@ void Node::_bind_methods() {
 	BIND_CONSTANT(NOTIFICATION_POST_ENTER_TREE);
 	BIND_CONSTANT(NOTIFICATION_DISABLED);
 	BIND_CONSTANT(NOTIFICATION_ENABLED);
+	BIND_CONSTANT(NOTIFICATION_NODE_RECACHE_REQUESTED);
 
 	BIND_CONSTANT(NOTIFICATION_EDITOR_PRE_SAVE);
 	BIND_CONSTANT(NOTIFICATION_EDITOR_POST_SAVE);
@@ -2996,7 +3031,7 @@ void Node::_bind_methods() {
 }
 
 String Node::_get_name_num_separator() {
-	switch (GLOBAL_GET("editor/node_naming/name_num_separator").operator int()) {
+	switch (GLOBAL_GET("editor/naming/node_name_num_separator").operator int()) {
 		case 0:
 			return "";
 		case 1:

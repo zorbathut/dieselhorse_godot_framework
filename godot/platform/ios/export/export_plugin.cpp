@@ -1,41 +1,49 @@
-/*************************************************************************/
-/*  export_plugin.cpp                                                    */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  export_plugin.cpp                                                     */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "export_plugin.h"
 
 #include "core/string/translation.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scale.h"
+#include "platform/ios/logo_svg.gen.h"
+
+#include "modules/modules_enabled.gen.h" // For svg.
+#ifdef MODULE_SVG_ENABLED
+#include "modules/svg/image_loader_svg.h"
+#endif
 
 void EditorExportPlatformIOS::get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const {
 	// Vulkan and OpenGL ES 3.0 both mandate ETC2 support.
 	r_features->push_back("etc2");
+	r_features->push_back("astc");
 
 	Vector<String> architectures = _get_preset_architectures(p_preset);
 	for (int i = 0; i < architectures.size(); ++i) {
@@ -1565,7 +1573,7 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 	int ret = unzGoToFirstFile(src_pkg_zip);
 	Vector<uint8_t> project_file_data;
 	while (ret == UNZ_OK) {
-#if defined(MACOS_ENABLED) || defined(X11_ENABLED)
+#if defined(MACOS_ENABLED) || defined(LINUXBSD_ENABLED)
 		bool is_execute = false;
 #endif
 
@@ -1598,7 +1606,7 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 				continue; //ignore!
 			}
 			found_library = true;
-#if defined(MACOS_ENABLED) || defined(X11_ENABLED)
+#if defined(MACOS_ENABLED) || defined(LINUXBSD_ENABLED)
 			is_execute = true;
 #endif
 			file = file.replace(library_to_use, binary_name + ".xcframework");
@@ -1641,7 +1649,7 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 				f->store_buffer(data.ptr(), data.size());
 			}
 
-#if defined(MACOS_ENABLED) || defined(X11_ENABLED)
+#if defined(MACOS_ENABLED) || defined(LINUXBSD_ENABLED)
 			if (is_execute) {
 				// we need execute rights on this file
 				chmod(file.utf8().get_data(), 0755);
@@ -1799,7 +1807,10 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 		ERR_FAIL_COND_V(dylibs_dir.is_null(), ERR_CANT_OPEN);
 		CodesignData codesign_data(p_preset, p_debug);
 		err = _walk_dir_recursive(dylibs_dir, _codesign, &codesign_data);
-		ERR_FAIL_COND_V(err, err);
+		if (err != OK) {
+			add_message(EXPORT_MESSAGE_ERROR, TTR("Code Signing"), TTR("Code signing failed, see editor log for details."));
+			return err;
+		}
 	}
 
 	if (ep.step("Making .xcarchive", 3)) {
@@ -1825,6 +1836,10 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 	err = OS::get_singleton()->execute("xcodebuild", archive_args, &archive_str, nullptr, true);
 	ERR_FAIL_COND_V(err, err);
 	print_line("xcodebuild (.xcarchive):\n" + archive_str);
+	if (!archive_str.contains("** ARCHIVE SUCCEEDED **")) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Xcode Build"), TTR("Xcode project build failed, see editor log for details."));
+		return FAILED;
+	}
 
 	if (ep.step("Making .ipa", 4)) {
 		return ERR_SKIP;
@@ -1841,9 +1856,14 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 	String export_str;
 	err = OS::get_singleton()->execute("xcodebuild", export_args, &export_str, nullptr, true);
 	ERR_FAIL_COND_V(err, err);
+
 	print_line("xcodebuild (.ipa):\n" + export_str);
+	if (!export_str.contains("** EXPORT SUCCEEDED **")) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Xcode Build"), TTR(".ipa export failed, see editor log for details."));
+		return FAILED;
+	}
 #else
-	print_line(".ipa can only be built on macOS. Leaving Xcode project without building the package.");
+	add_message(EXPORT_MESSAGE_WARNING, TTR("Xcode Build"), TTR(".ipa can only be built on macOS. Leaving Xcode project without building the package."));
 #endif
 
 	return OK;
@@ -1914,7 +1934,15 @@ bool EditorExportPlatformIOS::has_valid_project_configuration(const Ref<EditorEx
 }
 
 EditorExportPlatformIOS::EditorExportPlatformIOS() {
-	logo = ImageTexture::create_from_image(memnew(Image(_ios_logo)));
+#ifdef MODULE_SVG_ENABLED
+	Ref<Image> img = memnew(Image);
+	const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
+
+	ImageLoaderSVG img_loader;
+	img_loader.create_image_from_string(img, _ios_logo_svg, EDSCALE, upsample, false);
+	logo = ImageTexture::create_from_image(img);
+#endif
+
 	plugins_changed.set();
 #ifndef ANDROID_ENABLED
 	check_for_changes_thread.start(_check_for_changes_poll_thread, this);

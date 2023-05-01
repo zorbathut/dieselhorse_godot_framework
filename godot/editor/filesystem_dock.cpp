@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  filesystem_dock.cpp                                                  */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  filesystem_dock.cpp                                                   */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "filesystem_dock.h"
 
@@ -241,8 +241,8 @@ void FileSystemDock::_update_tree(const Vector<String> &p_uncollapsed_paths, boo
 	}
 
 	for (int i = 0; i < favorite_paths.size(); i++) {
-		String fave = favorite_paths[i];
-		if (!fave.begins_with("res://")) {
+		String favorite = favorite_paths[i];
+		if (!favorite.begins_with("res://")) {
 			continue;
 		}
 
@@ -252,18 +252,18 @@ void FileSystemDock::_update_tree(const Vector<String> &p_uncollapsed_paths, boo
 		String text;
 		Ref<Texture2D> icon;
 		Color color;
-		if (fave == "res://") {
+		if (favorite == "res://") {
 			text = "/";
 			icon = folder_icon;
 			color = folder_color;
-		} else if (fave.ends_with("/")) {
-			text = fave.substr(0, fave.length() - 1).get_file();
+		} else if (favorite.ends_with("/")) {
+			text = favorite.substr(0, favorite.length() - 1).get_file();
 			icon = folder_icon;
 			color = folder_color;
 		} else {
-			text = fave.get_file();
+			text = favorite.get_file();
 			int index;
-			EditorFileSystemDirectory *dir = EditorFileSystem::get_singleton()->find_file(fave, &index);
+			EditorFileSystemDirectory *dir = EditorFileSystem::get_singleton()->find_file(favorite, &index);
 			if (dir) {
 				icon = _get_tree_item_icon(dir->get_file_import_is_valid(index), dir->get_file_type(index));
 			} else {
@@ -277,18 +277,18 @@ void FileSystemDock::_update_tree(const Vector<String> &p_uncollapsed_paths, boo
 			ti->set_text(0, text);
 			ti->set_icon(0, icon);
 			ti->set_icon_modulate(0, color);
-			ti->set_tooltip_text(0, fave);
+			ti->set_tooltip_text(0, favorite);
 			ti->set_selectable(0, true);
-			ti->set_metadata(0, fave);
-			if (p_select_in_favorites && fave == path) {
+			ti->set_metadata(0, favorite);
+			if (p_select_in_favorites && favorite == path) {
 				ti->select(0);
 				ti->set_as_cursor(0);
 			}
-			if (!fave.ends_with("/")) {
+			if (!favorite.ends_with("/")) {
 				Array udata;
 				udata.push_back(tree_update_id);
 				udata.push_back(ti);
-				EditorResourcePreview::get_singleton()->queue_resource_preview(fave, this, "_tree_thumbnail_done", udata);
+				EditorResourcePreview::get_singleton()->queue_resource_preview(favorite, this, "_tree_thumbnail_done", udata);
 			}
 		}
 	}
@@ -1531,6 +1531,10 @@ void FileSystemDock::_make_scene_confirm() {
 	EditorNode::get_singleton()->save_scene_list({ scene_path });
 }
 
+void FileSystemDock::_resource_removed(const Ref<Resource> &p_resource) {
+	emit_signal(SNAME("resource_removed"), p_resource);
+}
+
 void FileSystemDock::_file_removed(String p_file) {
 	emit_signal(SNAME("file_removed"), p_file);
 
@@ -1819,6 +1823,43 @@ void FileSystemDock::_file_option(int p_option, const Vector<String> &p_selected
 			OS::get_singleton()->shell_open(String("file://") + dir);
 		} break;
 
+		case FILE_OPEN_EXTERNAL: {
+			String fpath = path;
+			if (path == "Favorites") {
+				fpath = p_selected[0];
+			}
+
+			String file = ProjectSettings::get_singleton()->globalize_path(fpath);
+
+			String resource_type = ResourceLoader::get_resource_type(fpath);
+			String external_program;
+
+			if (resource_type == "CompressedTexture2D" || resource_type == "Image") {
+				if (file.get_extension() == "svg" || file.get_extension() == "svgz") {
+					external_program = EDITOR_GET("filesystem/external_programs/vector_image_editor");
+				} else {
+					external_program = EDITOR_GET("filesystem/external_programs/raster_image_editor");
+				}
+			} else if (ClassDB::is_parent_class(resource_type, "AudioStream")) {
+				external_program = EDITOR_GET("filesystem/external_programs/audio_editor");
+			} else if (resource_type == "PackedScene") {
+				// Ignore non-model scenes.
+				if (file.get_extension() != "tscn" && file.get_extension() != "scn" && file.get_extension() != "res") {
+					external_program = EDITOR_GET("filesystem/external_programs/3d_model_editor");
+				}
+			} else if (ClassDB::is_parent_class(resource_type, "Script")) {
+				external_program = EDITOR_GET("text_editor/external/exec_path");
+			}
+
+			if (external_program.is_empty()) {
+				OS::get_singleton()->shell_open(file);
+			} else {
+				List<String> args;
+				args.push_back(file);
+				OS::get_singleton()->create_process(external_program, args);
+			}
+		} break;
+
 		case FILE_OPEN: {
 			// Open folders.
 			TreeItem *selected = tree->get_root();
@@ -2051,7 +2092,8 @@ void FileSystemDock::_file_option(int p_option, const Vector<String> &p_selected
 			if (!fpath.ends_with("/")) {
 				fpath = fpath.get_base_dir();
 			}
-			ScriptEditor::get_singleton()->open_text_file_create_dialog(fpath);
+			String dir = ProjectSettings::get_singleton()->globalize_path(fpath);
+			ScriptEditor::get_singleton()->open_text_file_create_dialog(dir);
 		} break;
 	}
 }
@@ -2589,17 +2631,36 @@ void FileSystemDock::_file_and_folders_fill_popup(PopupMenu *p_popup, Vector<Str
 	if (p_paths.size() == 1) {
 		p_popup->add_separator();
 		if (p_display_path_dependent_options) {
-			p_popup->add_icon_item(get_theme_icon(SNAME("Folder"), SNAME("EditorIcons")), TTR("New Folder..."), FILE_NEW_FOLDER);
-			p_popup->add_icon_item(get_theme_icon(SNAME("PackedScene"), SNAME("EditorIcons")), TTR("New Scene..."), FILE_NEW_SCENE);
-			p_popup->add_icon_item(get_theme_icon(SNAME("Script"), SNAME("EditorIcons")), TTR("New Script..."), FILE_NEW_SCRIPT);
-			p_popup->add_icon_item(get_theme_icon(SNAME("Object"), SNAME("EditorIcons")), TTR("New Resource..."), FILE_NEW_RESOURCE);
-			p_popup->add_icon_item(get_theme_icon(SNAME("TextFile"), SNAME("EditorIcons")), TTR("New TextFile..."), FILE_NEW_TEXTFILE);
+			PopupMenu *new_menu = memnew(PopupMenu);
+			new_menu->set_name("New");
+			new_menu->connect("id_pressed", callable_mp(this, &FileSystemDock::_tree_rmb_option));
+
+			p_popup->add_child(new_menu);
+			p_popup->add_submenu_item(TTR("New"), "New", FILE_NEW);
+
+			new_menu->add_icon_item(get_theme_icon(SNAME("Folder"), SNAME("EditorIcons")), TTR("Folder..."), FILE_NEW_FOLDER);
+			new_menu->add_icon_item(get_theme_icon(SNAME("PackedScene"), SNAME("EditorIcons")), TTR("Scene..."), FILE_NEW_SCENE);
+			new_menu->add_icon_item(get_theme_icon(SNAME("Script"), SNAME("EditorIcons")), TTR("Script..."), FILE_NEW_SCRIPT);
+			new_menu->add_icon_item(get_theme_icon(SNAME("Object"), SNAME("EditorIcons")), TTR("Resource..."), FILE_NEW_RESOURCE);
+			new_menu->add_icon_item(get_theme_icon(SNAME("TextFile"), SNAME("EditorIcons")), TTR("TextFile..."), FILE_NEW_TEXTFILE);
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
 			p_popup->add_separator();
+#endif
 		}
 
-		String fpath = p_paths[0];
-		String item_text = fpath.ends_with("/") ? TTR("Open in File Manager") : TTR("Show in File Manager");
-		p_popup->add_icon_item(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), item_text, FILE_SHOW_IN_EXPLORER);
+		const String fpath = p_paths[0];
+
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+		// Opening the system file manager is not supported on the Android and web editors.
+		const bool is_directory = fpath.ends_with("/");
+		const String item_text = is_directory ? TTR("Open in File Manager") : TTR("Show in File Manager");
+		p_popup->add_icon_shortcut(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), ED_GET_SHORTCUT("filesystem_dock/show_in_explorer"), FILE_SHOW_IN_EXPLORER);
+		p_popup->set_item_text(p_popup->get_item_index(FILE_SHOW_IN_EXPLORER), item_text);
+		if (!is_directory) {
+			p_popup->add_icon_shortcut(get_theme_icon(SNAME("ExternalLink"), SNAME("EditorIcons")), ED_GET_SHORTCUT("filesystem_dock/open_in_external_program"), FILE_OPEN_EXTERNAL);
+		}
+#endif
+
 		path = fpath;
 	}
 }
@@ -2643,8 +2704,11 @@ void FileSystemDock::_tree_empty_click(const Vector2 &p_pos, MouseButton p_butto
 	tree_popup->add_icon_item(get_theme_icon(SNAME("Script"), SNAME("EditorIcons")), TTR("New Script..."), FILE_NEW_SCRIPT);
 	tree_popup->add_icon_item(get_theme_icon(SNAME("Object"), SNAME("EditorIcons")), TTR("New Resource..."), FILE_NEW_RESOURCE);
 	tree_popup->add_icon_item(get_theme_icon(SNAME("TextFile"), SNAME("EditorIcons")), TTR("New TextFile..."), FILE_NEW_TEXTFILE);
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+	// Opening the system file manager is not supported on the Android and web editors.
 	tree_popup->add_separator();
-	tree_popup->add_icon_item(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), TTR("Open in File Manager"), FILE_SHOW_IN_EXPLORER);
+	tree_popup->add_icon_shortcut(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), ED_GET_SHORTCUT("filesystem_dock/show_in_explorer"), FILE_SHOW_IN_EXPLORER);
+#endif
 
 	tree_popup->set_position(tree->get_screen_position() + p_pos);
 	tree_popup->reset_size();
@@ -2704,7 +2768,8 @@ void FileSystemDock::_file_list_empty_clicked(const Vector2 &p_pos, MouseButton 
 	file_list_popup->add_icon_item(get_theme_icon(SNAME("Object"), SNAME("EditorIcons")), TTR("New Resource..."), FILE_NEW_RESOURCE);
 	file_list_popup->add_icon_item(get_theme_icon(SNAME("TextFile"), SNAME("EditorIcons")), TTR("New TextFile..."), FILE_NEW_TEXTFILE);
 	file_list_popup->add_separator();
-	file_list_popup->add_icon_item(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), TTR("Open in File Manager"), FILE_SHOW_IN_EXPLORER);
+	file_list_popup->add_icon_shortcut(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")), ED_GET_SHORTCUT("filesystem_dock/show_in_explorer"), FILE_SHOW_IN_EXPLORER);
+
 	file_list_popup->set_position(files->get_screen_position() + p_pos);
 	file_list_popup->reset_size();
 	file_list_popup->popup();
@@ -2816,6 +2881,10 @@ void FileSystemDock::_tree_gui_input(Ref<InputEvent> p_event) {
 			_tree_rmb_option(FILE_REMOVE);
 		} else if (ED_IS_SHORTCUT("filesystem_dock/rename", p_event)) {
 			_tree_rmb_option(FILE_RENAME);
+		} else if (ED_IS_SHORTCUT("filesystem_dock/show_in_explorer", p_event)) {
+			_tree_rmb_option(FILE_SHOW_IN_EXPLORER);
+		} else if (ED_IS_SHORTCUT("filesystem_dock/open_in_external_program", p_event)) {
+			_tree_rmb_option(FILE_OPEN_EXTERNAL);
 		} else if (ED_IS_SHORTCUT("editor/open_search", p_event)) {
 			focus_on_filter();
 		} else {
@@ -2874,6 +2943,8 @@ void FileSystemDock::_file_list_gui_input(Ref<InputEvent> p_event) {
 			_file_list_rmb_option(FILE_REMOVE);
 		} else if (ED_IS_SHORTCUT("filesystem_dock/rename", p_event)) {
 			_file_list_rmb_option(FILE_RENAME);
+		} else if (ED_IS_SHORTCUT("filesystem_dock/show_in_explorer", p_event)) {
+			_file_list_rmb_option(FILE_SHOW_IN_EXPLORER);
 		} else if (ED_IS_SHORTCUT("editor/open_search", p_event)) {
 			focus_on_filter();
 		} else {
@@ -2884,12 +2955,19 @@ void FileSystemDock::_file_list_gui_input(Ref<InputEvent> p_event) {
 	}
 }
 
-void FileSystemDock::_get_imported_files(const String &p_path, Vector<String> &r_files) const {
+bool FileSystemDock::_get_imported_files(const String &p_path, String &r_extension, Vector<String> &r_files) const {
 	if (!p_path.ends_with("/")) {
 		if (FileAccess::exists(p_path + ".import")) {
+			if (r_extension.is_empty()) {
+				r_extension = p_path.get_extension();
+			} else if (r_extension != p_path.get_extension()) {
+				r_files.clear();
+				return false; // File type mismatch, stop search.
+			}
+
 			r_files.push_back(p_path);
 		}
-		return;
+		return true;
 	}
 
 	Ref<DirAccess> da = DirAccess::open(p_path);
@@ -2898,11 +2976,14 @@ void FileSystemDock::_get_imported_files(const String &p_path, Vector<String> &r
 	while (!n.is_empty()) {
 		if (n != "." && n != ".." && !n.ends_with(".import")) {
 			String npath = p_path + n + (da->current_is_dir() ? "/" : "");
-			_get_imported_files(npath, r_files);
+			if (!_get_imported_files(npath, r_extension, r_files)) {
+				return false;
+			}
 		}
 		n = da->get_next();
 	}
 	da->list_dir_end();
+	return true;
 }
 
 void FileSystemDock::_update_import_dock() {
@@ -2927,10 +3008,16 @@ void FileSystemDock::_update_import_dock() {
 		}
 	}
 
-	// Expand directory selection
+	if (!selected.is_empty() && selected[0] == "res://") {
+		// Scanning res:// is costly and unlikely to yield any useful results.
+		return;
+	}
+
+	// Expand directory selection.
 	Vector<String> efiles;
-	for (int i = 0; i < selected.size(); i++) {
-		_get_imported_files(selected[i], efiles);
+	String extension;
+	for (const String &fpath : selected) {
+		_get_imported_files(fpath, extension, efiles);
 	}
 
 	// Check import.
@@ -3015,9 +3102,6 @@ void FileSystemDock::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_tree_thumbnail_done"), &FileSystemDock::_tree_thumbnail_done);
 	ClassDB::bind_method(D_METHOD("_select_file"), &FileSystemDock::_select_file);
 
-	ClassDB::bind_method(D_METHOD("_get_drag_data_fw", "position", "from"), &FileSystemDock::get_drag_data_fw);
-	ClassDB::bind_method(D_METHOD("_can_drop_data_fw", "position", "data", "from"), &FileSystemDock::can_drop_data_fw);
-	ClassDB::bind_method(D_METHOD("_drop_data_fw", "position", "data", "from"), &FileSystemDock::drop_data_fw);
 	ClassDB::bind_method(D_METHOD("navigate_to_path", "path"), &FileSystemDock::navigate_to_path);
 
 	ClassDB::bind_method(D_METHOD("_update_import_dock"), &FileSystemDock::_update_import_dock);
@@ -3025,6 +3109,7 @@ void FileSystemDock::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("inherit", PropertyInfo(Variant::STRING, "file")));
 	ADD_SIGNAL(MethodInfo("instantiate", PropertyInfo(Variant::PACKED_STRING_ARRAY, "files")));
 
+	ADD_SIGNAL(MethodInfo("resource_removed", PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, "Resource")));
 	ADD_SIGNAL(MethodInfo("file_removed", PropertyInfo(Variant::STRING, "file")));
 	ADD_SIGNAL(MethodInfo("folder_removed", PropertyInfo(Variant::STRING, "folder")));
 	ADD_SIGNAL(MethodInfo("files_moved", PropertyInfo(Variant::STRING, "old_file"), PropertyInfo(Variant::STRING, "new_file")));
@@ -3045,6 +3130,11 @@ FileSystemDock::FileSystemDock() {
 	ED_SHORTCUT("filesystem_dock/delete", TTR("Delete"), Key::KEY_DELETE);
 	ED_SHORTCUT("filesystem_dock/rename", TTR("Rename..."), Key::F2);
 	ED_SHORTCUT_OVERRIDE("filesystem_dock/rename", "macos", Key::ENTER);
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
+	// Opening the system file manager or opening in an external program is not supported on the Android and web editors.
+	ED_SHORTCUT("filesystem_dock/show_in_explorer", TTR("Open in File Manager"));
+	ED_SHORTCUT("filesystem_dock/open_in_external_program", TTR("Open in External Program"));
+#endif
 
 	VBoxContainer *top_vbc = memnew(VBoxContainer);
 	add_child(top_vbc);
@@ -3116,10 +3206,11 @@ FileSystemDock::FileSystemDock() {
 	tree = memnew(Tree);
 
 	tree->set_hide_root(true);
-	tree->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_GCD(tree, FileSystemDock);
 	tree->set_allow_rmb_select(true);
 	tree->set_select_mode(Tree::SELECT_MULTI);
 	tree->set_custom_minimum_size(Size2(0, 15 * EDSCALE));
+	tree->set_column_clip_content(0, true);
 	split_box->add_child(tree);
 
 	tree->connect("item_activated", callable_mp(this, &FileSystemDock::_tree_activate_file));
@@ -3153,7 +3244,7 @@ FileSystemDock::FileSystemDock() {
 	files = memnew(ItemList);
 	files->set_v_size_flags(SIZE_EXPAND_FILL);
 	files->set_select_mode(ItemList::SELECT_MULTI);
-	files->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_GCD(files, FileSystemDock);
 	files->connect("item_clicked", callable_mp(this, &FileSystemDock::_file_list_item_clicked));
 	files->connect("gui_input", callable_mp(this, &FileSystemDock::_file_list_gui_input));
 	files->connect("multi_selected", callable_mp(this, &FileSystemDock::_file_multi_selected));
@@ -3181,6 +3272,7 @@ FileSystemDock::FileSystemDock() {
 	add_child(owners_editor);
 
 	remove_dialog = memnew(DependencyRemoveDialog);
+	remove_dialog->connect("resource_removed", callable_mp(this, &FileSystemDock::_resource_removed));
 	remove_dialog->connect("file_removed", callable_mp(this, &FileSystemDock::_file_removed));
 	remove_dialog->connect("folder_removed", callable_mp(this, &FileSystemDock::_folder_removed));
 	add_child(remove_dialog);

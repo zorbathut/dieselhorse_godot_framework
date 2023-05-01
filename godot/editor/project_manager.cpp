@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  project_manager.cpp                                                  */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  project_manager.cpp                                                   */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "project_manager.h"
 
@@ -265,7 +265,7 @@ private:
 			}
 
 		} else {
-			// check if the specified folder is empty, even though this is not an error, it is good to check here
+			// Check if the specified folder is empty, even though this is not an error, it is good to check here.
 			d->list_dir_begin();
 			is_folder_empty = true;
 			String n = d->get_next();
@@ -283,6 +283,12 @@ private:
 			d->list_dir_end();
 
 			if (!is_folder_empty) {
+				if (valid_path == OS::get_singleton()->get_environment("HOME") || valid_path == OS::get_singleton()->get_system_dir(OS::SYSTEM_DIR_DOCUMENTS) || valid_path == OS::get_singleton()->get_executable_path().get_base_dir()) {
+					set_message(TTR("You cannot save a project in the selected path. Please make a new folder or choose a new path."), MESSAGE_ERROR);
+					get_ok_button()->set_disabled(true);
+					return "";
+				}
+
 				set_message(TTR("The selected path is not empty. Choosing an empty folder is highly recommended."), MESSAGE_WARNING);
 				get_ok_button()->set_disabled(false);
 				return valid_path;
@@ -510,6 +516,8 @@ private:
 					ProjectSettings::CustomMap initial_settings;
 
 					// Be sure to change this code if/when renderers are changed.
+					// Default values are "forward_plus" for the main setting, "mobile" for the mobile override,
+					// and "gl_compatibility" for the web override.
 					String renderer_type = renderer_button_group->get_pressed_button()->get_meta(SNAME("rendering_method"));
 					initial_settings["rendering/renderer/rendering_method"] = renderer_type;
 
@@ -522,6 +530,8 @@ private:
 						project_features.push_back("Mobile");
 					} else if (renderer_type == "gl_compatibility") {
 						project_features.push_back("GL Compatibility");
+						// Also change the default rendering method for the mobile override.
+						initial_settings["rendering/renderer/rendering_method.mobile"] = "gl_compatibility";
 					} else {
 						WARN_PRINT("Unknown renderer type. Please report this as a bug on GitHub.");
 					}
@@ -907,33 +917,41 @@ public:
 		Button *rs_button = memnew(CheckBox);
 		rs_button->set_button_group(renderer_button_group);
 		rs_button->set_text(TTR("Forward+"));
+#if defined(WEB_ENABLED)
+		rs_button->set_disabled(true);
+#endif
 		rs_button->set_meta(SNAME("rendering_method"), "forward_plus");
 		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
 		rvb->add_child(rs_button);
 		if (default_renderer_type == "forward_plus") {
 			rs_button->set_pressed(true);
 		}
-
 		rs_button = memnew(CheckBox);
 		rs_button->set_button_group(renderer_button_group);
 		rs_button->set_text(TTR("Mobile"));
+#if defined(WEB_ENABLED)
+		rs_button->set_disabled(true);
+#endif
 		rs_button->set_meta(SNAME("rendering_method"), "mobile");
 		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
 		rvb->add_child(rs_button);
 		if (default_renderer_type == "mobile") {
 			rs_button->set_pressed(true);
 		}
-
 		rs_button = memnew(CheckBox);
 		rs_button->set_button_group(renderer_button_group);
 		rs_button->set_text(TTR("Compatibility"));
+#if !defined(GLES3_ENABLED)
+		rs_button->set_disabled(true);
+#endif
 		rs_button->set_meta(SNAME("rendering_method"), "gl_compatibility");
 		rs_button->connect("pressed", callable_mp(this, &ProjectDialog::_renderer_selected));
 		rvb->add_child(rs_button);
+#if defined(GLES3_ENABLED)
 		if (default_renderer_type == "gl_compatibility") {
 			rs_button->set_pressed(true);
 		}
-
+#endif
 		rshc->add_child(memnew(VSeparator));
 
 		// Right hand side, used for text explaining each choice.
@@ -961,8 +979,8 @@ public:
 		default_files_container->add_child(l);
 		vcs_metadata_selection = memnew(OptionButton);
 		vcs_metadata_selection->set_custom_minimum_size(Size2(100, 20));
-		vcs_metadata_selection->add_item("None", (int)EditorVCSInterface::VCSMetadata::NONE);
-		vcs_metadata_selection->add_item("Git", (int)EditorVCSInterface::VCSMetadata::GIT);
+		vcs_metadata_selection->add_item(TTR("None"), (int)EditorVCSInterface::VCSMetadata::NONE);
+		vcs_metadata_selection->add_item(TTR("Git"), (int)EditorVCSInterface::VCSMetadata::GIT);
 		vcs_metadata_selection->select((int)EditorVCSInterface::VCSMetadata::GIT);
 		default_files_container->add_child(vcs_metadata_selection);
 		Control *spacer = memnew(Control);
@@ -1233,7 +1251,7 @@ void ProjectList::load_project_icon(int p_index) {
 
 	// The default project icon is 128×128 to look crisp on hiDPI displays,
 	// but we want the actual displayed size to be 64×64 on loDPI displays.
-	item.control->icon->set_ignore_texture_size(true);
+	item.control->icon->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
 	item.control->icon->set_custom_minimum_size(Size2(64, 64) * EDSCALE);
 	item.control->icon->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
 
@@ -1273,7 +1291,7 @@ ProjectList::Item ProjectList::load_project_data(const String &p_path, bool p_fa
 	PackedStringArray unsupported_features = ProjectSettings::get_unsupported_features(project_features);
 
 	uint64_t last_edited = 0;
-	if (FileAccess::exists(conf)) {
+	if (cf_err == OK) {
 		// The modification date marks the date the project was last edited.
 		// This is because the `project.godot` file will always be modified
 		// when editing a project (but not when running it).
@@ -1354,6 +1372,8 @@ void ProjectList::load_projects() {
 	for (int i = 0; i < _projects.size(); ++i) {
 		create_project_item_control(i);
 	}
+
+	sort_projects();
 
 	set_v_scroll(0);
 
@@ -1503,8 +1523,13 @@ void ProjectList::create_project_item_control(int p_index) {
 		path_hb->add_child(show);
 
 		if (!item.missing) {
+#if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
 			show->connect("pressed", callable_mp(this, &ProjectList::_show_project).bind(item.path));
 			show->set_tooltip_text(TTR("Show in File Manager"));
+#else
+			// Opening the system file manager is not supported on the Android and web editors.
+			show->hide();
+#endif
 		} else {
 			show->set_tooltip_text(TTR("Error: Project is missing on the filesystem."));
 		}
@@ -1809,9 +1834,11 @@ void ProjectList::erase_selected_projects(bool p_delete_project_contents) {
 		if (_selected_project_paths.has(item.path) && item.control->is_visible()) {
 			_config.erase_section(item.path);
 
-			if (p_delete_project_contents) {
-				OS::get_singleton()->move_to_trash(item.path);
-			}
+			// Comment out for now until we have a better warning system to
+			// ensure users delete their project only.
+			//if (p_delete_project_contents) {
+			//	OS::get_singleton()->move_to_trash(item.path);
+			//}
 
 			memdelete(item.control);
 			_projects.remove_at(i);
@@ -2002,16 +2029,25 @@ void ProjectManager::_notification(int p_what) {
 }
 
 Ref<Texture2D> ProjectManager::_file_dialog_get_icon(const String &p_path) {
-	return singleton->icon_type_cache["ObjectHR"];
+	if (p_path.get_extension().to_lower() == "godot") {
+		return singleton->icon_type_cache["GodotMonochrome"];
+	}
+
+	return singleton->icon_type_cache["Object"];
+}
+
+Ref<Texture2D> ProjectManager::_file_dialog_get_thumbnail(const String &p_path) {
+	if (p_path.get_extension().to_lower() == "godot") {
+		return singleton->icon_type_cache["GodotFile"];
+	}
+
+	return Ref<Texture2D>();
 }
 
 void ProjectManager::_build_icon_type_cache(Ref<Theme> p_theme) {
 	List<StringName> tl;
 	p_theme->get_icon_list(SNAME("EditorIcons"), &tl);
 	for (List<StringName>::Element *E = tl.front(); E; E = E->next()) {
-		if (!ClassDB::class_exists(E->get())) {
-			continue;
-		}
 		icon_type_cache[E->get()] = p_theme->get_icon(E->get(), SNAME("EditorIcons"));
 	}
 }
@@ -2220,11 +2256,11 @@ void ProjectManager::_open_selected_projects_ask() {
 		return;
 	}
 
-	const Size2i popup_min_width = Size2i(600.0 * EDSCALE, 0);
+	const Size2i popup_min_size = Size2i(600.0 * EDSCALE, 400.0 * EDSCALE);
 
 	if (selected_list.size() > 1) {
 		multi_open_ask->set_text(vformat(TTR("You requested to open %d projects in parallel. Do you confirm?\nNote that usual checks for engine version compatibility will be bypassed."), selected_list.size()));
-		multi_open_ask->popup_centered(popup_min_width);
+		multi_open_ask->popup_centered(popup_min_size);
 		return;
 	}
 
@@ -2246,7 +2282,7 @@ void ProjectManager::_open_selected_projects_ask() {
 	// Check if the config_version property was empty or 0.
 	if (config_version == 0) {
 		ask_update_settings->set_text(vformat(TTR("The selected project \"%s\" does not specify its supported Godot version in its configuration file (\"project.godot\").\n\nProject path: %s\n\nIf you proceed with opening it, it will be converted to Godot's current configuration file format.\n\nWarning: You won't be able to open the project with previous versions of the engine anymore."), project.project_name, project.path));
-		ask_update_settings->popup_centered(popup_min_width);
+		ask_update_settings->popup_centered(popup_min_size);
 		return;
 	}
 	// Check if we need to convert project settings from an earlier engine version.
@@ -2259,14 +2295,14 @@ void ProjectManager::_open_selected_projects_ask() {
 			ask_update_settings->set_text(vformat(TTR("The selected project \"%s\" was generated by an older engine version, and needs to be converted for this version.\n\nProject path: %s\n\nDo you want to convert it?\n\nWarning: You won't be able to open the project with previous versions of the engine anymore."), project.project_name, project.path));
 			ask_update_settings->get_ok_button()->set_text(TTR("Convert project.godot"));
 		}
-		ask_update_settings->popup_centered(popup_min_width);
+		ask_update_settings->popup_centered(popup_min_size);
 		ask_update_settings->get_cancel_button()->grab_focus(); // To prevent accidents.
 		return;
 	}
 	// Check if the file was generated by a newer, incompatible engine version.
 	if (config_version > ProjectSettings::CONFIG_VERSION) {
 		dialog_error->set_text(vformat(TTR("Can't open project \"%s\" at the following path:\n\n%s\n\nThe project settings were created by a newer engine version, whose settings are not compatible with this version."), project.project_name, project.path));
-		dialog_error->popup_centered(popup_min_width);
+		dialog_error->popup_centered(popup_min_size);
 		return;
 	}
 	// Check if the project is using features not supported by this build of Godot.
@@ -2295,7 +2331,7 @@ void ProjectManager::_open_selected_projects_ask() {
 		warning_message += TTR("Open anyway? Project will be modified.");
 		ask_update_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 		ask_update_settings->set_text(warning_message);
-		ask_update_settings->popup_centered(popup_min_width);
+		ask_update_settings->popup_centered(popup_min_size);
 		return;
 	}
 
@@ -2305,7 +2341,7 @@ void ProjectManager::_open_selected_projects_ask() {
 
 void ProjectManager::_full_convert_button_pressed() {
 	ask_update_settings->hide();
-	ask_full_convert_dialog->popup_centered(Size2i(600.0 * EDSCALE, 0));
+	ask_full_convert_dialog->popup_centered(Size2i(600.0 * EDSCALE, 400.0 * EDSCALE));
 	ask_full_convert_dialog->get_cancel_button()->grab_focus();
 }
 
@@ -2438,7 +2474,7 @@ void ProjectManager::_rename_project() {
 }
 
 void ProjectManager::_erase_project_confirm() {
-	_project_list->erase_selected_projects(delete_project_contents->is_pressed());
+	_project_list->erase_selected_projects(false);
 	_update_project_buttons();
 }
 
@@ -2462,7 +2498,7 @@ void ProjectManager::_erase_project() {
 	}
 
 	erase_ask_label->set_text(confirm_message);
-	delete_project_contents->set_pressed(false);
+	//delete_project_contents->set_pressed(false);
 	erase_ask->popup_centered();
 }
 
@@ -2640,6 +2676,7 @@ ProjectManager::ProjectManager() {
 				break;
 		}
 		EditorFileDialog::get_icon_func = &ProjectManager::_file_dialog_get_icon;
+		EditorFileDialog::get_thumbnail_func = &ProjectManager::_file_dialog_get_thumbnail;
 	}
 
 	// TRANSLATORS: This refers to the application where users manage their Godot projects.
@@ -2653,9 +2690,11 @@ ProjectManager::ProjectManager() {
 		AcceptDialog::set_swap_cancel_ok(swap_cancel_ok == 2);
 	}
 
-	set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	set_theme(create_custom_theme());
+	EditorColorMap::create();
+	Ref<Theme> theme = create_custom_theme();
+	DisplayServer::set_early_window_clear_color_override(true, theme->get_color(SNAME("background"), SNAME("Editor")));
 
+	set_theme(theme);
 	set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 
 	Panel *panel = memnew(Panel);
@@ -2923,9 +2962,11 @@ ProjectManager::ProjectManager() {
 		erase_ask_label = memnew(Label);
 		erase_ask_vb->add_child(erase_ask_label);
 
-		delete_project_contents = memnew(CheckBox);
-		delete_project_contents->set_text(TTR("Also delete project contents (no undo!)"));
-		erase_ask_vb->add_child(delete_project_contents);
+		// Comment out for now until we have a better warning system to
+		// ensure users delete their project only.
+		//delete_project_contents = memnew(CheckBox);
+		//delete_project_contents->set_text(TTR("Also delete project contents (no undo!)"));
+		//erase_ask_vb->add_child(delete_project_contents);
 
 		multi_open_ask = memnew(ConfirmationDialog);
 		multi_open_ask->set_ok_button_text(TTR("Edit"));
@@ -2944,7 +2985,7 @@ ProjectManager::ProjectManager() {
 		ask_update_settings = memnew(ConfirmationDialog);
 		ask_update_settings->set_autowrap(true);
 		ask_update_settings->get_ok_button()->connect("pressed", callable_mp(this, &ProjectManager::_confirm_update_settings));
-		full_convert_button = ask_update_settings->add_button("Convert Full Project", !GLOBAL_GET("gui/common/swap_cancel_ok"));
+		full_convert_button = ask_update_settings->add_button(TTR("Convert Full Project"), !GLOBAL_GET("gui/common/swap_cancel_ok"));
 		full_convert_button->connect("pressed", callable_mp(this, &ProjectManager::_full_convert_button_pressed));
 		add_child(ask_update_settings);
 
@@ -3008,22 +3049,24 @@ ProjectManager::ProjectManager() {
 	SceneTree::get_singleton()->get_root()->connect("files_dropped", callable_mp(this, &ProjectManager::_files_dropped));
 
 	// Define a minimum window size to prevent UI elements from overlapping or being cut off.
-	DisplayServer::get_singleton()->window_set_min_size(Size2(520, 350) * EDSCALE);
+	Window *w = Object::cast_to<Window>(SceneTree::get_singleton()->get_root());
+	if (w) {
+		w->set_min_size(Size2(520, 350) * EDSCALE);
+	}
 
 	// Resize the bootsplash window based on Editor display scale EDSCALE.
 	float scale_factor = MAX(1, EDSCALE);
 	if (scale_factor > 1.0) {
 		Vector2i window_size = DisplayServer::get_singleton()->window_get_size();
-		Vector2i screen_size = DisplayServer::get_singleton()->screen_get_size();
-		Vector2i screen_position = DisplayServer::get_singleton()->screen_get_position();
+		Rect2i screen_rect = DisplayServer::get_singleton()->screen_get_usable_rect(DisplayServer::get_singleton()->window_get_current_screen());
 
 		window_size *= scale_factor;
 
 		DisplayServer::get_singleton()->window_set_size(window_size);
-		if (screen_size != Vector2i()) {
+		if (screen_rect.size != Vector2i()) {
 			Vector2i window_position;
-			window_position.x = screen_position.x + (screen_size.x - window_size.x) / 2;
-			window_position.y = screen_position.y + (screen_size.y - window_size.y) / 2;
+			window_position.x = screen_rect.position.x + (screen_rect.size.x - window_size.x) / 2;
+			window_position.y = screen_rect.position.y + (screen_rect.size.y - window_size.y) / 2;
 			DisplayServer::get_singleton()->window_set_position(window_position);
 		}
 	}

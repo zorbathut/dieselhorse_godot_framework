@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  packed_scene.cpp                                                     */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  packed_scene.cpp                                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "packed_scene.h"
 
@@ -43,7 +43,7 @@
 #include "scene/main/missing_node.h"
 #include "scene/property_utils.h"
 
-#define PACKED_SCENE_VERSION 2
+#define PACKED_SCENE_VERSION 3
 #define META_POINTER_PROPERTY_BASE "metadata/_editor_prop_ptr_"
 bool SceneState::can_instantiate() const {
 	return nodes.size() > 0;
@@ -314,7 +314,19 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 									//must make a copy, because this res is local to scene
 								}
 							}
-						} else if (p_edit_state == GEN_EDIT_STATE_INSTANCE) {
+						}
+						if (value.get_type() == Variant::ARRAY) {
+							Array set_array = value;
+							bool is_get_valid = false;
+							Variant get_value = node->get(snames[nprops[j].name], &is_get_valid);
+							if (is_get_valid && get_value.get_type() == Variant::ARRAY) {
+								Array get_array = get_value;
+								if (!set_array.is_same_typed(get_array)) {
+									value = Array(set_array, get_array.get_typed_builtin(), get_array.get_typed_class_name(), get_array.get_typed_script());
+								}
+							}
+						}
+						if (p_edit_state == GEN_EDIT_STATE_INSTANCE && value.get_type() != Variant::OBJECT) {
 							value = value.duplicate(true); // Duplicate arrays and dictionaries for the editor
 						}
 
@@ -402,8 +414,7 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 		}
 	}
 
-	for (uint32_t i = 0; i < deferred_node_paths.size(); i++) {
-		const DeferredNodePathProperties &dnp = deferred_node_paths[i];
+	for (const DeferredNodePathProperties &dnp : deferred_node_paths) {
 		Node *other = dnp.base->get_node_or_null(dnp.path);
 		dnp.base->set(dnp.property, other);
 	}
@@ -1047,6 +1058,25 @@ Ref<SceneState> SceneState::get_base_scene_state() const {
 	return Ref<SceneState>();
 }
 
+void SceneState::update_instance_resource(String p_path, Ref<PackedScene> p_packed_scene) {
+	ERR_FAIL_COND(p_packed_scene.is_null());
+
+	for (const NodeData &nd : nodes) {
+		if (nd.instance >= 0) {
+			if (!(nd.instance & FLAG_INSTANCE_IS_PLACEHOLDER)) {
+				int instance_id = nd.instance & FLAG_MASK;
+				Ref<PackedScene> original_packed_scene = variants[instance_id];
+				if (original_packed_scene.is_valid()) {
+					if (original_packed_scene->get_path() == p_path) {
+						variants.remove_at(instance_id);
+						variants.insert(instance_id, p_packed_scene);
+					}
+				}
+			}
+		}
+	}
+}
+
 int SceneState::find_node_by_path(const NodePath &p_node) const {
 	ERR_FAIL_COND_V_MSG(node_path_cache.size() == 0, -1, "This operation requires the node cache to have been built.");
 
@@ -1264,6 +1294,9 @@ void SceneState::set_bundled_scene(const Dictionary &p_dictionary) {
 			for (int j = 0; j < cd.binds.size(); j++) {
 				cd.binds.write[j] = r[idx++];
 			}
+			if (version >= 3) {
+				cd.unbinds = r[idx++];
+			}
 		}
 	}
 
@@ -1350,6 +1383,7 @@ Dictionary SceneState::get_bundled_scene() const {
 		for (int j = 0; j < cd.binds.size(); j++) {
 			rconns.push_back(cd.binds[j]);
 		}
+		rconns.push_back(cd.unbinds);
 	}
 
 	d["conns"] = rconns;

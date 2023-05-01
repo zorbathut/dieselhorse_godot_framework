@@ -113,7 +113,7 @@ namespace Godot.SourceGenerators
             var propertySymbols = members
                 .Where(s => !s.IsStatic && s.Kind == SymbolKind.Property)
                 .Cast<IPropertySymbol>()
-                .Where(s => !s.IsIndexer);
+                .Where(s => !s.IsIndexer && s.ExplicitInterfaceImplementations.Length == 0);
 
             var fieldSymbols = members
                 .Where(s => !s.IsStatic && s.Kind == SymbolKind.Field && !s.IsImplicitlyDeclared)
@@ -158,7 +158,7 @@ namespace Godot.SourceGenerators
                 // Generate SetGodotClassPropertyValue
 
                 bool allPropertiesAreReadOnly = godotClassFields.All(fi => fi.FieldSymbol.IsReadOnly) &&
-                                                godotClassProperties.All(pi => pi.PropertySymbol.IsReadOnly);
+                                                godotClassProperties.All(pi => pi.PropertySymbol.IsReadOnly || pi.PropertySymbol.SetMethod!.IsInitOnly);
 
                 if (!allPropertiesAreReadOnly)
                 {
@@ -168,7 +168,7 @@ namespace Godot.SourceGenerators
                     isFirstEntry = true;
                     foreach (var property in godotClassProperties)
                     {
-                        if (property.PropertySymbol.IsReadOnly)
+                        if (property.PropertySymbol.IsReadOnly || property.PropertySymbol.SetMethod!.IsInitOnly)
                             continue;
 
                         GeneratePropertySetter(property.PropertySymbol.Name,
@@ -328,15 +328,15 @@ namespace Godot.SourceGenerators
 
         private static void AppendGroupingPropertyInfo(StringBuilder source, PropertyInfo propertyInfo)
         {
-            source.Append("        properties.Add(new(type: (Godot.Variant.Type)")
+            source.Append("        properties.Add(new(type: (global::Godot.Variant.Type)")
                 .Append((int)VariantType.Nil)
                 .Append(", name: \"")
                 .Append(propertyInfo.Name)
-                .Append("\", hint: (Godot.PropertyHint)")
+                .Append("\", hint: (global::Godot.PropertyHint)")
                 .Append((int)PropertyHint.None)
                 .Append(", hintString: \"")
                 .Append(propertyInfo.HintString)
-                .Append("\", usage: (Godot.PropertyUsageFlags)")
+                .Append("\", usage: (global::Godot.PropertyUsageFlags)")
                 .Append((int)propertyInfo.Usage)
                 .Append(", exported: true));\n");
         }
@@ -407,7 +407,7 @@ namespace Godot.SourceGenerators
                     return null;
                 }
 
-                if (propertySymbol.SetMethod == null)
+                if (propertySymbol.SetMethod == null || propertySymbol.SetMethod.IsInitOnly)
                 {
                     // This should never happen, as we filtered ReadOnly properties, but just in case.
                     Common.ReportExportedMemberIsReadOnly(context, propertySymbol);

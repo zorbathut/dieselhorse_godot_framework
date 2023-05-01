@@ -112,9 +112,15 @@ layout(location = 9) out highp float dp_clip;
 // !BAS! This needs to become an input once we implement our fallback!
 #define ViewIndex 0
 #endif
+vec3 multiview_uv(vec2 uv) {
+	return vec3(uv, ViewIndex);
+}
 #else
 // Set to zero, not supported in non stereo
 #define ViewIndex 0
+vec2 multiview_uv(vec2 uv) {
+	return uv;
+}
 #endif //USE_MULTIVIEW
 
 invariant gl_Position;
@@ -308,9 +314,11 @@ void main() {
 #ifdef USE_MULTIVIEW
 	mat4 projection_matrix = scene_data.projection_matrix_view[ViewIndex];
 	mat4 inv_projection_matrix = scene_data.inv_projection_matrix_view[ViewIndex];
+	vec3 eye_offset = scene_data.eye_offset[ViewIndex].xyz;
 #else
 	mat4 projection_matrix = scene_data.projection_matrix;
 	mat4 inv_projection_matrix = scene_data.inv_projection_matrix;
+	vec3 eye_offset = vec3(0.0, 0.0, 0.0);
 #endif //USE_MULTIVIEW
 
 //using world coordinates
@@ -523,9 +531,15 @@ layout(location = 9) highp in float dp_clip;
 // !BAS! This needs to become an input once we implement our fallback!
 #define ViewIndex 0
 #endif
+vec3 multiview_uv(vec2 uv) {
+	return vec3(uv, ViewIndex);
+}
 #else
 // Set to zero, not supported in non stereo
 #define ViewIndex 0
+vec2 multiview_uv(vec2 uv) {
+	return uv;
+}
 #endif //USE_MULTIVIEW
 
 //defines to keep compatibility with vertex
@@ -659,8 +673,10 @@ void main() {
 	//lay out everything, whatever is unused is optimized away anyway
 	vec3 vertex = vertex_interp;
 #ifdef USE_MULTIVIEW
-	vec3 view = -normalize(vertex_interp - scene_data.eye_offset[ViewIndex].xyz);
+	vec3 eye_offset = scene_data.eye_offset[ViewIndex].xyz;
+	vec3 view = -normalize(vertex_interp - eye_offset);
 #else
+	vec3 eye_offset = vec3(0.0, 0.0, 0.0);
 	vec3 view = -normalize(vertex_interp);
 #endif
 	vec3 albedo = vec3(1.0);
@@ -866,7 +882,7 @@ void main() {
 		uint decal_indices = draw_call.decals.x;
 		for (uint i = 0; i < 8; i++) {
 			uint decal_index = decal_indices & 0xFF;
-			if (i == 4) {
+			if (i == 3) {
 				decal_indices = draw_call.decals.y;
 			} else {
 				decal_indices = decal_indices >> 8;
@@ -1148,7 +1164,7 @@ void main() {
 
 		for (uint i = 0; i < 8; i++) {
 			uint reflection_index = reflection_indices & 0xFF;
-			if (i == 4) {
+			if (i == 3) {
 				reflection_indices = draw_call.reflection_probes.y;
 			} else {
 				reflection_indices = reflection_indices >> 8;
@@ -1515,6 +1531,8 @@ void main() {
 			} else {
 				shadow = float(shadow1 >> ((i - 4) * 8) & 0xFF) / 255.0;
 			}
+
+			shadow = mix(1.0, shadow, directional_lights.data[i].shadow_opacity);
 #endif
 			blur_shadow(shadow);
 
@@ -1551,7 +1569,7 @@ void main() {
 		uint light_indices = draw_call.omni_lights.x;
 		for (uint i = 0; i < 8; i++) {
 			uint light_index = light_indices & 0xFF;
-			if (i == 4) {
+			if (i == 3) {
 				light_indices = draw_call.omni_lights.y;
 			} else {
 				light_indices = light_indices >> 8;
@@ -1596,7 +1614,7 @@ void main() {
 		uint light_indices = draw_call.spot_lights.x;
 		for (uint i = 0; i < 8; i++) {
 			uint light_index = light_indices & 0xFF;
-			if (i == 4) {
+			if (i == 3) {
 				light_indices = draw_call.spot_lights.y;
 			} else {
 				light_indices = light_indices >> 8;

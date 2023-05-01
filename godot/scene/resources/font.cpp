@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  font.cpp                                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  font.cpp                                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "font.h"
 
@@ -270,24 +270,18 @@ void Font::set_cache_capacity(int p_single_line, int p_multi_line) {
 }
 
 Size2 Font::get_string_size(const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	if (p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-		hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-		hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	}
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	bool fill = (p_alignment == HORIZONTAL_ALIGNMENT_FILL);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, fill ? p_width : 0.0, fill ? p_jst_flags : TextServer::JUSTIFICATION_NONE, TextServer::BREAK_NONE, p_direction, p_orientation);
 
 	Ref<TextLine> buffer;
-	if (cache.has(hash)) {
-		buffer = cache.get(hash);
+	if (cache.has(key)) {
+		buffer = cache.get(key);
 	} else {
 		buffer.instantiate();
 		buffer->set_direction(p_direction);
 		buffer->set_orientation(p_orientation);
 		buffer->add_string(p_text, Ref<Font>(this), p_font_size);
-		cache.insert(hash, buffer);
+		cache.insert(key, buffer);
 	}
 
 	buffer->set_width(p_width);
@@ -300,17 +294,11 @@ Size2 Font::get_string_size(const String &p_text, HorizontalAlignment p_alignmen
 }
 
 Size2 Font::get_multiline_string_size(const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_max_lines, BitField<TextServer::LineBreakFlag> p_brk_flags, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-	hash = hash_djb2_one_64(p_brk_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, p_width, p_jst_flags, p_brk_flags, p_direction, p_orientation);
 
 	Ref<TextParagraph> lines_buffer;
-	if (cache_wrap.has(hash)) {
-		lines_buffer = cache_wrap.get(hash);
+	if (cache_wrap.has(key)) {
+		lines_buffer = cache_wrap.get(key);
 	} else {
 		lines_buffer.instantiate();
 		lines_buffer->set_direction(p_direction);
@@ -319,7 +307,7 @@ Size2 Font::get_multiline_string_size(const String &p_text, HorizontalAlignment 
 		lines_buffer->set_width(p_width);
 		lines_buffer->set_break_flags(p_brk_flags);
 		lines_buffer->set_justification_flags(p_jst_flags);
-		cache_wrap.insert(hash, lines_buffer);
+		cache_wrap.insert(key, lines_buffer);
 	}
 
 	lines_buffer->set_alignment(p_alignment);
@@ -329,24 +317,18 @@ Size2 Font::get_multiline_string_size(const String &p_text, HorizontalAlignment 
 }
 
 void Font::draw_string(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, const Color &p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	if (p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-		hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-		hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	}
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	bool fill = (p_alignment == HORIZONTAL_ALIGNMENT_FILL);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, fill ? p_width : 0.0, fill ? p_jst_flags : TextServer::JUSTIFICATION_NONE, TextServer::BREAK_NONE, p_direction, p_orientation);
 
 	Ref<TextLine> buffer;
-	if (cache.has(hash)) {
-		buffer = cache.get(hash);
+	if (cache.has(key)) {
+		buffer = cache.get(key);
 	} else {
 		buffer.instantiate();
 		buffer->set_direction(p_direction);
 		buffer->set_orientation(p_orientation);
 		buffer->add_string(p_text, Ref<Font>(this), p_font_size);
-		cache.insert(hash, buffer);
+		cache.insert(key, buffer);
 	}
 
 	Vector2 ofs = p_pos;
@@ -366,17 +348,11 @@ void Font::draw_string(RID p_canvas_item, const Point2 &p_pos, const String &p_t
 }
 
 void Font::draw_multiline_string(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_max_lines, const Color &p_modulate, BitField<TextServer::LineBreakFlag> p_brk_flags, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-	hash = hash_djb2_one_64(p_brk_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, p_width, p_jst_flags, p_brk_flags, p_direction, p_orientation);
 
 	Ref<TextParagraph> lines_buffer;
-	if (cache_wrap.has(hash)) {
-		lines_buffer = cache_wrap.get(hash);
+	if (cache_wrap.has(key)) {
+		lines_buffer = cache_wrap.get(key);
 	} else {
 		lines_buffer.instantiate();
 		lines_buffer->set_direction(p_direction);
@@ -385,7 +361,7 @@ void Font::draw_multiline_string(RID p_canvas_item, const Point2 &p_pos, const S
 		lines_buffer->set_width(p_width);
 		lines_buffer->set_break_flags(p_brk_flags);
 		lines_buffer->set_justification_flags(p_jst_flags);
-		cache_wrap.insert(hash, lines_buffer);
+		cache_wrap.insert(key, lines_buffer);
 	}
 
 	Vector2 ofs = p_pos;
@@ -402,24 +378,18 @@ void Font::draw_multiline_string(RID p_canvas_item, const Point2 &p_pos, const S
 }
 
 void Font::draw_string_outline(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_size, const Color &p_modulate, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	if (p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-		hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-		hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	}
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	bool fill = (p_alignment == HORIZONTAL_ALIGNMENT_FILL);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, fill ? p_width : 0.0, fill ? p_jst_flags : TextServer::JUSTIFICATION_NONE, TextServer::BREAK_NONE, p_direction, p_orientation);
 
 	Ref<TextLine> buffer;
-	if (cache.has(hash)) {
-		buffer = cache.get(hash);
+	if (cache.has(key)) {
+		buffer = cache.get(key);
 	} else {
 		buffer.instantiate();
 		buffer->set_direction(p_direction);
 		buffer->set_orientation(p_orientation);
 		buffer->add_string(p_text, Ref<Font>(this), p_font_size);
-		cache.insert(hash, buffer);
+		cache.insert(key, buffer);
 	}
 
 	Vector2 ofs = p_pos;
@@ -439,17 +409,11 @@ void Font::draw_string_outline(RID p_canvas_item, const Point2 &p_pos, const Str
 }
 
 void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment, float p_width, int p_font_size, int p_max_lines, int p_size, const Color &p_modulate, BitField<TextServer::LineBreakFlag> p_brk_flags, BitField<TextServer::JustificationFlag> p_jst_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) const {
-	uint64_t hash = p_text.hash64();
-	hash = hash_djb2_one_64(p_font_size, hash);
-	hash = hash_djb2_one_64(hash_murmur3_one_float(p_width), hash);
-	hash = hash_djb2_one_64(p_brk_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_jst_flags.operator int64_t(), hash);
-	hash = hash_djb2_one_64(p_direction, hash);
-	hash = hash_djb2_one_64(p_orientation, hash);
+	ShapedTextKey key = ShapedTextKey(p_text, p_font_size, p_width, p_jst_flags, p_brk_flags, p_direction, p_orientation);
 
 	Ref<TextParagraph> lines_buffer;
-	if (cache_wrap.has(hash)) {
-		lines_buffer = cache_wrap.get(hash);
+	if (cache_wrap.has(key)) {
+		lines_buffer = cache_wrap.get(key);
 	} else {
 		lines_buffer.instantiate();
 		lines_buffer->set_direction(p_direction);
@@ -458,7 +422,7 @@ void Font::draw_multiline_string_outline(RID p_canvas_item, const Point2 &p_pos,
 		lines_buffer->set_width(p_width);
 		lines_buffer->set_break_flags(p_brk_flags);
 		lines_buffer->set_justification_flags(p_jst_flags);
-		cache_wrap.insert(hash, lines_buffer);
+		cache_wrap.insert(key, lines_buffer);
 	}
 
 	Vector2 ofs = p_pos;
@@ -1494,6 +1458,9 @@ Error FontFile::load_bitmap_font(const String &p_path) {
 						}
 						if (ch[i] == 1 && first_ol_ch == -1) {
 							first_ol_ch = i;
+							if (outline == 0) {
+								outline = 1;
+							}
 						}
 						if (ch[i] == 2 && first_cm_ch == -1) {
 							first_cm_ch = i;
@@ -1783,6 +1750,9 @@ Error FontFile::load_bitmap_font(const String &p_path) {
 					}
 					if (ch[i] == 1 && first_ol_ch == -1) {
 						first_ol_ch = i;
+						if (outline == 0) {
+							outline = 1;
+						}
 					}
 					if (ch[i] == 2 && first_cm_ch == -1) {
 						first_cm_ch = i;
@@ -2748,6 +2718,9 @@ Ref<Font> FontVariation::_get_base_font_or_default() const {
 		for (const StringName &E : theme_types) {
 			if (ThemeDB::get_singleton()->get_project_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
 				Ref<Font> f = ThemeDB::get_singleton()->get_project_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
+				if (f == this) {
+					continue;
+				}
 				if (f.is_valid()) {
 					theme_font = f;
 					theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<FontVariation *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
@@ -2765,6 +2738,9 @@ Ref<Font> FontVariation::_get_base_font_or_default() const {
 		for (const StringName &E : theme_types) {
 			if (ThemeDB::get_singleton()->get_default_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
 				Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
+				if (f == this) {
+					continue;
+				}
 				if (f.is_valid()) {
 					theme_font = f;
 					theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<FontVariation *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
@@ -2775,11 +2751,13 @@ Ref<Font> FontVariation::_get_base_font_or_default() const {
 
 		// If they don't exist, use any type to return the default/empty value.
 		Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", StringName());
-		if (f.is_valid()) {
-			theme_font = f;
-			theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<FontVariation *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
+		if (f != this) {
+			if (f.is_valid()) {
+				theme_font = f;
+				theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<FontVariation *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
+			}
+			return f;
 		}
-		return f;
 	}
 
 	return Ref<Font>();
@@ -2904,6 +2882,12 @@ void SystemFont::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_multichannel_signed_distance_field", "msdf"), &SystemFont::set_multichannel_signed_distance_field);
 	ClassDB::bind_method(D_METHOD("is_multichannel_signed_distance_field"), &SystemFont::is_multichannel_signed_distance_field);
 
+	ClassDB::bind_method(D_METHOD("set_msdf_pixel_range", "msdf_pixel_range"), &SystemFont::set_msdf_pixel_range);
+	ClassDB::bind_method(D_METHOD("get_msdf_pixel_range"), &SystemFont::get_msdf_pixel_range);
+
+	ClassDB::bind_method(D_METHOD("set_msdf_size", "msdf_size"), &SystemFont::set_msdf_size);
+	ClassDB::bind_method(D_METHOD("get_msdf_size"), &SystemFont::get_msdf_size);
+
 	ClassDB::bind_method(D_METHOD("set_oversampling", "oversampling"), &SystemFont::set_oversampling);
 	ClassDB::bind_method(D_METHOD("get_oversampling"), &SystemFont::get_oversampling);
 
@@ -2926,6 +2910,8 @@ void SystemFont::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "hinting", PROPERTY_HINT_ENUM, "None,Light,Normal"), "set_hinting", "get_hinting");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "subpixel_positioning", PROPERTY_HINT_ENUM, "Disabled,Auto,One Half of a Pixel,One Quarter of a Pixel"), "set_subpixel_positioning", "get_subpixel_positioning");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "multichannel_signed_distance_field"), "set_multichannel_signed_distance_field", "is_multichannel_signed_distance_field");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "msdf_pixel_range"), "set_msdf_pixel_range", "get_msdf_pixel_range");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "msdf_size"), "set_msdf_size", "get_msdf_size");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "oversampling", PROPERTY_HINT_RANGE, "0,10,0.1"), "set_oversampling", "get_oversampling");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE, MAKE_RESOURCE_TYPE_HINT("Font")), "set_fallbacks", "get_fallbacks");
 }
@@ -3023,6 +3009,8 @@ void SystemFont::_update_base_font() {
 		file->set_hinting(hinting);
 		file->set_subpixel_positioning(subpixel_positioning);
 		file->set_multichannel_signed_distance_field(msdf);
+		file->set_msdf_pixel_range(msdf_pixel_range);
+		file->set_msdf_size(msdf_size);
 		file->set_oversampling(oversampling);
 
 		base_font = file;
@@ -3087,6 +3075,9 @@ Ref<Font> SystemFont::_get_base_font_or_default() const {
 		for (const StringName &E : theme_types) {
 			if (ThemeDB::get_singleton()->get_project_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
 				Ref<Font> f = ThemeDB::get_singleton()->get_project_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
+				if (f == this) {
+					continue;
+				}
 				if (f.is_valid()) {
 					theme_font = f;
 					theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<SystemFont *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
@@ -3104,6 +3095,9 @@ Ref<Font> SystemFont::_get_base_font_or_default() const {
 		for (const StringName &E : theme_types) {
 			if (ThemeDB::get_singleton()->get_default_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
 				Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
+				if (f == this) {
+					continue;
+				}
 				if (f.is_valid()) {
 					theme_font = f;
 					theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<SystemFont *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
@@ -3114,11 +3108,13 @@ Ref<Font> SystemFont::_get_base_font_or_default() const {
 
 		// If they don't exist, use any type to return the default/empty value.
 		Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", StringName());
-		if (f.is_valid()) {
-			theme_font = f;
-			theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<SystemFont *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
+		if (f != this) {
+			if (f.is_valid()) {
+				theme_font = f;
+				theme_font->connect(CoreStringNames::get_singleton()->changed, callable_mp(reinterpret_cast<Font *>(const_cast<SystemFont *>(this)), &Font::_invalidate_rids), CONNECT_REFERENCE_COUNTED);
+			}
+			return f;
 		}
-		return f;
 	}
 
 	return Ref<Font>();
@@ -3220,6 +3216,34 @@ void SystemFont::set_multichannel_signed_distance_field(bool p_msdf) {
 
 bool SystemFont::is_multichannel_signed_distance_field() const {
 	return msdf;
+}
+
+void SystemFont::set_msdf_pixel_range(int p_msdf_pixel_range) {
+	if (msdf_pixel_range != p_msdf_pixel_range) {
+		msdf_pixel_range = p_msdf_pixel_range;
+		if (base_font.is_valid()) {
+			base_font->set_msdf_pixel_range(msdf_pixel_range);
+		}
+		emit_changed();
+	}
+}
+
+int SystemFont::get_msdf_pixel_range() const {
+	return msdf_pixel_range;
+}
+
+void SystemFont::set_msdf_size(int p_msdf_size) {
+	if (msdf_size != p_msdf_size) {
+		msdf_size = p_msdf_size;
+		if (base_font.is_valid()) {
+			base_font->set_msdf_size(msdf_size);
+		}
+		emit_changed();
+	}
+}
+
+int SystemFont::get_msdf_size() const {
+	return msdf_size;
 }
 
 void SystemFont::set_oversampling(real_t p_oversampling) {

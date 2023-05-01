@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  node_3d_editor_gizmos.cpp                                            */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  node_3d_editor_gizmos.cpp                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "node_3d_editor_gizmos.h"
 
@@ -100,6 +100,7 @@ bool EditorNode3DGizmo::is_editable() const {
 }
 
 void EditorNode3DGizmo::clear() {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	for (int i = 0; i < instances.size(); i++) {
 		if (instances[i].instance.is_valid()) {
 			RS::get_singleton()->free(instances[i].instance);
@@ -809,6 +810,7 @@ void EditorNode3DGizmo::transform() {
 }
 
 void EditorNode3DGizmo::free() {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	ERR_FAIL_COND(!spatial_node);
 	ERR_FAIL_COND(!valid);
 
@@ -1335,13 +1337,13 @@ void Light3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_i
 		light->set_param(p_id == 0 ? Light3D::PARAM_RANGE : Light3D::PARAM_SPOT_ANGLE, p_restore);
 
 	} else if (p_id == 0) {
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Light Radius"));
 		ur->add_do_method(light, "set_param", Light3D::PARAM_RANGE, light->get_param(Light3D::PARAM_RANGE));
 		ur->add_undo_method(light, "set_param", Light3D::PARAM_RANGE, p_restore);
 		ur->commit_action();
 	} else if (p_id == 1) {
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Light Radius"));
 		ur->add_do_method(light, "set_param", Light3D::PARAM_SPOT_ANGLE, light->get_param(Light3D::PARAM_SPOT_ANGLE));
 		ur->add_undo_method(light, "set_param", Light3D::PARAM_SPOT_ANGLE, p_restore);
@@ -1560,7 +1562,7 @@ void AudioStreamPlayer3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gi
 		player->set_emission_angle(p_restore);
 
 	} else {
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change AudioStreamPlayer3D Emission Angle"));
 		ur->add_do_method(player, "set_emission_angle", player->get_emission_angle());
 		ur->add_undo_method(player, "set_emission_angle", p_restore);
@@ -1803,7 +1805,7 @@ void Camera3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id,
 	} else {
 		Vector3 ra, rb;
 		Geometry3D::get_closest_points_between_segments(Vector3(0, 0, -1), Vector3(4096, 0, -1), s[0], s[1], ra, rb);
-		float d = ra.x * 2.0;
+		float d = ra.x * 2;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 		}
@@ -1821,7 +1823,7 @@ void Camera3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_
 		if (p_cancel) {
 			camera->set("fov", p_restore);
 		} else {
-			Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+			EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 			ur->create_action(TTR("Change Camera FOV"));
 			ur->add_do_property(camera, "fov", camera->get_fov());
 			ur->add_undo_property(camera, "fov", p_restore);
@@ -1832,7 +1834,7 @@ void Camera3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_
 		if (p_cancel) {
 			camera->set("size", p_restore);
 		} else {
-			Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+			EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 			ur->create_action(TTR("Change Camera Size"));
 			ur->add_do_property(camera, "size", camera->get_size());
 			ur->add_undo_property(camera, "size", p_restore);
@@ -2097,7 +2099,7 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 		Ref<BoxOccluder3D> bo = o;
 		Vector3 ra, rb;
 		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
-		float d = ra[p_id];
+		float d = ra[p_id] * 2;
 		if (snap_enabled) {
 			d = Math::snapped(d, snap);
 		}
@@ -2107,7 +2109,7 @@ void OccluderInstance3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo,
 		}
 
 		Vector3 he = bo->get_size();
-		he[p_id] = d * 2;
+		he[p_id] = d;
 		bo->set_size(he);
 	}
 
@@ -2158,7 +2160,7 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Sphere Shape Radius"));
 		ur->add_do_method(so.ptr(), "set_radius", so->get_radius());
 		ur->add_undo_method(so.ptr(), "set_radius", p_restore);
@@ -2172,7 +2174,7 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Box Shape Size"));
 		ur->add_do_method(bo.ptr(), "set_size", bo->get_size());
 		ur->add_undo_method(bo.ptr(), "set_size", p_restore);
@@ -2186,7 +2188,7 @@ void OccluderInstance3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_giz
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Box Shape Size"));
 		ur->add_do_method(qo.ptr(), "set_size", qo->get_size());
 		ur->add_undo_method(qo.ptr(), "set_size", p_restore);
@@ -2900,7 +2902,7 @@ void VisibleOnScreenNotifier3DGizmoPlugin::commit_handle(const EditorNode3DGizmo
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 	ur->create_action(TTR("Change Notifier AABB"));
 	ur->add_do_method(notifier, "set_aabb", notifier->get_aabb());
 	ur->add_undo_method(notifier, "set_aabb", p_restore);
@@ -3091,7 +3093,7 @@ void GPUParticles3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, 
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 	ur->create_action(TTR("Change Particles AABB"));
 	ur->add_do_method(particles, "set_visibility_aabb", particles->get_visibility_aabb());
 	ur->add_undo_method(particles, "set_visibility_aabb", p_restore);
@@ -3182,7 +3184,7 @@ String GPUParticlesCollision3DGizmoPlugin::get_handle_name(const EditorNode3DGiz
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(cs) || Object::cast_to<GPUParticlesAttractorBox3D>(cs) || Object::cast_to<GPUParticlesAttractorVectorField3D>(cs) || Object::cast_to<GPUParticlesCollisionSDF3D>(cs) || Object::cast_to<GPUParticlesCollisionHeightField3D>(cs)) {
-		return "Extents";
+		return "Size";
 	}
 
 	return "";
@@ -3196,7 +3198,7 @@ Variant GPUParticlesCollision3DGizmoPlugin::get_handle_value(const EditorNode3DG
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(cs) || Object::cast_to<GPUParticlesAttractorBox3D>(cs) || Object::cast_to<GPUParticlesAttractorVectorField3D>(cs) || Object::cast_to<GPUParticlesCollisionSDF3D>(cs) || Object::cast_to<GPUParticlesCollisionHeightField3D>(cs)) {
-		return Vector3(p_gizmo->get_node_3d()->call("get_extents"));
+		return Vector3(p_gizmo->get_node_3d()->call("get_size"));
 	}
 
 	return Variant();
@@ -3233,7 +3235,7 @@ void GPUParticlesCollision3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_g
 		axis[p_id] = 1.0;
 		Vector3 ra, rb;
 		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
-		float d = ra[p_id];
+		float d = ra[p_id] * 2;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 		}
@@ -3242,9 +3244,9 @@ void GPUParticlesCollision3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_g
 			d = 0.001;
 		}
 
-		Vector3 he = sn->call("get_extents");
+		Vector3 he = sn->call("get_size");
 		he[p_id] = d;
-		sn->call("set_extents", he);
+		sn->call("set_size", he);
 	}
 }
 
@@ -3257,7 +3259,7 @@ void GPUParticlesCollision3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Radius"));
 		ur->add_do_method(sn, "set_radius", sn->call("get_radius"));
 		ur->add_undo_method(sn, "set_radius", p_restore);
@@ -3266,14 +3268,14 @@ void GPUParticlesCollision3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(sn) || Object::cast_to<GPUParticlesAttractorBox3D>(sn) || Object::cast_to<GPUParticlesAttractorVectorField3D>(sn) || Object::cast_to<GPUParticlesCollisionSDF3D>(sn) || Object::cast_to<GPUParticlesCollisionHeightField3D>(sn)) {
 		if (p_cancel) {
-			sn->call("set_extents", p_restore);
+			sn->call("set_size", p_restore);
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
-		ur->create_action(TTR("Change Box Shape Extents"));
-		ur->add_do_method(sn, "set_extents", sn->call("get_extents"));
-		ur->add_undo_method(sn, "set_extents", p_restore);
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+		ur->create_action(TTR("Change Box Shape Size"));
+		ur->add_do_method(sn, "set_size", sn->call("get_size"));
+		ur->add_undo_method(sn, "set_size", p_restore);
 		ur->commit_action();
 	}
 }
@@ -3340,8 +3342,8 @@ void GPUParticlesCollision3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(cs) || Object::cast_to<GPUParticlesAttractorBox3D>(cs) || Object::cast_to<GPUParticlesAttractorVectorField3D>(cs) || Object::cast_to<GPUParticlesCollisionSDF3D>(cs) || Object::cast_to<GPUParticlesCollisionHeightField3D>(cs)) {
 		Vector<Vector3> lines;
 		AABB aabb;
-		aabb.position = -cs->call("get_extents").operator Vector3();
-		aabb.size = aabb.position * -2;
+		aabb.size = cs->call("get_size").operator Vector3();
+		aabb.position = aabb.size / -2;
 
 		for (int i = 0; i < 12; i++) {
 			Vector3 a, b;
@@ -3354,7 +3356,7 @@ void GPUParticlesCollision3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 		for (int i = 0; i < 3; i++) {
 			Vector3 ax;
-			ax[i] = cs->call("get_extents").operator Vector3()[i];
+			ax[i] = cs->call("get_size").operator Vector3()[i] / 2;
 			handles.push_back(ax);
 		}
 
@@ -3440,11 +3442,11 @@ int ReflectionProbeGizmoPlugin::get_priority() const {
 String ReflectionProbeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	switch (p_id) {
 		case 0:
-			return "Extents X";
+			return "Size X";
 		case 1:
-			return "Extents Y";
+			return "Size Y";
 		case 2:
-			return "Extents Z";
+			return "Size Z";
 		case 3:
 			return "Origin X";
 		case 4:
@@ -3458,7 +3460,7 @@ String ReflectionProbeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gi
 
 Variant ReflectionProbeGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	ReflectionProbe *probe = Object::cast_to<ReflectionProbe>(p_gizmo->get_node_3d());
-	return AABB(probe->get_extents(), probe->get_origin_offset());
+	return AABB(probe->get_origin_offset(), probe->get_size());
 }
 
 void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
@@ -3468,7 +3470,7 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 	Transform3D gi = gt.affine_inverse();
 
 	if (p_id < 3) {
-		Vector3 extents = probe->get_extents();
+		Vector3 size = probe->get_size();
 
 		Vector3 ray_from = p_camera->project_ray_origin(p_point);
 		Vector3 ray_dir = p_camera->project_ray_normal(p_point);
@@ -3480,7 +3482,7 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 
 		Vector3 ra, rb;
 		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 16384, sg[0], sg[1], ra, rb);
-		float d = ra[p_id];
+		float d = ra[p_id] * 2;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 		}
@@ -3489,8 +3491,8 @@ void ReflectionProbeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, in
 			d = 0.001;
 		}
 
-		extents[p_id] = d;
-		probe->set_extents(extents);
+		size[p_id] = d;
+		probe->set_size(size);
 	} else {
 		p_id -= 3;
 
@@ -3524,17 +3526,17 @@ void ReflectionProbeGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo,
 	AABB restore = p_restore;
 
 	if (p_cancel) {
-		probe->set_extents(restore.position);
-		probe->set_origin_offset(restore.size);
+		probe->set_origin_offset(restore.position);
+		probe->set_size(restore.size);
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
-	ur->create_action(TTR("Change Probe Extents"));
-	ur->add_do_method(probe, "set_extents", probe->get_extents());
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Change Probe Size"));
+	ur->add_do_method(probe, "set_size", probe->get_size());
 	ur->add_do_method(probe, "set_origin_offset", probe->get_origin_offset());
-	ur->add_undo_method(probe, "set_extents", restore.position);
-	ur->add_undo_method(probe, "set_origin_offset", restore.size);
+	ur->add_undo_method(probe, "set_size", restore.size);
+	ur->add_undo_method(probe, "set_origin_offset", restore.position);
 	ur->commit_action();
 }
 
@@ -3545,11 +3547,11 @@ void ReflectionProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 	Vector<Vector3> lines;
 	Vector<Vector3> internal_lines;
-	Vector3 extents = probe->get_extents();
+	Vector3 size = probe->get_size();
 
 	AABB aabb;
-	aabb.position = -extents;
-	aabb.size = extents * 2;
+	aabb.position = -size / 2;
+	aabb.size = size;
 
 	for (int i = 0; i < 12; i++) {
 		Vector3 a, b;
@@ -3591,7 +3593,7 @@ void ReflectionProbeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 	if (p_gizmo->is_selected()) {
 		Ref<Material> solid_material = get_material("reflection_probe_solid_material", p_gizmo);
-		p_gizmo->add_solid_box(solid_material, probe->get_extents() * 2.0);
+		p_gizmo->add_solid_box(solid_material, probe->get_size());
 	}
 
 	p_gizmo->add_unscaled_billboard(icon, 0.05);
@@ -3625,11 +3627,11 @@ int DecalGizmoPlugin::get_priority() const {
 String DecalGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	switch (p_id) {
 		case 0:
-			return "Extents X";
+			return "Size X";
 		case 1:
-			return "Extents Y";
+			return "Size Y";
 		case 2:
-			return "Extents Z";
+			return "Size Z";
 	}
 
 	return "";
@@ -3637,7 +3639,7 @@ String DecalGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p
 
 Variant DecalGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	Decal *decal = Object::cast_to<Decal>(p_gizmo->get_node_3d());
-	return decal->get_extents();
+	return decal->get_size();
 }
 
 void DecalGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
@@ -3646,7 +3648,7 @@ void DecalGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bo
 
 	Transform3D gi = gt.affine_inverse();
 
-	Vector3 extents = decal->get_extents();
+	Vector3 size = decal->get_size();
 
 	Vector3 ray_from = p_camera->project_ray_origin(p_point);
 	Vector3 ray_dir = p_camera->project_ray_normal(p_point);
@@ -3658,7 +3660,7 @@ void DecalGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bo
 
 	Vector3 ra, rb;
 	Geometry3D::get_closest_points_between_segments(Vector3(), axis * 16384, sg[0], sg[1], ra, rb);
-	float d = ra[p_id];
+	float d = ra[p_id] * 2;
 	if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 		d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 	}
@@ -3667,8 +3669,8 @@ void DecalGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bo
 		d = 0.001;
 	}
 
-	extents[p_id] = d;
-	decal->set_extents(extents);
+	size[p_id] = d;
+	decal->set_size(size);
 }
 
 void DecalGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
@@ -3677,14 +3679,14 @@ void DecalGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id,
 	Vector3 restore = p_restore;
 
 	if (p_cancel) {
-		decal->set_extents(restore);
+		decal->set_size(restore);
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
-	ur->create_action(TTR("Change Decal Extents"));
-	ur->add_do_method(decal, "set_extents", decal->get_extents());
-	ur->add_undo_method(decal, "set_extents", restore);
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Change Decal Size"));
+	ur->add_do_method(decal, "set_size", decal->get_size());
+	ur->add_undo_method(decal, "set_size", restore);
 	ur->commit_action();
 }
 
@@ -3694,11 +3696,11 @@ void DecalGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	p_gizmo->clear();
 
 	Vector<Vector3> lines;
-	Vector3 extents = decal->get_extents();
+	Vector3 size = decal->get_size();
 
 	AABB aabb;
-	aabb.position = -extents;
-	aabb.size = extents * 2;
+	aabb.position = -size / 2;
+	aabb.size = size;
 
 	for (int i = 0; i < 12; i++) {
 		Vector3 a, b;
@@ -3716,8 +3718,9 @@ void DecalGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		}
 	}
 
-	lines.push_back(Vector3(0, extents.y, 0));
-	lines.push_back(Vector3(0, extents.y * 1.2, 0));
+	float half_size_y = size.y / 2;
+	lines.push_back(Vector3(0, half_size_y, 0));
+	lines.push_back(Vector3(0, half_size_y * 1.2, 0));
 
 	Vector<Vector3> handles;
 
@@ -3765,11 +3768,11 @@ int VoxelGIGizmoPlugin::get_priority() const {
 String VoxelGIGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	switch (p_id) {
 		case 0:
-			return "Extents X";
+			return "Size X";
 		case 1:
-			return "Extents Y";
+			return "Size Y";
 		case 2:
-			return "Extents Z";
+			return "Size Z";
 	}
 
 	return "";
@@ -3777,7 +3780,7 @@ String VoxelGIGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int
 
 Variant VoxelGIGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	VoxelGI *probe = Object::cast_to<VoxelGI>(p_gizmo->get_node_3d());
-	return probe->get_extents();
+	return probe->get_size();
 }
 
 void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
@@ -3786,7 +3789,7 @@ void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, 
 	Transform3D gt = probe->get_global_transform();
 	Transform3D gi = gt.affine_inverse();
 
-	Vector3 extents = probe->get_extents();
+	Vector3 size = probe->get_size();
 
 	Vector3 ray_from = p_camera->project_ray_origin(p_point);
 	Vector3 ray_dir = p_camera->project_ray_normal(p_point);
@@ -3798,7 +3801,7 @@ void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, 
 
 	Vector3 ra, rb;
 	Geometry3D::get_closest_points_between_segments(Vector3(), axis * 16384, sg[0], sg[1], ra, rb);
-	float d = ra[p_id];
+	float d = ra[p_id] * 2;
 	if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 		d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 	}
@@ -3807,8 +3810,8 @@ void VoxelGIGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, 
 		d = 0.001;
 	}
 
-	extents[p_id] = d;
-	probe->set_extents(extents);
+	size[p_id] = d;
+	probe->set_size(size);
 }
 
 void VoxelGIGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
@@ -3817,14 +3820,14 @@ void VoxelGIGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_i
 	Vector3 restore = p_restore;
 
 	if (p_cancel) {
-		probe->set_extents(restore);
+		probe->set_size(restore);
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
-	ur->create_action(TTR("Change Probe Extents"));
-	ur->add_do_method(probe, "set_extents", probe->get_extents());
-	ur->add_undo_method(probe, "set_extents", restore);
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Change Probe Size"));
+	ur->add_do_method(probe, "set_size", probe->get_size());
+	ur->add_undo_method(probe, "set_size", restore);
 	ur->commit_action();
 }
 
@@ -3838,11 +3841,11 @@ void VoxelGIGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	p_gizmo->clear();
 
 	Vector<Vector3> lines;
-	Vector3 extents = probe->get_extents();
+	Vector3 size = probe->get_size();
 
 	static const int subdivs[VoxelGI::SUBDIV_MAX] = { 64, 128, 256, 512 };
 
-	AABB aabb = AABB(-extents, extents * 2);
+	AABB aabb = AABB(-size / 2, size);
 	int subdiv = subdivs[probe->get_subdiv()];
 	float cell_size = aabb.get_longest_axis_size() / subdiv;
 
@@ -4361,7 +4364,7 @@ void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 		Ref<BoxShape3D> bs = s;
 		Vector3 ra, rb;
 		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
-		float d = ra[p_id];
+		float d = ra[p_id] * 2;
 		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 		}
@@ -4371,7 +4374,7 @@ void CollisionShape3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 		}
 
 		Vector3 he = bs->get_size();
-		he[p_id] = d * 2;
+		he[p_id] = d;
 		bs->set_size(he);
 	}
 
@@ -4436,7 +4439,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Sphere Shape Radius"));
 		ur->add_do_method(ss.ptr(), "set_radius", ss->get_radius());
 		ur->add_undo_method(ss.ptr(), "set_radius", p_restore);
@@ -4450,7 +4453,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Box Shape Size"));
 		ur->add_do_method(ss.ptr(), "set_size", ss->get_size());
 		ur->add_undo_method(ss.ptr(), "set_size", p_restore);
@@ -4467,7 +4470,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		if (p_id == 0) {
 			ur->create_action(TTR("Change Capsule Shape Radius"));
 			ur->add_do_method(ss.ptr(), "set_radius", ss->get_radius());
@@ -4492,7 +4495,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		if (p_id == 0) {
 			ur->create_action(TTR("Change Cylinder Shape Radius"));
 			ur->add_do_method(ss.ptr(), "set_radius", ss->get_radius());
@@ -4517,7 +4520,7 @@ void CollisionShape3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 			return;
 		}
 
-		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 		ur->create_action(TTR("Change Separation Ray Shape Length"));
 		ur->add_do_method(ss.ptr(), "set_length", ss->get_length());
 		ur->add_undo_method(ss.ptr(), "set_length", p_restore);
@@ -4873,6 +4876,10 @@ NavigationRegion3DGizmoPlugin::NavigationRegion3DGizmoPlugin() {
 	create_material("face_material_disabled", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_face_disabled_color(), false, false, true);
 	create_material("edge_material", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_color());
 	create_material("edge_material_disabled", NavigationServer3D::get_singleton()->get_debug_navigation_geometry_edge_disabled_color());
+
+	Color baking_aabb_material_color = Color(0.8, 0.5, 0.7);
+	baking_aabb_material_color.a = 0.1;
+	create_material("baking_aabb_material", baking_aabb_material_color);
 }
 
 bool NavigationRegion3DGizmoPlugin::has_gizmo(Node3D *p_spatial) {
@@ -4894,6 +4901,16 @@ void NavigationRegion3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	Ref<NavigationMesh> navigationmesh = navigationregion->get_navigation_mesh();
 	if (navigationmesh.is_null()) {
 		return;
+	}
+
+	AABB baking_aabb = navigationmesh->get_filter_baking_aabb();
+	if (baking_aabb.has_volume()) {
+		Vector3 baking_aabb_offset = navigationmesh->get_filter_baking_aabb_offset();
+
+		if (p_gizmo->is_selected()) {
+			Ref<Material> material = get_material("baking_aabb_material", p_gizmo);
+			p_gizmo->add_solid_box(material, baking_aabb.get_size(), baking_aabb.get_center() + baking_aabb_offset);
+		}
 	}
 
 	Vector<Vector3> vertices = navigationmesh->get_vertices();
@@ -5055,8 +5072,8 @@ void NavigationLink3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	Vector3 up_vector = NavigationServer3D::get_singleton()->map_get_up(nav_map);
 	Vector3::Axis up_axis = up_vector.max_axis_index();
 
-	Vector3 start_location = link->get_start_location();
-	Vector3 end_location = link->get_end_location();
+	Vector3 start_position = link->get_start_position();
+	Vector3 end_position = link->get_end_position();
 
 	Ref<Material> link_material = get_material("navigation_link_material", p_gizmo);
 	Ref<Material> link_material_disabled = get_material("navigation_link_material_disabled", p_gizmo);
@@ -5066,10 +5083,10 @@ void NavigationLink3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 	// Draw line between the points.
 	Vector<Vector3> lines;
-	lines.append(start_location);
-	lines.append(end_location);
+	lines.append(start_position);
+	lines.append(end_position);
 
-	// Draw start location search radius
+	// Draw start position search radius
 	for (int i = 0; i < 30; i++) {
 		// Create a circle
 		const float ra = Math::deg_to_rad((float)(i * 12));
@@ -5080,21 +5097,21 @@ void NavigationLink3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		// Draw axis-aligned circle
 		switch (up_axis) {
 			case Vector3::AXIS_X:
-				lines.append(start_location + Vector3(0, a.x, a.y));
-				lines.append(start_location + Vector3(0, b.x, b.y));
+				lines.append(start_position + Vector3(0, a.x, a.y));
+				lines.append(start_position + Vector3(0, b.x, b.y));
 				break;
 			case Vector3::AXIS_Y:
-				lines.append(start_location + Vector3(a.x, 0, a.y));
-				lines.append(start_location + Vector3(b.x, 0, b.y));
+				lines.append(start_position + Vector3(a.x, 0, a.y));
+				lines.append(start_position + Vector3(b.x, 0, b.y));
 				break;
 			case Vector3::AXIS_Z:
-				lines.append(start_location + Vector3(a.x, a.y, 0));
-				lines.append(start_location + Vector3(b.x, b.y, 0));
+				lines.append(start_position + Vector3(a.x, a.y, 0));
+				lines.append(start_position + Vector3(b.x, b.y, 0));
 				break;
 		}
 	}
 
-	// Draw end location search radius
+	// Draw end position search radius
 	for (int i = 0; i < 30; i++) {
 		// Create a circle
 		const float ra = Math::deg_to_rad((float)(i * 12));
@@ -5105,16 +5122,16 @@ void NavigationLink3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		// Draw axis-aligned circle
 		switch (up_axis) {
 			case Vector3::AXIS_X:
-				lines.append(end_location + Vector3(0, a.x, a.y));
-				lines.append(end_location + Vector3(0, b.x, b.y));
+				lines.append(end_position + Vector3(0, a.x, a.y));
+				lines.append(end_position + Vector3(0, b.x, b.y));
 				break;
 			case Vector3::AXIS_Y:
-				lines.append(end_location + Vector3(a.x, 0, a.y));
-				lines.append(end_location + Vector3(b.x, 0, b.y));
+				lines.append(end_position + Vector3(a.x, 0, a.y));
+				lines.append(end_position + Vector3(b.x, 0, b.y));
 				break;
 			case Vector3::AXIS_Z:
-				lines.append(end_location + Vector3(a.x, a.y, 0));
-				lines.append(end_location + Vector3(b.x, b.y, 0));
+				lines.append(end_position + Vector3(a.x, a.y, 0));
+				lines.append(end_position + Vector3(b.x, b.y, 0));
 				break;
 		}
 	}
@@ -5123,8 +5140,8 @@ void NavigationLink3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	p_gizmo->add_collision_segments(lines);
 
 	Vector<Vector3> handles;
-	handles.append(start_location);
-	handles.append(end_location);
+	handles.append(start_position);
+	handles.append(end_position);
 	p_gizmo->add_handles(handles, handles_material);
 }
 
@@ -5134,7 +5151,7 @@ String NavigationLink3DGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_g
 
 Variant NavigationLink3DGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
 	NavigationLink3D *link = Object::cast_to<NavigationLink3D>(p_gizmo->get_node_3d());
-	return p_id == 0 ? link->get_start_location() : link->get_end_location();
+	return p_id == 0 ? link->get_start_position() : link->get_end_position();
 }
 
 void NavigationLink3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
@@ -5149,8 +5166,8 @@ void NavigationLink3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 	Vector3 ray_from = p_camera->project_ray_origin(p_point);
 	Vector3 ray_dir = p_camera->project_ray_normal(p_point);
 
-	Vector3 location = p_id == 0 ? link->get_start_location() : link->get_end_location();
-	Plane move_plane = Plane(cam_dir, gt.xform(location));
+	Vector3 position = p_id == 0 ? link->get_start_position() : link->get_end_position();
+	Plane move_plane = Plane(cam_dir, gt.xform(position));
 
 	Vector3 intersection;
 	if (!move_plane.intersects_ray(ray_from, ray_dir, &intersection)) {
@@ -5162,11 +5179,11 @@ void NavigationLink3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, i
 		intersection.snap(Vector3(snap, snap, snap));
 	}
 
-	location = gi.xform(intersection);
+	position = gi.xform(intersection);
 	if (p_id == 0) {
-		link->set_start_location(location);
+		link->set_start_position(position);
 	} else if (p_id == 1) {
-		link->set_end_location(location);
+		link->set_end_position(position);
 	}
 }
 
@@ -5175,22 +5192,22 @@ void NavigationLink3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo
 
 	if (p_cancel) {
 		if (p_id == 0) {
-			link->set_start_location(p_restore);
+			link->set_start_position(p_restore);
 		} else {
-			link->set_end_location(p_restore);
+			link->set_end_position(p_restore);
 		}
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
 	if (p_id == 0) {
-		ur->create_action(TTR("Change Start Location"));
-		ur->add_do_method(link, "set_start_location", link->get_start_location());
-		ur->add_undo_method(link, "set_start_location", p_restore);
+		ur->create_action(TTR("Change Start Position"));
+		ur->add_do_method(link, "set_start_position", link->get_start_position());
+		ur->add_undo_method(link, "set_start_position", p_restore);
 	} else {
-		ur->create_action(TTR("Change End Location"));
-		ur->add_do_method(link, "set_end_location", link->get_end_location());
-		ur->add_undo_method(link, "set_end_location", p_restore);
+		ur->create_action(TTR("Change End Position"));
+		ur->add_do_method(link, "set_end_position", link->get_end_position());
+		ur->add_undo_method(link, "set_end_position", p_restore);
 	}
 
 	ur->commit_action();
@@ -5900,11 +5917,11 @@ int FogVolumeGizmoPlugin::get_priority() const {
 }
 
 String FogVolumeGizmoPlugin::get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	return "Extents";
+	return "Size";
 }
 
 Variant FogVolumeGizmoPlugin::get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const {
-	return Vector3(p_gizmo->get_node_3d()->call("get_extents"));
+	return Vector3(p_gizmo->get_node_3d()->call("get_size"));
 }
 
 void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
@@ -5922,7 +5939,7 @@ void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id
 	axis[p_id] = 1.0;
 	Vector3 ra, rb;
 	Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
-	float d = ra[p_id];
+	float d = ra[p_id] * 2;
 	if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 		d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
 	}
@@ -5931,23 +5948,23 @@ void FogVolumeGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id
 		d = 0.001;
 	}
 
-	Vector3 he = sn->call("get_extents");
+	Vector3 he = sn->call("get_size");
 	he[p_id] = d;
-	sn->call("set_extents", he);
+	sn->call("set_size", he);
 }
 
 void FogVolumeGizmoPlugin::commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
 	Node3D *sn = p_gizmo->get_node_3d();
 
 	if (p_cancel) {
-		sn->call("set_extents", p_restore);
+		sn->call("set_size", p_restore);
 		return;
 	}
 
-	Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
-	ur->create_action(TTR("Change Fog Volume Extents"));
-	ur->add_do_method(sn, "set_extents", sn->call("get_extents"));
-	ur->add_undo_method(sn, "set_extents", p_restore);
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Change Fog Volume Size"));
+	ur->add_do_method(sn, "set_size", sn->call("get_size"));
+	ur->add_undo_method(sn, "set_size", p_restore);
 	ur->commit_action();
 }
 
@@ -5966,8 +5983,8 @@ void FogVolumeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 		Vector<Vector3> lines;
 		AABB aabb;
-		aabb.position = -cs->call("get_extents").operator Vector3();
-		aabb.size = aabb.position * -2;
+		aabb.size = cs->call("get_size").operator Vector3();
+		aabb.position = aabb.size / -2;
 
 		for (int i = 0; i < 12; i++) {
 			Vector3 a, b;
@@ -5980,7 +5997,7 @@ void FogVolumeGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 		for (int i = 0; i < 3; i++) {
 			Vector3 ax;
-			ax[i] = cs->call("get_extents").operator Vector3()[i];
+			ax[i] = cs->call("get_size").operator Vector3()[i] / 2;
 			handles.push_back(ax);
 		}
 

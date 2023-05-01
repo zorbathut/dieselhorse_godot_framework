@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  tree.cpp                                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  tree.cpp                                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "tree.h"
 
@@ -332,7 +332,7 @@ void TreeItem::set_structured_text_bidi_override(int p_column, TextServer::Struc
 }
 
 TextServer::StructuredTextParser TreeItem::get_structured_text_bidi_override(int p_column) const {
-	ERR_FAIL_INDEX_V(p_column, cells.size(), TextServer::STRUCTURED_TEXT_NONE);
+	ERR_FAIL_INDEX_V(p_column, cells.size(), TextServer::STRUCTURED_TEXT_DEFAULT);
 	return cells[p_column].st_parser;
 }
 
@@ -657,7 +657,7 @@ int TreeItem::get_custom_minimum_height() const {
 
 /* Item manipulation */
 
-TreeItem *TreeItem::create_child(int p_idx) {
+TreeItem *TreeItem::create_child(int p_index) {
 	TreeItem *ti = memnew(TreeItem(tree));
 	if (tree) {
 		ti->cells.resize(tree->columns.size());
@@ -669,7 +669,7 @@ TreeItem *TreeItem::create_child(int p_idx) {
 	int idx = 0;
 
 	while (c) {
-		if (idx++ == p_idx) {
+		if (idx++ == p_index) {
 			c->prev = ti;
 			ti->next = c;
 			break;
@@ -683,7 +683,7 @@ TreeItem *TreeItem::create_child(int p_idx) {
 		ti->prev = l_prev;
 		if (!children_cache.is_empty()) {
 			if (ti->next) {
-				children_cache.insert(p_idx, ti);
+				children_cache.insert(p_index, ti);
 			} else {
 				children_cache.append(ti);
 			}
@@ -826,15 +826,15 @@ TreeItem *TreeItem::get_next_visible(bool p_wrap) {
 	return next_item;
 }
 
-TreeItem *TreeItem::get_child(int p_idx) {
+TreeItem *TreeItem::get_child(int p_index) {
 	_create_children_cache();
 
-	if (p_idx < 0) {
-		p_idx += children_cache.size();
+	if (p_index < 0) {
+		p_index += children_cache.size();
 	}
-	ERR_FAIL_INDEX_V(p_idx, children_cache.size(), nullptr);
+	ERR_FAIL_INDEX_V(p_index, children_cache.size(), nullptr);
 
-	return children_cache.get(p_idx);
+	return children_cache.get(p_index);
 }
 
 int TreeItem::get_visible_child_count() {
@@ -1058,28 +1058,28 @@ int TreeItem::get_button_count(int p_column) const {
 	return cells[p_column].buttons.size();
 }
 
-Ref<Texture2D> TreeItem::get_button(int p_column, int p_idx) const {
+Ref<Texture2D> TreeItem::get_button(int p_column, int p_index) const {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), Ref<Texture2D>());
-	ERR_FAIL_INDEX_V(p_idx, cells[p_column].buttons.size(), Ref<Texture2D>());
-	return cells[p_column].buttons[p_idx].texture;
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), Ref<Texture2D>());
+	return cells[p_column].buttons[p_index].texture;
 }
 
-String TreeItem::get_button_tooltip_text(int p_column, int p_idx) const {
+String TreeItem::get_button_tooltip_text(int p_column, int p_index) const {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), String());
-	ERR_FAIL_INDEX_V(p_idx, cells[p_column].buttons.size(), String());
-	return cells[p_column].buttons[p_idx].tooltip;
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), String());
+	return cells[p_column].buttons[p_index].tooltip;
 }
 
-int TreeItem::get_button_id(int p_column, int p_idx) const {
+int TreeItem::get_button_id(int p_column, int p_index) const {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), -1);
-	ERR_FAIL_INDEX_V(p_idx, cells[p_column].buttons.size(), -1);
-	return cells[p_column].buttons[p_idx].id;
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), -1);
+	return cells[p_column].buttons[p_index].id;
 }
 
-void TreeItem::erase_button(int p_column, int p_idx) {
+void TreeItem::erase_button(int p_column, int p_index) {
 	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_INDEX(p_idx, cells[p_column].buttons.size());
-	cells.write[p_column].buttons.remove_at(p_idx);
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
+	cells.write[p_column].buttons.remove_at(p_index);
 	_changed_notify(p_column);
 }
 
@@ -1094,52 +1094,52 @@ int TreeItem::get_button_by_id(int p_column, int p_id) const {
 	return -1;
 }
 
-void TreeItem::set_button(int p_column, int p_idx, const Ref<Texture2D> &p_button) {
+void TreeItem::set_button(int p_column, int p_index, const Ref<Texture2D> &p_button) {
 	ERR_FAIL_COND(p_button.is_null());
 	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_INDEX(p_idx, cells[p_column].buttons.size());
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
 
-	if (cells[p_column].buttons[p_idx].texture == p_button) {
+	if (cells[p_column].buttons[p_index].texture == p_button) {
 		return;
 	}
 
-	cells.write[p_column].buttons.write[p_idx].texture = p_button;
+	cells.write[p_column].buttons.write[p_index].texture = p_button;
 	cells.write[p_column].cached_minimum_size_dirty = true;
 
 	_changed_notify(p_column);
 }
 
-void TreeItem::set_button_color(int p_column, int p_idx, const Color &p_color) {
+void TreeItem::set_button_color(int p_column, int p_index, const Color &p_color) {
 	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_INDEX(p_idx, cells[p_column].buttons.size());
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
 
-	if (cells[p_column].buttons[p_idx].color == p_color) {
+	if (cells[p_column].buttons[p_index].color == p_color) {
 		return;
 	}
 
-	cells.write[p_column].buttons.write[p_idx].color = p_color;
+	cells.write[p_column].buttons.write[p_index].color = p_color;
 	_changed_notify(p_column);
 }
 
-void TreeItem::set_button_disabled(int p_column, int p_idx, bool p_disabled) {
+void TreeItem::set_button_disabled(int p_column, int p_index, bool p_disabled) {
 	ERR_FAIL_INDEX(p_column, cells.size());
-	ERR_FAIL_INDEX(p_idx, cells[p_column].buttons.size());
+	ERR_FAIL_INDEX(p_index, cells[p_column].buttons.size());
 
-	if (cells[p_column].buttons[p_idx].disabled == p_disabled) {
+	if (cells[p_column].buttons[p_index].disabled == p_disabled) {
 		return;
 	}
 
-	cells.write[p_column].buttons.write[p_idx].disabled = p_disabled;
+	cells.write[p_column].buttons.write[p_index].disabled = p_disabled;
 	cells.write[p_column].cached_minimum_size_dirty = true;
 
 	_changed_notify(p_column);
 }
 
-bool TreeItem::is_button_disabled(int p_column, int p_idx) const {
+bool TreeItem::is_button_disabled(int p_column, int p_index) const {
 	ERR_FAIL_INDEX_V(p_column, cells.size(), false);
-	ERR_FAIL_INDEX_V(p_idx, cells[p_column].buttons.size(), false);
+	ERR_FAIL_INDEX_V(p_index, cells[p_column].buttons.size(), false);
 
-	return cells[p_column].buttons[p_idx].disabled;
+	return cells[p_column].buttons[p_index].disabled;
 }
 
 void TreeItem::set_editable(int p_column, bool p_editable) {
@@ -1497,15 +1497,15 @@ void TreeItem::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("add_button", "column", "button", "id", "disabled", "tooltip_text"), &TreeItem::add_button, DEFVAL(-1), DEFVAL(false), DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("get_button_count", "column"), &TreeItem::get_button_count);
-	ClassDB::bind_method(D_METHOD("get_button_tooltip_text", "column", "button_idx"), &TreeItem::get_button_tooltip_text);
-	ClassDB::bind_method(D_METHOD("get_button_id", "column", "button_idx"), &TreeItem::get_button_id);
+	ClassDB::bind_method(D_METHOD("get_button_tooltip_text", "column", "button_index"), &TreeItem::get_button_tooltip_text);
+	ClassDB::bind_method(D_METHOD("get_button_id", "column", "button_index"), &TreeItem::get_button_id);
 	ClassDB::bind_method(D_METHOD("get_button_by_id", "column", "id"), &TreeItem::get_button_by_id);
-	ClassDB::bind_method(D_METHOD("get_button", "column", "button_idx"), &TreeItem::get_button);
-	ClassDB::bind_method(D_METHOD("set_button", "column", "button_idx", "button"), &TreeItem::set_button);
-	ClassDB::bind_method(D_METHOD("erase_button", "column", "button_idx"), &TreeItem::erase_button);
-	ClassDB::bind_method(D_METHOD("set_button_disabled", "column", "button_idx", "disabled"), &TreeItem::set_button_disabled);
-	ClassDB::bind_method(D_METHOD("set_button_color", "column", "button_idx", "color"), &TreeItem::set_button_color);
-	ClassDB::bind_method(D_METHOD("is_button_disabled", "column", "button_idx"), &TreeItem::is_button_disabled);
+	ClassDB::bind_method(D_METHOD("get_button", "column", "button_index"), &TreeItem::get_button);
+	ClassDB::bind_method(D_METHOD("set_button", "column", "button_index", "button"), &TreeItem::set_button);
+	ClassDB::bind_method(D_METHOD("erase_button", "column", "button_index"), &TreeItem::erase_button);
+	ClassDB::bind_method(D_METHOD("set_button_disabled", "column", "button_index", "disabled"), &TreeItem::set_button_disabled);
+	ClassDB::bind_method(D_METHOD("set_button_color", "column", "button_index", "color"), &TreeItem::set_button_color);
+	ClassDB::bind_method(D_METHOD("is_button_disabled", "column", "button_index"), &TreeItem::is_button_disabled);
 
 	ClassDB::bind_method(D_METHOD("set_tooltip_text", "column", "tooltip"), &TreeItem::set_tooltip_text);
 	ClassDB::bind_method(D_METHOD("get_tooltip_text", "column"), &TreeItem::get_tooltip_text);
@@ -1518,7 +1518,7 @@ void TreeItem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_disable_folding", "disable"), &TreeItem::set_disable_folding);
 	ClassDB::bind_method(D_METHOD("is_folding_disabled"), &TreeItem::is_folding_disabled);
 
-	ClassDB::bind_method(D_METHOD("create_child", "idx"), &TreeItem::create_child, DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("create_child", "index"), &TreeItem::create_child, DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("get_tree"), &TreeItem::get_tree);
 
 	ClassDB::bind_method(D_METHOD("get_next"), &TreeItem::get_next);
@@ -1529,7 +1529,7 @@ void TreeItem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_next_visible", "wrap"), &TreeItem::get_next_visible, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_prev_visible", "wrap"), &TreeItem::get_prev_visible, DEFVAL(false));
 
-	ClassDB::bind_method(D_METHOD("get_child", "idx"), &TreeItem::get_child);
+	ClassDB::bind_method(D_METHOD("get_child", "index"), &TreeItem::get_child);
 	ClassDB::bind_method(D_METHOD("get_child_count"), &TreeItem::get_child_count);
 	ClassDB::bind_method(D_METHOD("get_children"), &TreeItem::get_children);
 	ClassDB::bind_method(D_METHOD("get_index"), &TreeItem::get_index);
@@ -1775,10 +1775,10 @@ void Tree::draw_item_rect(TreeItem::Cell &p_cell, const Rect2i &p_rect, const Co
 
 	RID ci = get_canvas_item();
 
-	if (rtl) {
+	if (rtl && rect.size.width > 0) {
 		Point2 draw_pos = rect.position;
 		draw_pos.y += Math::floor((rect.size.y - p_cell.text_buf->get_size().y) / 2.0);
-		p_cell.text_buf->set_width(MAX(0, rect.size.width));
+		p_cell.text_buf->set_width(rect.size.width);
 		if (p_ol_size > 0 && p_ol_color.a > 0) {
 			p_cell.text_buf->draw_outline(ci, draw_pos, p_ol_size, p_ol_color);
 		}
@@ -1800,10 +1800,10 @@ void Tree::draw_item_rect(TreeItem::Cell &p_cell, const Rect2i &p_rect, const Co
 		rect.size.x -= bmsize.x + theme_cache.h_separation;
 	}
 
-	if (!rtl) {
+	if (!rtl && rect.size.width > 0) {
 		Point2 draw_pos = rect.position;
 		draw_pos.y += Math::floor((rect.size.y - p_cell.text_buf->get_size().y) / 2.0);
-		p_cell.text_buf->set_width(MAX(0, rect.size.width));
+		p_cell.text_buf->set_width(rect.size.width);
 		if (p_ol_size > 0 && p_ol_color.a > 0) {
 			p_cell.text_buf->draw_outline(ci, draw_pos, p_ol_size, p_ol_color);
 		}
@@ -2580,8 +2580,8 @@ void Tree::_range_click_timeout() {
 		mb.instantiate();
 
 		int x_limit = get_size().width - theme_cache.panel_style->get_minimum_size().width;
-		if (h_scroll->is_visible()) {
-			x_limit -= h_scroll->get_minimum_size().width;
+		if (v_scroll->is_visible()) {
+			x_limit -= v_scroll->get_minimum_size().width;
 		}
 
 		cache.rtl = is_layout_rtl();
@@ -3554,7 +3554,7 @@ void Tree::gui_input(const Ref<InputEvent> &p_event) {
 								icon_size_x = icon_region.size.width;
 							}
 						}
-						// Icon is treated as if it is outside of the rect so that double clicking on it will emit the item_double_clicked signal.
+						// Icon is treated as if it is outside of the rect so that double clicking on it will emit the item_icon_double_clicked signal.
 						if (rtl) {
 							mpos.x = get_size().width - (mpos.x + icon_size_x);
 						} else {
@@ -3562,10 +3562,10 @@ void Tree::gui_input(const Ref<InputEvent> &p_event) {
 						}
 						if (rect.has_point(mpos)) {
 							if (!edit_selected()) {
-								emit_signal(SNAME("item_double_clicked"));
+								emit_signal(SNAME("item_icon_double_clicked"));
 							}
 						} else {
-							emit_signal(SNAME("item_double_clicked"));
+							emit_signal(SNAME("item_icon_double_clicked"));
 						}
 					}
 					pressing_for_editor = false;
@@ -3640,8 +3640,8 @@ void Tree::gui_input(const Ref<InputEvent> &p_event) {
 				propagate_mouse_activated = false;
 
 				int x_limit = get_size().width - theme_cache.panel_style->get_minimum_size().width;
-				if (h_scroll->is_visible()) {
-					x_limit -= h_scroll->get_minimum_size().width;
+				if (v_scroll->is_visible()) {
+					x_limit -= v_scroll->get_minimum_size().width;
 				}
 
 				cache.rtl = is_layout_rtl();
@@ -3847,41 +3847,38 @@ Size2 Tree::get_internal_min_size() const {
 }
 
 void Tree::update_scrollbars() {
-	Size2 size = get_size();
-	int tbh;
-	if (show_column_titles) {
-		tbh = _get_title_button_height();
-	} else {
-		tbh = 0;
-	}
+	const Size2 size = get_size();
+	const Size2 hmin = h_scroll->get_combined_minimum_size();
+	const Size2 vmin = v_scroll->get_combined_minimum_size();
 
-	Size2 hmin = h_scroll->get_combined_minimum_size();
-	Size2 vmin = v_scroll->get_combined_minimum_size();
+	const Rect2 content_rect = Rect2(theme_cache.panel_style->get_offset(), size - theme_cache.panel_style->get_minimum_size());
+	v_scroll->set_begin(content_rect.get_position() + Vector2(content_rect.get_size().x - vmin.width, 0));
+	v_scroll->set_end(content_rect.get_end() - Vector2(0, hmin.height));
+	h_scroll->set_begin(content_rect.get_position() + Vector2(0, content_rect.get_size().y - hmin.height));
+	h_scroll->set_end(content_rect.get_end() - Vector2(vmin.width, 0));
 
-	v_scroll->set_begin(Point2(size.width - vmin.width, theme_cache.panel_style->get_margin(SIDE_TOP)));
-	v_scroll->set_end(Point2(size.width, size.height - theme_cache.panel_style->get_margin(SIDE_TOP) - theme_cache.panel_style->get_margin(SIDE_BOTTOM)));
+	const Size2 internal_min_size = get_internal_min_size();
+	const int title_button_height = _get_title_button_height();
 
-	h_scroll->set_begin(Point2(0, size.height - hmin.height));
-	h_scroll->set_end(Point2(size.width - vmin.width, size.height));
-
-	Size2 internal_min_size = get_internal_min_size();
-
-	bool display_vscroll = internal_min_size.height + theme_cache.panel_style->get_margin(SIDE_TOP) > size.height;
-	bool display_hscroll = internal_min_size.width + theme_cache.panel_style->get_margin(SIDE_LEFT) > size.width;
+	Size2 tree_content_size = content_rect.get_size() - Vector2(0, title_button_height);
+	bool display_vscroll = internal_min_size.height > tree_content_size.height;
+	bool display_hscroll = internal_min_size.width > tree_content_size.width;
 	for (int i = 0; i < 2; i++) {
 		// Check twice, as both values are dependent on each other.
 		if (display_hscroll) {
-			display_vscroll = internal_min_size.height + theme_cache.panel_style->get_margin(SIDE_TOP) + hmin.height > size.height;
+			tree_content_size.height = content_rect.get_size().height - title_button_height - hmin.height;
+			display_vscroll = internal_min_size.height > tree_content_size.height;
 		}
 		if (display_vscroll) {
-			display_hscroll = internal_min_size.width + theme_cache.panel_style->get_margin(SIDE_LEFT) + vmin.width > size.width;
+			tree_content_size.width = content_rect.get_size().width - vmin.width;
+			display_hscroll = internal_min_size.width > tree_content_size.width;
 		}
 	}
 
 	if (display_vscroll) {
 		v_scroll->show();
 		v_scroll->set_max(internal_min_size.height);
-		v_scroll->set_page(size.height - hmin.height - tbh);
+		v_scroll->set_page(tree_content_size.height);
 		theme_cache.offset.y = v_scroll->get_value();
 	} else {
 		v_scroll->hide();
@@ -3891,7 +3888,7 @@ void Tree::update_scrollbars() {
 	if (display_hscroll) {
 		h_scroll->show();
 		h_scroll->set_max(internal_min_size.width);
-		h_scroll->set_page(size.width - vmin.width);
+		h_scroll->set_page(tree_content_size.width);
 		theme_cache.offset.x = h_scroll->get_value();
 	} else {
 		h_scroll->hide();
@@ -4015,8 +4012,8 @@ void Tree::_notification(int p_what) {
 			Point2 draw_ofs;
 			draw_ofs += bg->get_offset();
 			Size2 draw_size = get_size() - bg->get_minimum_size();
-			if (h_scroll->is_visible()) {
-				draw_size.width -= h_scroll->get_minimum_size().width;
+			if (v_scroll->is_visible()) {
+				draw_size.width -= v_scroll->get_minimum_size().width;
 			}
 
 			bg->draw(ci, Rect2(Point2(), get_size()));
@@ -4111,14 +4108,14 @@ Size2 Tree::get_minimum_size() const {
 	}
 }
 
-TreeItem *Tree::create_item(TreeItem *p_parent, int p_idx) {
+TreeItem *Tree::create_item(TreeItem *p_parent, int p_index) {
 	ERR_FAIL_COND_V(blocked > 0, nullptr);
 
 	TreeItem *ti = nullptr;
 
 	if (p_parent) {
 		ERR_FAIL_COND_V_MSG(p_parent->tree != this, nullptr, "A different tree owns the given parent");
-		ti = p_parent->create_child(p_idx);
+		ti = p_parent->create_child(p_index);
 	} else {
 		if (!root) {
 			// No root exists, make the given item the new root.
@@ -4129,7 +4126,7 @@ TreeItem *Tree::create_item(TreeItem *p_parent, int p_idx) {
 			root = ti;
 		} else {
 			// Root exists, append or insert to root.
-			ti = create_item(root, p_idx);
+			ti = create_item(root, p_index);
 		}
 	}
 
@@ -4853,7 +4850,11 @@ void Tree::_do_incr_search(const String &p_add) {
 		return;
 	}
 
-	item->select(col);
+	if (select_mode == SELECT_MULTI) {
+		item->set_as_cursor(col);
+	} else {
+		item->select(col);
+	}
 	ensure_cursor_is_visible();
 }
 
@@ -5161,7 +5162,7 @@ bool Tree::get_allow_reselect() const {
 
 void Tree::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("clear"), &Tree::clear);
-	ClassDB::bind_method(D_METHOD("create_item", "parent", "idx"), &Tree::create_item, DEFVAL(Variant()), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("create_item", "parent", "index"), &Tree::create_item, DEFVAL(Variant()), DEFVAL(-1));
 
 	ClassDB::bind_method(D_METHOD("get_root"), &Tree::get_root);
 	ClassDB::bind_method(D_METHOD("set_column_custom_minimum_width", "column", "min_width"), &Tree::set_column_custom_minimum_width);
@@ -5183,6 +5184,7 @@ void Tree::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_pressed_button"), &Tree::get_pressed_button);
 	ClassDB::bind_method(D_METHOD("set_select_mode", "mode"), &Tree::set_select_mode);
 	ClassDB::bind_method(D_METHOD("get_select_mode"), &Tree::get_select_mode);
+	ClassDB::bind_method(D_METHOD("deselect_all"), &Tree::deselect_all);
 
 	ClassDB::bind_method(D_METHOD("set_columns", "amount"), &Tree::set_columns);
 	ClassDB::bind_method(D_METHOD("get_columns"), &Tree::get_columns);
@@ -5254,8 +5256,7 @@ void Tree::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("empty_clicked", PropertyInfo(Variant::VECTOR2, "position"), PropertyInfo(Variant::INT, "mouse_button_index")));
 	ADD_SIGNAL(MethodInfo("item_edited"));
 	ADD_SIGNAL(MethodInfo("custom_item_clicked", PropertyInfo(Variant::INT, "mouse_button_index")));
-	ADD_SIGNAL(MethodInfo("item_custom_button_pressed"));
-	ADD_SIGNAL(MethodInfo("item_double_clicked"));
+	ADD_SIGNAL(MethodInfo("item_icon_double_clicked"));
 	ADD_SIGNAL(MethodInfo("item_collapsed", PropertyInfo(Variant::OBJECT, "item", PROPERTY_HINT_RESOURCE_TYPE, "TreeItem")));
 	ADD_SIGNAL(MethodInfo("check_propagated_to_item", PropertyInfo(Variant::OBJECT, "item", PROPERTY_HINT_RESOURCE_TYPE, "TreeItem"), PropertyInfo(Variant::INT, "column")));
 	ADD_SIGNAL(MethodInfo("button_clicked", PropertyInfo(Variant::OBJECT, "item", PROPERTY_HINT_RESOURCE_TYPE, "TreeItem"), PropertyInfo(Variant::INT, "column"), PropertyInfo(Variant::INT, "id"), PropertyInfo(Variant::INT, "mouse_button_index")));
