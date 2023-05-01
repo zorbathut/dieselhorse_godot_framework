@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  mesh.h                                                               */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  mesh.h                                                                */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef MESH_H
 #define MESH_H
@@ -156,7 +156,7 @@ public:
 	virtual Array surface_get_arrays(int p_surface) const;
 	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const;
 	virtual Dictionary surface_get_lods(int p_surface) const;
-	virtual uint32_t surface_get_format(int p_idx) const;
+	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const;
 	virtual PrimitiveType surface_get_primitive_type(int p_idx) const;
 	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material);
 	virtual Ref<Material> surface_get_material(int p_idx) const;
@@ -220,6 +220,8 @@ public:
 	virtual int get_builtin_bind_pose_count() const;
 	virtual Transform3D get_builtin_bind_pose(int p_index) const;
 
+	virtual Ref<Resource> create_placeholder() const;
+
 	Mesh();
 };
 
@@ -269,9 +271,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	void add_surface_from_arrays(PrimitiveType p_primitive, const Array &p_arrays, const TypedArray<Array> &p_blend_shapes = TypedArray<Array>(), const Dictionary &p_lods = Dictionary(), uint32_t p_flags = 0);
+	void add_surface_from_arrays(PrimitiveType p_primitive, const Array &p_arrays, const TypedArray<Array> &p_blend_shapes = TypedArray<Array>(), const Dictionary &p_lods = Dictionary(), BitField<ArrayFormat> p_flags = 0);
 
-	void add_surface(uint32_t p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data = Vector<uint8_t>(), const Vector<AABB> &p_bone_aabbs = Vector<AABB>(), const Vector<RS::SurfaceData::LOD> &p_lods = Vector<RS::SurfaceData::LOD>());
+	void add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data = Vector<uint8_t>(), const Vector<AABB> &p_bone_aabbs = Vector<AABB>(), const Vector<RS::SurfaceData::LOD> &p_lods = Vector<RS::SurfaceData::LOD>());
 
 	Array surface_get_arrays(int p_surface) const override;
 	TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override;
@@ -298,7 +300,7 @@ public:
 
 	int surface_get_array_len(int p_idx) const override;
 	int surface_get_array_index_len(int p_idx) const override;
-	uint32_t surface_get_format(int p_idx) const override;
+	BitField<ArrayFormat> surface_get_format(int p_idx) const override;
 	PrimitiveType surface_get_primitive_type(int p_idx) const override;
 
 	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material) override;
@@ -330,7 +332,7 @@ public:
 };
 
 VARIANT_ENUM_CAST(Mesh::ArrayType);
-VARIANT_ENUM_CAST(Mesh::ArrayFormat);
+VARIANT_BITFIELD_CAST(Mesh::ArrayFormat);
 VARIANT_ENUM_CAST(Mesh::ArrayCustomFormat);
 VARIANT_ENUM_CAST(Mesh::PrimitiveType);
 VARIANT_ENUM_CAST(Mesh::BlendShapeMode);
@@ -351,7 +353,7 @@ public:
 	virtual Array surface_get_arrays(int p_surface) const override { return Array(); }
 	virtual TypedArray<Array> surface_get_blend_shape_arrays(int p_surface) const override { return TypedArray<Array>(); }
 	virtual Dictionary surface_get_lods(int p_surface) const override { return Dictionary(); }
-	virtual uint32_t surface_get_format(int p_idx) const override { return 0; }
+	virtual BitField<ArrayFormat> surface_get_format(int p_idx) const override { return 0; }
 	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override { return PRIMITIVE_TRIANGLES; }
 	virtual void surface_set_material(int p_idx, const Ref<Material> &p_material) override {}
 	virtual Ref<Material> surface_get_material(int p_idx) const override { return Ref<Material>(); }

@@ -1,38 +1,39 @@
-/*************************************************************************/
-/*  shader_language.cpp                                                  */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  shader_language.cpp                                                   */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "shader_language.h"
 
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/local_vector.h"
+#include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering_server.h"
 #include "shader_types.h"
 
@@ -90,8 +91,9 @@ const char *ShaderLanguage::token_names[TK_MAX] = {
 	"IDENTIFIER",
 	"TRUE",
 	"FALSE",
-	"REAL_CONSTANT",
+	"FLOAT_CONSTANT",
 	"INT_CONSTANT",
+	"UINT_CONSTANT",
 	"TYPE_VOID",
 	"TYPE_BOOL",
 	"TYPE_BVEC2",
@@ -126,6 +128,7 @@ const char *ShaderLanguage::token_names[TK_MAX] = {
 	"INTERPOLATION_FLAT",
 	"INTERPOLATION_SMOOTH",
 	"CONST",
+	"STRUCT",
 	"PRECISION_LOW",
 	"PRECISION_MID",
 	"PRECISION_HIGH",
@@ -169,6 +172,7 @@ const char *ShaderLanguage::token_names[TK_MAX] = {
 	"CF_DO",
 	"CF_SWITCH",
 	"CF_CASE",
+	"CF_DEFAULT",
 	"CF_BREAK",
 	"CF_CONTINUE",
 	"CF_RETURN",
@@ -185,19 +189,26 @@ const char *ShaderLanguage::token_names[TK_MAX] = {
 	"SEMICOLON",
 	"PERIOD",
 	"UNIFORM",
+	"UNIFORM_GROUP",
 	"INSTANCE",
 	"GLOBAL",
 	"VARYING",
-	"IN",
-	"OUT",
-	"INOUT",
+	"ARG_IN",
+	"ARG_OUT",
+	"ARG_INOUT",
 	"RENDER_MODE",
-	"SOURCE_COLOR",
 	"HINT_DEFAULT_WHITE_TEXTURE",
 	"HINT_DEFAULT_BLACK_TEXTURE",
 	"HINT_DEFAULT_TRANSPARENT_TEXTURE",
 	"HINT_NORMAL_TEXTURE",
+	"HINT_ROUGHNESS_NORMAL_TEXTURE",
+	"HINT_ROUGHNESS_R",
+	"HINT_ROUGHNESS_G",
+	"HINT_ROUGHNESS_B",
+	"HINT_ROUGHNESS_A",
+	"HINT_ROUGHNESS_GRAY",
 	"HINT_ANISOTROPY_TEXTURE",
+	"HINT_SOURCE_COLOR",
 	"HINT_RANGE",
 	"HINT_INSTANCE_INDEX",
 	"HINT_SCREEN_TEXTURE",
@@ -612,7 +623,7 @@ ShaderLanguage::Token ShaderLanguage::_get_token() {
 					char_idx += 2;
 
 					include_positions.resize(include_positions.size() - 1); // Pop back.
-					tk_line = include_positions[include_positions.size() - 1].line; // Restore line.
+					tk_line = include_positions[include_positions.size() - 1].line - 1; // Restore line.
 
 				} else {
 					return _make_token(TK_ERROR, "Invalid include enter/exit hint token (@@> and @@<)");
@@ -1215,7 +1226,7 @@ void ShaderLanguage::clear() {
 	char_idx = 0;
 	error_set = false;
 	error_str = "";
-	last_const = false;
+	is_const_decl = false;
 	while (nodes) {
 		Node *n = nodes;
 		nodes = nodes->next;
@@ -2827,6 +2838,20 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 	{ "dFdx", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 	{ "dFdx", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 
+	// dFdxCoarse
+
+	{ "dFdxCoarse", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxCoarse", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxCoarse", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxCoarse", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+
+	// dFdxFine
+
+	{ "dFdxFine", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxFine", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxFine", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdxFine", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+
 	// dFdy
 
 	{ "dFdy", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
@@ -2834,12 +2859,40 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 	{ "dFdy", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 	{ "dFdy", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 
+	// dFdyCoarse
+
+	{ "dFdyCoarse", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyCoarse", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyCoarse", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyCoarse", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+
+	// dFdyFine
+
+	{ "dFdyFine", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyFine", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyFine", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "dFdyFine", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+
 	// fwidth
 
 	{ "fwidth", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 	{ "fwidth", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 	{ "fwidth", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
 	{ "fwidth", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, false },
+
+	// fwidthCoarse
+
+	{ "fwidthCoarse", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthCoarse", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthCoarse", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthCoarse", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+
+	// fwidthFine
+
+	{ "fwidthFine", TYPE_FLOAT, { TYPE_FLOAT, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthFine", TYPE_VEC2, { TYPE_VEC2, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthFine", TYPE_VEC3, { TYPE_VEC3, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
+	{ "fwidthFine", TYPE_VEC4, { TYPE_VEC4, TYPE_VOID }, { "p" }, TAG_GLOBAL, true },
 
 	// Sub-functions.
 	// array
@@ -2849,10 +2902,10 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 	// Modern functions.
 	// fma
 
-	{ "fma", TYPE_FLOAT, { TYPE_FLOAT, TYPE_FLOAT, TYPE_FLOAT, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, false },
-	{ "fma", TYPE_VEC2, { TYPE_VEC2, TYPE_VEC2, TYPE_VEC2, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, false },
-	{ "fma", TYPE_VEC3, { TYPE_VEC3, TYPE_VEC3, TYPE_VEC3, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, false },
-	{ "fma", TYPE_VEC4, { TYPE_VEC4, TYPE_VEC4, TYPE_VEC4, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, false },
+	{ "fma", TYPE_FLOAT, { TYPE_FLOAT, TYPE_FLOAT, TYPE_FLOAT, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, true },
+	{ "fma", TYPE_VEC2, { TYPE_VEC2, TYPE_VEC2, TYPE_VEC2, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, true },
+	{ "fma", TYPE_VEC3, { TYPE_VEC3, TYPE_VEC3, TYPE_VEC3, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, true },
+	{ "fma", TYPE_VEC4, { TYPE_VEC4, TYPE_VEC4, TYPE_VEC4, TYPE_VOID }, { "a", "b", "c" }, TAG_GLOBAL, true },
 
 	// Packing/Unpacking functions.
 
@@ -3003,7 +3056,7 @@ const ShaderLanguage::BuiltinFuncConstArgs ShaderLanguage::builtin_func_const_ar
 
 bool ShaderLanguage::is_const_suffix_lut_initialized = false;
 
-bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionInfo &p_function_info, OperatorNode *p_func, DataType *r_ret_type, StringName *r_ret_type_str) {
+bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionInfo &p_function_info, OperatorNode *p_func, DataType *r_ret_type, StringName *r_ret_type_str, bool *r_is_custom_function) {
 	ERR_FAIL_COND_V(p_func->op != OP_CALL && p_func->op != OP_CONSTRUCT, false);
 
 	Vector<DataType> args;
@@ -3427,6 +3480,9 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 				}
 			}
 
+			if (r_is_custom_function) {
+				*r_is_custom_function = true;
+			}
 			return true;
 		}
 	}
@@ -3507,6 +3563,14 @@ bool ShaderLanguage::_parse_function_arguments(BlockNode *p_block, const Functio
 
 		if (!arg) {
 			return false;
+		}
+
+		if (is_const_decl && arg->type == Node::TYPE_VARIABLE) {
+			const VariableNode *var = static_cast<const VariableNode *>(arg);
+			if (!var->is_const) {
+				_set_error(RTR("Expected constant expression."));
+				return false;
+			}
 		}
 
 		p_func->arguments.push_back(arg);
@@ -4478,14 +4542,14 @@ bool ShaderLanguage::_check_node_constness(const Node *p_node) const {
 		case Node::TYPE_CONSTANT:
 			break;
 		case Node::TYPE_VARIABLE: {
-			const VariableNode *varn = static_cast<const VariableNode *>(p_node);
-			if (!varn->is_const) {
+			const VariableNode *var_node = static_cast<const VariableNode *>(p_node);
+			if (!var_node->is_const) {
 				return false;
 			}
 		} break;
 		case Node::TYPE_ARRAY: {
-			const ArrayNode *arrn = static_cast<const ArrayNode *>(p_node);
-			if (!arrn->is_const) {
+			const ArrayNode *arr_node = static_cast<const ArrayNode *>(p_node);
+			if (!arr_node->is_const) {
 				return false;
 			}
 		} break;
@@ -5132,6 +5196,12 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 					expr = func;
 
 				} else { //a function call
+					if (p_block == nullptr) { // Non-constructor function call in global space is forbidden.
+						if (is_const_decl) {
+							_set_error(RTR("Expected constant expression."));
+						}
+						return nullptr;
+					}
 
 					const StringName &name = identifier;
 
@@ -5185,7 +5255,8 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 						return nullptr;
 					}
 
-					if (!_validate_function_call(p_block, p_function_info, func, &func->return_cache, &func->struct_name)) {
+					bool is_custom_func = false;
+					if (!_validate_function_call(p_block, p_function_info, func, &func->return_cache, &func->struct_name, &is_custom_func)) {
 						_set_error(vformat(RTR("No matching function found for: '%s'."), String(funcname->name)));
 						return nullptr;
 					}
@@ -5325,6 +5396,16 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 											//being sampler, this either comes from a uniform
 											ShaderNode::Uniform *u = &shader->uniforms[varname];
 											ERR_CONTINUE(u->type != call_function->arguments[i].type); //this should have been validated previously
+
+											if (RendererCompositor::get_singleton()->is_xr_enabled() && is_custom_func) {
+												ShaderNode::Uniform::Hint hint = u->hint;
+
+												if (hint == ShaderNode::Uniform::HINT_DEPTH_TEXTURE || hint == ShaderNode::Uniform::HINT_SCREEN_TEXTURE || hint == ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE) {
+													_set_error(vformat(RTR("Unable to pass a multiview texture sampler as a parameter to custom function. Consider to sample it in the main function and then pass the vector result to it."), get_uniform_hint_name(hint)));
+													return nullptr;
+												}
+											}
+
 											//propagate
 											if (!_propagate_function_call_sampler_uniform_settings(name, i, u->filter, u->repeat)) {
 												return nullptr;
@@ -5399,7 +5480,17 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 					}
 				} else {
 					if (!_find_identifier(p_block, false, p_function_info, identifier, &data_type, &ident_type, &is_const, &array_size, &struct_name)) {
+						if (identifier == "SCREEN_TEXTURE" || identifier == "DEPTH_TEXTURE" || identifier == "NORMAL_ROUGHNESS_TEXTURE") {
+							String name = String(identifier);
+							String name_lower = name.to_lower();
+							_set_error(vformat(RTR("%s has been removed in favor of using hint_%s with a uniform.\nTo continue with minimal code changes add 'uniform sampler2D %s : hint_%s, filter_linear_mipmap;' near the top of your shader."), name, name_lower, name, name_lower));
+							return nullptr;
+						}
 						_set_error(vformat(RTR("Unknown identifier in expression: '%s'."), String(identifier)));
+						return nullptr;
+					}
+					if (is_const_decl && !is_const) {
+						_set_error(RTR("Expected constant expression."));
 						return nullptr;
 					}
 					if (ident_type == IDENTIFIER_VARYING) {
@@ -6477,7 +6568,7 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 				OperatorNode *op = alloc_node<OperatorNode>();
 				op->op = expression[i].op;
 				if ((op->op == OP_INCREMENT || op->op == OP_DECREMENT) && !_validate_assign(expression[i + 1].node, p_function_info)) {
-					_set_error(RTR("Can't use increment/decrement operator in a constant expression."));
+					_set_error(RTR("Invalid use of increment/decrement operator in a constant expression."));
 					return nullptr;
 				}
 				op->arguments.push_back(expression[i + 1].node);
@@ -6919,6 +7010,7 @@ Error ShaderLanguage::_parse_block(BlockNode *p_block, const FunctionInfo &p_fun
 					}
 				}
 #endif // DEBUG_ENABLED
+				is_const_decl = is_const;
 
 				BlockNode::Variable var;
 				var.type = type;
@@ -7175,6 +7267,7 @@ Error ShaderLanguage::_parse_block(BlockNode *p_block, const FunctionInfo &p_fun
 
 				vdnode->declarations.push_back(decl);
 				p_block->variables[name] = var;
+				is_const_decl = false;
 
 				if (!fixed_array_size) {
 					array_size = 0;
@@ -8227,6 +8320,10 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 						_set_error(vformat(RTR("Uniform instances are not yet implemented for '%s' shaders."), shader_type_identifier));
 						return ERR_PARSE_ERROR;
 					}
+					if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+						_set_error(RTR("Uniform instances are not supported in gl_compatibility shaders."));
+						return ERR_PARSE_ERROR;
+					}
 					if (uniform_scope == ShaderNode::Uniform::SCOPE_LOCAL) {
 						tk = _get_token();
 						if (tk.type != TK_UNIFORM) {
@@ -8339,7 +8436,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 						_set_error(vformat(RTR("The '%s' data type is not supported for uniforms."), "struct"));
 						return ERR_PARSE_ERROR;
 					} else {
-						_set_error(vformat(RTR("The '%s' data type not allowed here."), "struct"));
+						_set_error(vformat(RTR("The '%s' data type is not allowed here."), "struct"));
 						return ERR_PARSE_ERROR;
 					}
 				}
@@ -8691,14 +8788,29 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 								case TK_HINT_SCREEN_TEXTURE: {
 									new_hint = ShaderNode::Uniform::HINT_SCREEN_TEXTURE;
 									--texture_uniforms;
+									--texture_binding;
 								} break;
 								case TK_HINT_NORMAL_ROUGHNESS_TEXTURE: {
 									new_hint = ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE;
 									--texture_uniforms;
+									--texture_binding;
+									if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+										_set_error(RTR("'hint_normal_roughness_texture' is not supported in gl_compatibility shaders."));
+										return ERR_PARSE_ERROR;
+									}
+									if (String(shader_type_identifier) != "spatial") {
+										_set_error(vformat(RTR("'hint_normal_roughness_texture' is not supported in '%s' shaders."), shader_type_identifier));
+										return ERR_PARSE_ERROR;
+									}
 								} break;
 								case TK_HINT_DEPTH_TEXTURE: {
 									new_hint = ShaderNode::Uniform::HINT_DEPTH_TEXTURE;
 									--texture_uniforms;
+									--texture_binding;
+									if (String(shader_type_identifier) != "spatial") {
+										_set_error(vformat(RTR("'hint_depth_texture' is not supported in '%s' shaders."), shader_type_identifier));
+										return ERR_PARSE_ERROR;
+									}
 								} break;
 								case TK_FILTER_NEAREST: {
 									new_filter = FILTER_NEAREST;
@@ -9032,6 +9144,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 						constant.precision = precision;
 						constant.initializer = nullptr;
 						constant.array_size = array_size;
+						is_const_decl = true;
 
 						if (tk.type == TK_BRACKET_OPEN) {
 							Error error = _parse_array_size(nullptr, constants, false, nullptr, &constant.array_size, &unknown_size);
@@ -9291,6 +9404,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 							unknown_size = false;
 
 						} else if (tk.type == TK_SEMICOLON) {
+							is_const_decl = false;
 							break;
 						} else {
 							_set_expected_error(",", ";");

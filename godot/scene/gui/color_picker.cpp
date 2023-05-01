@@ -1,45 +1,42 @@
-/*************************************************************************/
-/*  color_picker.cpp                                                     */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  color_picker.cpp                                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "color_picker.h"
 
 #include "core/input/input.h"
+#include "core/io/image.h"
 #include "core/math/color.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "scene/gui/color_mode.h"
-
-#ifdef TOOLS_ENABLED
-#include "editor/editor_settings.h"
-#endif
-
+#include "servers/display_server.h"
 #include "thirdparty/misc/ok_color.h"
 #include "thirdparty/misc/ok_color_shader.h"
 
@@ -50,31 +47,6 @@ void ColorPicker::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			_update_color();
-#ifdef TOOLS_ENABLED
-			if (Engine::get_singleton()->is_editor_hint()) {
-				if (preset_cache.is_empty()) {
-					PackedColorArray saved_presets = EditorSettings::get_singleton()->get_project_metadata("color_picker", "presets", PackedColorArray());
-					for (int i = 0; i < saved_presets.size(); i++) {
-						preset_cache.push_back(saved_presets[i]);
-					}
-				}
-
-				for (int i = 0; i < preset_cache.size(); i++) {
-					presets.push_back(preset_cache[i]);
-				}
-
-				if (recent_preset_cache.is_empty()) {
-					PackedColorArray saved_recent_presets = EditorSettings::get_singleton()->get_project_metadata("color_picker", "recent_presets", PackedColorArray());
-					for (int i = 0; i < saved_recent_presets.size(); i++) {
-						recent_preset_cache.push_back(saved_recent_presets[i]);
-					}
-				}
-
-				for (int i = 0; i < recent_preset_cache.size(); i++) {
-					recent_presets.push_back(recent_preset_cache[i]);
-				}
-			}
-#endif
 			[[fallthrough]];
 		}
 		case NOTIFICATION_THEME_CHANGED: {
@@ -120,8 +92,8 @@ void ColorPicker::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_WM_CLOSE_REQUEST: {
-			if (screen != nullptr && screen->is_visible()) {
-				screen->hide();
+			if (picker_window != nullptr && picker_window->is_visible()) {
+				picker_window->hide();
 			}
 		} break;
 	}
@@ -404,6 +376,40 @@ void ColorPicker::create_slider(GridContainer *gc, int idx) {
 	}
 }
 
+#ifdef TOOLS_ENABLED
+void ColorPicker::set_editor_settings(Object *p_editor_settings) {
+	if (editor_settings) {
+		return;
+	}
+	editor_settings = p_editor_settings;
+
+	if (preset_cache.is_empty()) {
+		PackedColorArray saved_presets = editor_settings->call(SNAME("get_project_metadata"), "color_picker", "presets", PackedColorArray());
+		for (int i = 0; i < saved_presets.size(); i++) {
+			preset_cache.push_back(saved_presets[i]);
+		}
+	}
+
+	for (int i = 0; i < preset_cache.size(); i++) {
+		presets.push_back(preset_cache[i]);
+	}
+
+	if (recent_preset_cache.is_empty()) {
+		PackedColorArray saved_recent_presets = editor_settings->call(SNAME("get_project_metadata"), "color_picker", "recent_presets", PackedColorArray());
+		for (int i = 0; i < saved_recent_presets.size(); i++) {
+			recent_preset_cache.push_back(saved_recent_presets[i]);
+		}
+	}
+
+	for (int i = 0; i < recent_preset_cache.size(); i++) {
+		recent_presets.push_back(recent_preset_cache[i]);
+	}
+
+	_update_presets();
+	_update_recent_presets();
+}
+#endif
+
 HSlider *ColorPicker::get_slider(int p_idx) {
 	if (p_idx < SLIDER_COUNT) {
 		return sliders[p_idx];
@@ -471,7 +477,7 @@ ColorPicker::PickerShapeType ColorPicker::_get_actual_shape() const {
 
 void ColorPicker::_reset_theme() {
 	Ref<StyleBoxFlat> style_box_flat(memnew(StyleBoxFlat));
-	style_box_flat->set_default_margin(SIDE_TOP, 16 * get_theme_default_base_scale());
+	style_box_flat->set_content_margin(SIDE_TOP, 16 * get_theme_default_base_scale());
 	style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 	for (int i = 0; i < SLIDER_COUNT; i++) {
 		sliders[i]->add_theme_icon_override("grabber", get_theme_icon(SNAME("bar_arrow"), SNAME("ColorPicker")));
@@ -553,7 +559,7 @@ void ColorPicker::_update_presets() {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (editor_settings) {
 		// Only load preset buttons when the only child is the add-preset button.
 		if (preset_container->get_child_count() == 1) {
 			for (int i = 0; i < preset_cache.size(); i++) {
@@ -567,7 +573,7 @@ void ColorPicker::_update_presets() {
 
 void ColorPicker::_update_recent_presets() {
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (editor_settings) {
 		int recent_preset_count = recent_preset_hbc->get_child_count();
 		for (int i = 0; i < recent_preset_count; i++) {
 			memdelete(recent_preset_hbc->get_child(0));
@@ -642,7 +648,7 @@ inline int ColorPicker::_get_preset_size() {
 void ColorPicker::_add_preset_button(int p_size, const Color &p_color) {
 	ColorPresetButton *btn_preset_new = memnew(ColorPresetButton(p_color, p_size));
 	btn_preset_new->set_tooltip_text(vformat(RTR("Color: #%s\nLMB: Apply color\nRMB: Remove preset"), p_color.to_html(p_color.a < 1)));
-	btn_preset_new->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_GCDU(btn_preset_new, ColorPicker);
 	btn_preset_new->set_button_group(preset_group);
 	preset_container->add_child(btn_preset_new);
 	btn_preset_new->set_pressed(true);
@@ -743,9 +749,9 @@ void ColorPicker::add_preset(const Color &p_color) {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (editor_settings) {
 		PackedColorArray arr_to_save = get_presets();
-		EditorSettings::get_singleton()->set_project_metadata("color_picker", "presets", arr_to_save);
+		editor_settings->call(SNAME("set_project_metadata"), "color_picker", "presets", arr_to_save);
 	}
 #endif
 }
@@ -764,9 +770,9 @@ void ColorPicker::add_recent_preset(const Color &p_color) {
 	_select_from_preset_container(p_color);
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
+	if (editor_settings) {
 		PackedColorArray arr_to_save = get_recent_presets();
-		EditorSettings::get_singleton()->set_project_metadata("color_picker", "recent_presets", arr_to_save);
+		editor_settings->call(SNAME("set_project_metadata"), "color_picker", "recent_presets", arr_to_save);
 	}
 #endif
 }
@@ -787,9 +793,9 @@ void ColorPicker::erase_preset(const Color &p_color) {
 		}
 
 #ifdef TOOLS_ENABLED
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (editor_settings) {
 			PackedColorArray arr_to_save = get_presets();
-			EditorSettings::get_singleton()->set_project_metadata("color_picker", "presets", arr_to_save);
+			editor_settings->call(SNAME("set_project_metadata"), "color_picker", "presets", arr_to_save);
 		}
 #endif
 	}
@@ -811,9 +817,9 @@ void ColorPicker::erase_recent_preset(const Color &p_color) {
 		}
 
 #ifdef TOOLS_ENABLED
-		if (Engine::get_singleton()->is_editor_hint()) {
+		if (editor_settings) {
 			PackedColorArray arr_to_save = get_recent_presets();
-			EditorSettings::get_singleton()->set_project_metadata("color_picker", "recent_presets", arr_to_save);
+			editor_settings->call(SNAME("set_project_metadata"), "color_picker", "recent_presets", arr_to_save);
 		}
 #endif
 	}
@@ -890,7 +896,7 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders) {
 		alpha_slider->add_theme_style_override("slider", style_box_empty);
 	} else {
 		Ref<StyleBoxFlat> style_box_flat(memnew(StyleBoxFlat));
-		style_box_flat->set_default_margin(SIDE_TOP, 16 * get_theme_default_base_scale());
+		style_box_flat->set_content_margin(SIDE_TOP, 16 * get_theme_default_base_scale());
 		style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 
 		if (!slider_theme_modified) {
@@ -1193,11 +1199,11 @@ void ColorPicker::_uv_input(const Ref<InputEvent> &p_event, Control *c) {
 				}
 
 				if (!spinning) {
-					real_t x = CLAMP(bev->get_position().x, corner_x, c->get_size().x - corner_x);
-					real_t y = CLAMP(bev->get_position().y, corner_x, c->get_size().y - corner_y);
+					real_t x = CLAMP(bev->get_position().x - corner_x, 0, real_size.x);
+					real_t y = CLAMP(bev->get_position().y - corner_y, 0, real_size.y);
 
-					s = (x - c->get_position().x - corner_x) / real_size.x;
-					v = 1.0 - (y - c->get_position().y - corner_y) / real_size.y;
+					s = x / real_size.x;
+					v = 1.0 - y / real_size.y;
 				}
 			}
 
@@ -1246,11 +1252,11 @@ void ColorPicker::_uv_input(const Ref<InputEvent> &p_event, Control *c) {
 				real_t corner_y = (c == wheel_uv) ? center.y - Math_SQRT12 * c->get_size().height * 0.42 : 0;
 				Size2 real_size(c->get_size().x - corner_x * 2, c->get_size().y - corner_y * 2);
 
-				real_t x = CLAMP(mev->get_position().x, corner_x, c->get_size().x - corner_x);
-				real_t y = CLAMP(mev->get_position().y, corner_x, c->get_size().y - corner_y);
+				real_t x = CLAMP(mev->get_position().x - corner_x, 0, real_size.x);
+				real_t y = CLAMP(mev->get_position().y - corner_y, 0, real_size.y);
 
-				s = (x - corner_x) / real_size.x;
-				v = 1.0 - (y - corner_y) / real_size.y;
+				s = x / real_size.x;
+				v = 1.0 - y / real_size.y;
 			}
 		}
 
@@ -1368,30 +1374,26 @@ void ColorPicker::_recent_preset_pressed(const bool p_pressed, ColorPresetButton
 	emit_signal(SNAME("color_changed"), p_preset->get_preset_color());
 }
 
-void ColorPicker::_screen_input(const Ref<InputEvent> &p_event) {
+void ColorPicker::_picker_texture_input(const Ref<InputEvent> &p_event) {
 	if (!is_inside_tree()) {
 		return;
 	}
 
 	Ref<InputEventMouseButton> bev = p_event;
 	if (bev.is_valid() && bev->get_button_index() == MouseButton::LEFT && !bev->is_pressed()) {
+		set_pick_color(picker_color);
 		emit_signal(SNAME("color_changed"), color);
-		screen->hide();
+		picker_window->hide();
 	}
 
 	Ref<InputEventMouseMotion> mev = p_event;
 	if (mev.is_valid()) {
-		Viewport *r = get_tree()->get_root();
-		if (!r->get_visible_rect().has_point(mev->get_global_position())) {
-			return;
-		}
-
-		Ref<Image> img = r->get_texture()->get_image();
+		Ref<Image> img = picker_texture_rect->get_texture()->get_image();
 		if (img.is_valid() && !img->is_empty()) {
-			Vector2 ofs = mev->get_global_position();
-			Color c = img->get_pixel(ofs.x, ofs.y);
-
-			set_pick_color(c);
+			Vector2 ofs = mev->get_position();
+			picker_color = img->get_pixel(ofs.x, ofs.y);
+			picker_preview_style_box->set_bg_color(picker_color);
+			picker_preview_label->set_self_modulate(picker_color.get_luminance() < 0.5 ? Color(1.0f, 1.0f, 1.0f) : Color(0.0f, 0.0f, 0.0f));
 		}
 	}
 }
@@ -1405,27 +1407,79 @@ void ColorPicker::_add_preset_pressed() {
 	emit_signal(SNAME("preset_added"), color);
 }
 
-void ColorPicker::_screen_pick_pressed() {
+void ColorPicker::_pick_button_pressed() {
 	if (!is_inside_tree()) {
 		return;
 	}
 
-	Viewport *r = get_tree()->get_root();
-	if (!screen) {
-		screen = memnew(Control);
-		r->add_child(screen);
-		screen->set_as_top_level(true);
-		screen->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-		screen->set_default_cursor_shape(CURSOR_POINTING_HAND);
-		screen->connect("gui_input", callable_mp(this, &ColorPicker::_screen_input));
-		// It immediately toggles off in the first press otherwise.
-		screen->call_deferred(SNAME("connect"), "hidden", Callable(btn_pick, "set_pressed").bind(false));
-	} else {
-		screen->show();
+	if (!picker_window) {
+		picker_window = memnew(Popup);
+		picker_window->hide();
+		picker_window->set_transient(true);
+		add_child(picker_window);
+
+		picker_texture_rect = memnew(TextureRect);
+		picker_texture_rect->set_anchors_preset(Control::PRESET_FULL_RECT);
+		picker_window->add_child(picker_texture_rect);
+		picker_texture_rect->set_default_cursor_shape(CURSOR_POINTING_HAND);
+		picker_texture_rect->connect(SNAME("gui_input"), callable_mp(this, &ColorPicker::_picker_texture_input));
+
+		picker_preview = memnew(Panel);
+		picker_preview->set_anchors_preset(Control::PRESET_CENTER_TOP);
+		picker_preview->set_mouse_filter(MOUSE_FILTER_IGNORE);
+		picker_window->add_child(picker_preview);
+
+		picker_preview_label = memnew(Label);
+		picker_preview->set_anchors_preset(Control::PRESET_CENTER_TOP);
+		picker_preview_label->set_text("Color Picking active");
+		picker_preview->add_child(picker_preview_label);
+
+		picker_preview_style_box = (Ref<StyleBoxFlat>)memnew(StyleBoxFlat);
+		picker_preview_style_box->set_bg_color(Color(1.0, 1.0, 1.0));
+		picker_preview->add_theme_style_override("panel", picker_preview_style_box);
 	}
-	screen->move_to_front();
-	// TODO: show modal no longer works, needs to be converted to a popup.
-	//screen->show_modal();
+
+	Rect2i screen_rect;
+	if (picker_window->is_embedded()) {
+		screen_rect = picker_window->get_embedder()->get_visible_rect();
+		picker_window->set_position(Point2i());
+		picker_texture_rect->set_texture(ImageTexture::create_from_image(picker_window->get_embedder()->get_texture()->get_image()));
+	} else {
+		screen_rect = picker_window->get_parent_rect();
+		picker_window->set_position(screen_rect.position);
+
+		Ref<Image> target_image = Image::create_empty(screen_rect.size.x, screen_rect.size.y, false, Image::FORMAT_RGB8);
+		DisplayServer *ds = DisplayServer::get_singleton();
+
+		// Add the Texture of each Window to the Image.
+		Vector<DisplayServer::WindowID> wl = ds->get_window_list();
+		// FIXME: sort windows by visibility.
+		for (int index = 0; index < wl.size(); index++) {
+			DisplayServer::WindowID wid = wl[index];
+			if (wid == DisplayServer::INVALID_WINDOW_ID) {
+				continue;
+			}
+
+			ObjectID woid = DisplayServer::get_singleton()->window_get_attached_instance_id(wid);
+			if (woid == ObjectID()) {
+				continue;
+			}
+
+			Window *w = Object::cast_to<Window>(ObjectDB::get_instance(woid));
+			Ref<Image> img = w->get_texture()->get_image();
+			if (!img.is_valid() || img->is_empty()) {
+				continue;
+			}
+			img->convert(Image::FORMAT_RGB8);
+			target_image->blit_rect(img, Rect2i(Point2i(0, 0), img->get_size()), w->get_position());
+		}
+
+		picker_texture_rect->set_texture(ImageTexture::create_from_image(target_image));
+	}
+
+	picker_window->set_size(screen_rect.size);
+	picker_preview->set_size(screen_rect.size / 10.0); // 10% of size in each axis.
+	picker_window->popup();
 }
 
 void ColorPicker::_html_focus_exit() {
@@ -1544,10 +1598,6 @@ void ColorPicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_picker_shape", "shape"), &ColorPicker::set_picker_shape);
 	ClassDB::bind_method(D_METHOD("get_picker_shape"), &ColorPicker::get_picker_shape);
 
-	ClassDB::bind_method(D_METHOD("_get_drag_data_fw"), &ColorPicker::_get_drag_data_fw);
-	ClassDB::bind_method(D_METHOD("_can_drop_data_fw"), &ColorPicker::_can_drop_data_fw);
-	ClassDB::bind_method(D_METHOD("_drop_data_fw"), &ColorPicker::_drop_data_fw);
-
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_pick_color", "get_pick_color");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "edit_alpha"), "set_edit_alpha", "is_editing_alpha");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "color_mode", PROPERTY_HINT_ENUM, "RGB,HSV,RAW,OKHSL"), "set_color_mode", "get_color_mode");
@@ -1595,9 +1645,8 @@ ColorPicker::ColorPicker() {
 
 	btn_pick = memnew(Button);
 	sample_hbc->add_child(btn_pick);
-	btn_pick->set_toggle_mode(true);
-	btn_pick->set_tooltip_text(RTR("Pick a color from the editor window."));
-	btn_pick->connect("pressed", callable_mp(this, &ColorPicker::_screen_pick_pressed));
+	btn_pick->set_tooltip_text(RTR("Pick a color from the application window."));
+	btn_pick->connect(SNAME("pressed"), callable_mp(this, &ColorPicker::_pick_button_pressed));
 
 	sample = memnew(TextureRect);
 	sample_hbc->add_child(sample);

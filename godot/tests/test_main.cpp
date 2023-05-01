@@ -1,37 +1,38 @@
-/*************************************************************************/
-/*  test_main.cpp                                                        */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  test_main.cpp                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "test_main.h"
 
 #include "tests/core/config/test_project_settings.h"
 #include "tests/core/input/test_input_event_key.h"
+#include "tests/core/input/test_input_event_mouse.h"
 #include "tests/core/input/test_shortcut.h"
 #include "tests/core/io/test_config_file.h"
 #include "tests/core/io/test_file_access.h"
@@ -91,18 +92,23 @@
 #include "tests/scene/test_bit_map.h"
 #include "tests/scene/test_code_edit.h"
 #include "tests/scene/test_curve.h"
+#include "tests/scene/test_curve_2d.h"
 #include "tests/scene/test_gradient.h"
+#include "tests/scene/test_node.h"
 #include "tests/scene/test_path_2d.h"
 #include "tests/scene/test_path_3d.h"
 #include "tests/scene/test_primitives.h"
 #include "tests/scene/test_sprite_frames.h"
 #include "tests/scene/test_text_edit.h"
 #include "tests/scene/test_theme.h"
+#include "tests/scene/test_viewport.h"
+#include "tests/scene/test_visual_shader.h"
 #include "tests/servers/test_text_server.h"
 #include "tests/test_validate_testing.h"
 
 #include "modules/modules_tests.gen.h"
 
+#include "tests/display_server_mock.h"
 #include "tests/test_macros.h"
 
 #include "scene/theme/theme_db.h"
@@ -122,6 +128,7 @@ int test_main(int argc, char *argv[]) {
 		args.push_back(String::utf8(argv[i]));
 	}
 	OS::get_singleton()->set_cmdline("", args, List<String>());
+	DisplayServerMock::register_mock_driver();
 
 	// Run custom test tools.
 	if (test_commands) {
@@ -196,12 +203,13 @@ struct GodotTestCaseListener : public doctest::IReporter {
 			memnew(MessageQueue);
 
 			memnew(Input);
+			Input::get_singleton()->set_use_accumulated_input(false);
 
 			Error err = OK;
 			OS::get_singleton()->set_has_server_feature_callback(nullptr);
 			for (int i = 0; i < DisplayServer::get_create_function_count(); i++) {
-				if (String("headless") == DisplayServer::get_create_function_name(i)) {
-					DisplayServer::create(i, "", DisplayServer::WindowMode::WINDOW_MODE_MINIMIZED, DisplayServer::VSyncMode::VSYNC_ENABLED, 0, nullptr, Vector2i(0, 0), err);
+				if (String("mock") == DisplayServer::get_create_function_name(i)) {
+					DisplayServer::create(i, "", DisplayServer::WindowMode::WINDOW_MODE_MINIMIZED, DisplayServer::VSyncMode::VSYNC_ENABLED, 0, nullptr, Vector2i(0, 0), DisplayServer::SCREEN_PRIMARY, err);
 					break;
 				}
 			}
@@ -226,6 +234,9 @@ struct GodotTestCaseListener : public doctest::IReporter {
 
 			memnew(SceneTree);
 			SceneTree::get_singleton()->initialize();
+			if (!DisplayServer::get_singleton()->has_feature(DisplayServer::Feature::FEATURE_SUBWINDOWS)) {
+				SceneTree::get_singleton()->get_root()->set_embedding_subwindows(true);
+			}
 			return;
 		}
 

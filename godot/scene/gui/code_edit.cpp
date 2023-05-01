@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  code_edit.cpp                                                        */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  code_edit.cpp                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "code_edit.h"
 
@@ -380,13 +380,13 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 		}
 
 		if (symbol_lookup_on_click_enabled) {
-			if (mm->is_command_or_control_pressed() && mm->get_button_mask() == MouseButton::NONE) {
+			if (mm->is_command_or_control_pressed() && mm->get_button_mask().is_empty()) {
 				symbol_lookup_pos = get_line_column_at_pos(mpos);
 				symbol_lookup_new_word = get_word_at_pos(mpos);
 				if (symbol_lookup_new_word != symbol_lookup_word) {
 					emit_signal(SNAME("symbol_validate"), symbol_lookup_new_word);
 				}
-			} else if (!mm->is_command_or_control_pressed() || (mm->get_button_mask() != MouseButton::NONE && symbol_lookup_pos != get_line_column_at_pos(mpos))) {
+			} else if (!mm->is_command_or_control_pressed() || (!mm->get_button_mask().is_empty() && symbol_lookup_pos != get_line_column_at_pos(mpos))) {
 				set_symbol_lookup_word_as_valid(false);
 			}
 		}
@@ -548,7 +548,7 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 	}
 
 	if (k->is_action("ui_text_dedent", true)) {
-		do_unindent();
+		unindent_lines();
 		accept_event();
 		return;
 	}
@@ -896,50 +896,7 @@ void CodeEdit::indent_lines() {
 		set_caret_column(get_caret_column(c) + selection_offset, false, c);
 	}
 	end_complex_operation();
-}
-
-void CodeEdit::do_unindent() {
-	if (!is_editable()) {
-		return;
-	}
-
-	int cc = get_caret_column();
-
-	if (has_selection() || cc <= 0) {
-		unindent_lines();
-		return;
-	}
-
-	begin_complex_operation();
-	Vector<int> caret_edit_order = get_caret_index_edit_order();
-	for (const int &c : caret_edit_order) {
-		int cl = get_caret_line(c);
-		const String &line = get_line(cl);
-
-		if (line[cc - 1] == '\t') {
-			remove_text(cl, cc - 1, cl, cc);
-			set_caret_column(MAX(0, cc - 1), c == 0, c);
-			adjust_carets_after_edit(c, cl, cc, cl, cc - 1);
-			continue;
-		}
-
-		if (line[cc - 1] != ' ') {
-			continue;
-		}
-
-		int spaces_to_remove = _calculate_spaces_till_next_left_indent(cc);
-		if (spaces_to_remove > 0) {
-			for (int i = 1; i <= spaces_to_remove; i++) {
-				if (line[cc - i] != ' ') {
-					spaces_to_remove = i - 1;
-					break;
-				}
-			}
-			remove_text(cl, cc - spaces_to_remove, cl, cc);
-			set_caret_column(MAX(0, cc - spaces_to_remove), c == 0, c);
-		}
-	}
-	end_complex_operation();
+	queue_redraw();
 }
 
 void CodeEdit::unindent_lines() {
@@ -1017,6 +974,7 @@ void CodeEdit::unindent_lines() {
 		set_caret_column(initial_cursor_column - removed_characters, false, c);
 	}
 	end_complex_operation();
+	queue_redraw();
 }
 
 int CodeEdit::_calculate_spaces_till_next_left_indent(int p_column) const {
@@ -2086,9 +2044,11 @@ void CodeEdit::confirm_code_completion(bool p_replace) {
 		int post_brace_pair = get_caret_column(i) < get_line(caret_line).length() ? _get_auto_brace_pair_close_at_pos(caret_line, get_caret_column(i)) : -1;
 
 		// Strings do not nest like brackets, so ensure we don't add an additional closing pair.
-		if (has_string_delimiter(String::chr(last_completion_char)) && post_brace_pair != -1 && last_char_matches) {
-			remove_text(caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
-			adjust_carets_after_edit(i, caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
+		if (has_string_delimiter(String::chr(last_completion_char))) {
+			if (post_brace_pair != -1 && last_char_matches) {
+				remove_text(caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
+				adjust_carets_after_edit(i, caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
+			}
 		} else {
 			if (pre_brace_pair != -1 && pre_brace_pair != post_brace_pair && last_char_matches) {
 				remove_text(caret_line, get_caret_column(i), caret_line, get_caret_column(i) + 1);
@@ -2202,7 +2162,6 @@ void CodeEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_auto_indent_prefixes"), &CodeEdit::get_auto_indent_prefixes);
 
 	ClassDB::bind_method(D_METHOD("do_indent"), &CodeEdit::do_indent);
-	ClassDB::bind_method(D_METHOD("do_unindent"), &CodeEdit::do_unindent);
 
 	ClassDB::bind_method(D_METHOD("indent_lines"), &CodeEdit::indent_lines);
 	ClassDB::bind_method(D_METHOD("unindent_lines"), &CodeEdit::unindent_lines);
@@ -2338,7 +2297,7 @@ void CodeEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_code_completion_enabled"), &CodeEdit::is_code_completion_enabled);
 
 	ClassDB::bind_method(D_METHOD("set_code_completion_prefixes", "prefixes"), &CodeEdit::set_code_completion_prefixes);
-	ClassDB::bind_method(D_METHOD("get_code_comletion_prefixes"), &CodeEdit::get_code_completion_prefixes);
+	ClassDB::bind_method(D_METHOD("get_code_completion_prefixes"), &CodeEdit::get_code_completion_prefixes);
 
 	// Overridable
 
@@ -2382,7 +2341,7 @@ void CodeEdit::_bind_methods() {
 
 	ADD_GROUP("Code Completion", "code_completion_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "code_completion_enabled"), "set_code_completion_enabled", "is_code_completion_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "code_completion_prefixes"), "set_code_completion_prefixes", "get_code_comletion_prefixes");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "code_completion_prefixes"), "set_code_completion_prefixes", "get_code_completion_prefixes");
 
 	ADD_GROUP("Indentation", "indent_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "indent_size"), "set_indent_size", "get_indent_size");
@@ -2899,6 +2858,7 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	const int caret_line = get_caret_line();
 	const int caret_column = get_caret_column();
 	const String line = get_line(caret_line);
+	ERR_FAIL_INDEX_MSG(caret_column, line.length() + 1, "Caret column exceeds line length.");
 
 	if (caret_column > 0 && line[caret_column - 1] == '(' && !code_completion_forced) {
 		cancel_code_completion();
@@ -2965,6 +2925,12 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 
 	code_completion_options.clear();
 	code_completion_base = string_to_complete;
+
+	/* Don't autocomplete setting numerical values. */
+	if (code_completion_base.is_numeric()) {
+		cancel_code_completion();
+		return;
+	}
 
 	Vector<ScriptLanguage::CodeCompletionOption> completion_options_casei;
 	Vector<ScriptLanguage::CodeCompletionOption> completion_options_substr;
@@ -3130,6 +3096,8 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	}
 
 	code_completion_options.append_array(completion_options_casei);
+	code_completion_options.append_array(completion_options_substr);
+	code_completion_options.append_array(completion_options_substr_casei);
 	code_completion_options.append_array(completion_options_subseq);
 	code_completion_options.append_array(completion_options_subseq_casei);
 

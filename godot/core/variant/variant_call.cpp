@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  variant_call.cpp                                                     */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  variant_call.cpp                                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "variant.h"
 
@@ -65,11 +65,13 @@ static _FORCE_INLINE_ void vc_method_call(R (T::*method)(P...) const, Variant *b
 
 template <class T, class... P>
 static _FORCE_INLINE_ void vc_method_call(void (T::*method)(P...), Variant *base, const Variant **p_args, int p_argcount, Variant &r_ret, const Vector<Variant> &p_defvals, Callable::CallError &r_error) {
+	VariantInternal::clear(&r_ret);
 	call_with_variant_args_dv(VariantGetInternalPtr<T>::get_ptr(base), method, p_args, p_argcount, r_error, p_defvals);
 }
 
 template <class T, class... P>
 static _FORCE_INLINE_ void vc_method_call(void (T::*method)(P...) const, Variant *base, const Variant **p_args, int p_argcount, Variant &r_ret, const Vector<Variant> &p_defvals, Callable::CallError &r_error) {
+	VariantInternal::clear(&r_ret);
 	call_with_variant_argsc_dv(VariantGetInternalPtr<T>::get_ptr(base), method, p_args, p_argcount, r_error, p_defvals);
 }
 
@@ -1693,6 +1695,7 @@ static void _register_variant_builtin_methods() {
 	bind_string_method(json_escape, sarray(), varray());
 
 	bind_string_method(validate_node_name, sarray(), varray());
+	bind_string_method(validate_filename, sarray(), varray());
 
 	bind_string_method(is_valid_identifier, sarray(), varray());
 	bind_string_method(is_valid_int, sarray(), varray());
@@ -1921,7 +1924,7 @@ static void _register_variant_builtin_methods() {
 	/* Plane */
 
 	bind_method(Plane, normalized, sarray(), varray());
-	bind_method(Plane, center, sarray(), varray());
+	bind_method(Plane, get_center, sarray(), varray());
 	bind_method(Plane, is_equal_approx, sarray("to_plane"), varray());
 	bind_method(Plane, is_finite, sarray(), varray());
 	bind_method(Plane, is_point_over, sarray("point"), varray());
@@ -2014,7 +2017,10 @@ static void _register_variant_builtin_methods() {
 	bind_method(Callable, get_object, sarray(), varray());
 	bind_method(Callable, get_object_id, sarray(), varray());
 	bind_method(Callable, get_method, sarray(), varray());
+	bind_method(Callable, get_bound_arguments_count, sarray(), varray());
+	bind_method(Callable, get_bound_arguments, sarray(), varray());
 	bind_method(Callable, hash, sarray(), varray());
+	bind_method(Callable, bindv, sarray("arguments"), varray());
 	bind_method(Callable, unbind, sarray("argcount"), varray());
 
 	bind_custom(Callable, call, _VariantCall::func_Callable_call, true, Variant);
@@ -2057,9 +2063,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(Transform2D, interpolate_with, sarray("xform", "weight"), varray());
 	bind_method(Transform2D, is_equal_approx, sarray("xform"), varray());
 	bind_method(Transform2D, is_finite, sarray(), varray());
-	bind_method(Transform2D, set_rotation, sarray("rotation"), varray());
-	bind_method(Transform2D, set_scale, sarray("scale"), varray());
-	bind_method(Transform2D, set_skew, sarray("skew"), varray());
+	// Do not bind functions like set_rotation, set_scale, set_skew, etc because this type is immutable and can't be modified.
 	bind_method(Transform2D, looking_at, sarray("target"), varray(Vector2()));
 
 	/* Basis */
@@ -2132,7 +2136,7 @@ static void _register_variant_builtin_methods() {
 	bind_static_method(Projection, create_depth_correction, sarray("flip_y"), varray());
 	bind_static_method(Projection, create_light_atlas_rect, sarray("rect"), varray());
 	bind_static_method(Projection, create_perspective, sarray("fovy", "aspect", "z_near", "z_far", "flip_fov"), varray(false));
-	bind_static_method(Projection, create_perspective_hmd, sarray("fovy", "aspect", "z_near", "z_far", "flip_fov", "eye", "intraocular_dist", " convergence_dist"), varray());
+	bind_static_method(Projection, create_perspective_hmd, sarray("fovy", "aspect", "z_near", "z_far", "flip_fov", "eye", "intraocular_dist", "convergence_dist"), varray());
 	bind_static_method(Projection, create_for_hmd, sarray("eye", "aspect", "intraocular_dist", "display_width", "display_to_lens", "oversample", "z_near", "z_far"), varray());
 	bind_static_method(Projection, create_orthogonal, sarray("left", "right", "bottom", "top", "z_near", "z_far"), varray());
 	bind_static_method(Projection, create_orthogonal_aspect, sarray("size", "aspect", "z_near", "z_far", "flip_fov"), varray(false));
@@ -2176,6 +2180,8 @@ static void _register_variant_builtin_methods() {
 	bind_method(Dictionary, values, sarray(), varray());
 	bind_method(Dictionary, duplicate, sarray("deep"), varray(false));
 	bind_method(Dictionary, get, sarray("key", "default"), varray(Variant()));
+	bind_method(Dictionary, make_read_only, sarray(), varray());
+	bind_method(Dictionary, is_read_only, sarray(), varray());
 
 	/* Array */
 
@@ -2183,6 +2189,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(Array, is_empty, sarray(), varray());
 	bind_method(Array, clear, sarray(), varray());
 	bind_method(Array, hash, sarray(), varray());
+	bind_method(Array, assign, sarray("array"), varray());
 	bind_method(Array, push_back, sarray("value"), varray());
 	bind_method(Array, push_front, sarray("value"), varray());
 	bind_method(Array, append, sarray("value"), varray());
@@ -2217,13 +2224,12 @@ static void _register_variant_builtin_methods() {
 	bind_method(Array, all, sarray("method"), varray());
 	bind_method(Array, max, sarray(), varray());
 	bind_method(Array, min, sarray(), varray());
-	bind_method(Array, typed_assign, sarray("array"), varray());
-	bind_method(Array, set_typed, sarray("type", "class_name", "script"), varray());
 	bind_method(Array, is_typed, sarray(), varray());
+	bind_method(Array, is_same_typed, sarray("array"), varray());
 	bind_method(Array, get_typed_builtin, sarray(), varray());
 	bind_method(Array, get_typed_class_name, sarray(), varray());
 	bind_method(Array, get_typed_script, sarray(), varray());
-	bind_method(Array, set_read_only, sarray("enable"), varray());
+	bind_method(Array, make_read_only, sarray(), varray());
 	bind_method(Array, is_read_only, sarray(), varray());
 
 	/* Byte Array */
@@ -2397,7 +2403,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(PackedStringArray, remove_at, sarray("index"), varray());
 	bind_method(PackedStringArray, insert, sarray("at_index", "value"), varray());
 	bind_method(PackedStringArray, fill, sarray("value"), varray());
-	bind_method(PackedStringArray, resize, sarray("new_size"), varray());
+	bind_methodv(PackedStringArray, resize, &PackedStringArray::resize_zeroed, sarray("new_size"), varray());
 	bind_method(PackedStringArray, clear, sarray(), varray());
 	bind_method(PackedStringArray, has, sarray("value"), varray());
 	bind_method(PackedStringArray, reverse, sarray(), varray());
@@ -2421,7 +2427,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(PackedVector2Array, remove_at, sarray("index"), varray());
 	bind_method(PackedVector2Array, insert, sarray("at_index", "value"), varray());
 	bind_method(PackedVector2Array, fill, sarray("value"), varray());
-	bind_method(PackedVector2Array, resize, sarray("new_size"), varray());
+	bind_methodv(PackedVector2Array, resize, &PackedVector2Array::resize_zeroed, sarray("new_size"), varray());
 	bind_method(PackedVector2Array, clear, sarray(), varray());
 	bind_method(PackedVector2Array, has, sarray("value"), varray());
 	bind_method(PackedVector2Array, reverse, sarray(), varray());
@@ -2445,7 +2451,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(PackedVector3Array, remove_at, sarray("index"), varray());
 	bind_method(PackedVector3Array, insert, sarray("at_index", "value"), varray());
 	bind_method(PackedVector3Array, fill, sarray("value"), varray());
-	bind_method(PackedVector3Array, resize, sarray("new_size"), varray());
+	bind_methodv(PackedVector3Array, resize, &PackedVector3Array::resize_zeroed, sarray("new_size"), varray());
 	bind_method(PackedVector3Array, clear, sarray(), varray());
 	bind_method(PackedVector3Array, has, sarray("value"), varray());
 	bind_method(PackedVector3Array, reverse, sarray(), varray());
@@ -2469,7 +2475,7 @@ static void _register_variant_builtin_methods() {
 	bind_method(PackedColorArray, remove_at, sarray("index"), varray());
 	bind_method(PackedColorArray, insert, sarray("at_index", "value"), varray());
 	bind_method(PackedColorArray, fill, sarray("value"), varray());
-	bind_method(PackedColorArray, resize, sarray("new_size"), varray());
+	bind_methodv(PackedColorArray, resize, &PackedColorArray::resize_zeroed, sarray("new_size"), varray());
 	bind_method(PackedColorArray, clear, sarray(), varray());
 	bind_method(PackedColorArray, has, sarray("value"), varray());
 	bind_method(PackedColorArray, reverse, sarray(), varray());

@@ -7,12 +7,13 @@
 		This class contains the result of a navigation path query from [method NavigationServer3D.query_path].
 	</description>
 	<tutorials>
+		<link title="Using NavigationPathQueryObjects">$DOCS_URL/tutorials/navigation/navigation_using_navigationpathqueryobjects.html</link>
 	</tutorials>
 	<methods>
 		<method name="reset">
 			<return type="void" />
 			<description>
-				Reset the result object to its initial state.  This is useful to reuse the object across multiple queries.
+				Reset the result object to its initial state. This is useful to reuse the object across multiple queries.
 			</description>
 		</method>
 	</methods>

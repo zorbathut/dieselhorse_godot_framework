@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  font.h                                                               */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  font.h                                                                */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef FONT_H
 #define FONT_H
@@ -47,9 +47,44 @@ class TextParagraph;
 class Font : public Resource {
 	GDCLASS(Font, Resource);
 
+	struct ShapedTextKey {
+		String text;
+		int font_size = 14;
+		float width = 0.f;
+		BitField<TextServer::JustificationFlag> jst_flags = TextServer::JUSTIFICATION_NONE;
+		BitField<TextServer::LineBreakFlag> brk_flags = TextServer::BREAK_MANDATORY;
+		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
+		TextServer::Orientation orientation = TextServer::ORIENTATION_HORIZONTAL;
+
+		bool operator==(const ShapedTextKey &p_b) const {
+			return (font_size == p_b.font_size) && (width == p_b.width) && (jst_flags == p_b.jst_flags) && (brk_flags == p_b.brk_flags) && (direction == p_b.direction) && (orientation == p_b.orientation) && (text == p_b.text);
+		}
+
+		ShapedTextKey() {}
+		ShapedTextKey(const String &p_text, int p_font_size, float p_width, BitField<TextServer::JustificationFlag> p_jst_flags, BitField<TextServer::LineBreakFlag> p_brk_flags, TextServer::Direction p_direction, TextServer::Orientation p_orientation) {
+			text = p_text;
+			font_size = p_font_size;
+			width = p_width;
+			jst_flags = p_jst_flags;
+			brk_flags = p_brk_flags;
+			direction = p_direction;
+			orientation = p_orientation;
+		}
+	};
+
+	struct ShapedTextKeyHasher {
+		_FORCE_INLINE_ static uint32_t hash(const ShapedTextKey &p_a) {
+			uint32_t hash = p_a.text.hash();
+			hash = hash_murmur3_one_32(p_a.font_size, hash);
+			hash = hash_murmur3_one_float(p_a.width, hash);
+			hash = hash_murmur3_one_32(p_a.brk_flags | (p_a.jst_flags << 6) | (p_a.direction << 12) | (p_a.orientation << 15), hash);
+			return hash_fmix32(hash);
+		}
+	};
+
 	// Shaped string cache.
-	mutable LRUCache<uint64_t, Ref<TextLine>> cache;
-	mutable LRUCache<uint64_t, Ref<TextParagraph>> cache_wrap;
+	mutable LRUCache<ShapedTextKey, Ref<TextLine>, ShapedTextKeyHasher> cache;
+	mutable LRUCache<ShapedTextKey, Ref<TextParagraph>, ShapedTextKeyHasher> cache_wrap;
 
 protected:
 	// Output.
@@ -417,6 +452,8 @@ class SystemFont : public Font {
 	TextServer::SubpixelPositioning subpixel_positioning = TextServer::SUBPIXEL_POSITIONING_AUTO;
 	real_t oversampling = 0.f;
 	bool msdf = false;
+	int msdf_pixel_range = 16;
+	int msdf_size = 48;
 
 protected:
 	static void _bind_methods();
@@ -452,6 +489,12 @@ public:
 
 	virtual void set_multichannel_signed_distance_field(bool p_msdf);
 	virtual bool is_multichannel_signed_distance_field() const;
+
+	virtual void set_msdf_pixel_range(int p_msdf_pixel_range);
+	virtual int get_msdf_pixel_range() const;
+
+	virtual void set_msdf_size(int p_msdf_size);
+	virtual int get_msdf_size() const;
 
 	virtual void set_font_names(const PackedStringArray &p_names);
 	virtual PackedStringArray get_font_names() const;

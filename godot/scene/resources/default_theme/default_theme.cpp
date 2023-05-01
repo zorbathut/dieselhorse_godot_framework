@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  default_theme.cpp                                                    */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  default_theme.cpp                                                     */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "default_theme.h"
 
@@ -53,7 +53,7 @@ static const int default_corner_radius = 3;
 static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left = default_margin, float p_margin_top = default_margin, float p_margin_right = default_margin, float p_margin_bottom = default_margin, int p_corner_radius = default_corner_radius, bool p_draw_center = true, int p_border_width = 0) {
 	Ref<StyleBoxFlat> style(memnew(StyleBoxFlat));
 	style->set_bg_color(p_color);
-	style->set_default_margin_individual(p_margin_left * scale, p_margin_top * scale, p_margin_right * scale, p_margin_bottom * scale);
+	style->set_content_margin_individual(p_margin_left * scale, p_margin_top * scale, p_margin_right * scale, p_margin_bottom * scale);
 
 	style->set_corner_radius_all(p_corner_radius);
 	style->set_anti_aliased(true);
@@ -67,10 +67,10 @@ static Ref<StyleBoxFlat> make_flat_stylebox(Color p_color, float p_margin_left =
 }
 
 static Ref<StyleBoxFlat> sb_expand(Ref<StyleBoxFlat> p_sbox, float p_left, float p_top, float p_right, float p_bottom) {
-	p_sbox->set_expand_margin_size(SIDE_LEFT, p_left * scale);
-	p_sbox->set_expand_margin_size(SIDE_TOP, p_top * scale);
-	p_sbox->set_expand_margin_size(SIDE_RIGHT, p_right * scale);
-	p_sbox->set_expand_margin_size(SIDE_BOTTOM, p_bottom * scale);
+	p_sbox->set_expand_margin(SIDE_LEFT, p_left * scale);
+	p_sbox->set_expand_margin(SIDE_TOP, p_top * scale);
+	p_sbox->set_expand_margin(SIDE_RIGHT, p_right * scale);
+	p_sbox->set_expand_margin(SIDE_BOTTOM, p_bottom * scale);
 	return p_sbox;
 }
 
@@ -86,6 +86,10 @@ static Ref<ImageTexture> generate_icon(int p_index) {
 	ImageLoaderSVG img_loader;
 	Error err = img_loader.create_image_from_string(img, default_theme_icons_sources[p_index], scale, upsample, HashMap<Color, Color>());
 	ERR_FAIL_COND_V_MSG(err != OK, Ref<ImageTexture>(), "Failed generating icon, unsupported or invalid SVG data in default theme.");
+#else
+	// If the SVG module is disabled, we can't really display the UI well, but at least we won't crash.
+	// 16 pixels is used as it's the most common base size for Godot icons.
+	img = Image::create_empty(16 * scale, 16 * scale, false, Image::FORMAT_RGBA8);
 #endif
 
 	return ImageTexture::create_from_image(img);
@@ -93,7 +97,7 @@ static Ref<ImageTexture> generate_icon(int p_index) {
 
 static Ref<StyleBox> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1) {
 	Ref<StyleBox> style(memnew(StyleBoxEmpty));
-	style->set_default_margin_individual(p_margin_left * scale, p_margin_top * scale, p_margin_right * scale, p_margin_bottom * scale);
+	style->set_content_margin_individual(p_margin_left * scale, p_margin_top * scale, p_margin_right * scale, p_margin_bottom * scale);
 	return style;
 }
 
@@ -148,7 +152,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	const Ref<StyleBoxFlat> button_disabled = make_flat_stylebox(style_disabled_color);
 	Ref<StyleBoxFlat> focus = make_flat_stylebox(style_focus_color, default_margin, default_margin, default_margin, default_margin, default_corner_radius, false, 2);
 	// Make the focus outline appear to be flush with the buttons it's focusing.
-	focus->set_expand_margin_size_all(2 * scale);
+	focus->set_expand_margin_all(2 * scale);
 
 	theme->set_stylebox("normal", "Button", button_normal);
 	theme->set_stylebox("hover", "Button", button_hover);
@@ -279,9 +283,9 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	// CheckBox
 
 	Ref<StyleBox> cbx_empty = memnew(StyleBoxEmpty);
-	cbx_empty->set_default_margin_all(4 * scale);
+	cbx_empty->set_content_margin_all(4 * scale);
 	Ref<StyleBox> cbx_focus = focus;
-	cbx_focus->set_default_margin_all(4 * scale);
+	cbx_focus->set_content_margin_all(4 * scale);
 
 	theme->set_stylebox("normal", "CheckBox", cbx_empty);
 	theme->set_stylebox("pressed", "CheckBox", cbx_empty);
@@ -317,7 +321,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	// CheckButton
 
 	Ref<StyleBox> cb_empty = memnew(StyleBoxEmpty);
-	cb_empty->set_default_margin_individual(6 * scale, 4 * scale, 6 * scale, 4 * scale);
+	cb_empty->set_content_margin_individual(6 * scale, 4 * scale, 6 * scale, 4 * scale);
 
 	theme->set_stylebox("normal", "CheckButton", cb_empty);
 	theme->set_stylebox("pressed", "CheckButton", cb_empty);
@@ -509,14 +513,15 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 
 	Ref<Texture2D> empty_icon = memnew(ImageTexture);
 
-	const Ref<StyleBoxFlat> style_scrollbar = make_flat_stylebox(style_normal_color, 4, 4, 4, 4, 10);
+	const Ref<StyleBoxFlat> style_h_scrollbar = make_flat_stylebox(style_normal_color, 0, 4, 0, 4, 10);
+	const Ref<StyleBoxFlat> style_v_scrollbar = make_flat_stylebox(style_normal_color, 4, 0, 4, 0, 10);
 	Ref<StyleBoxFlat> style_scrollbar_grabber = make_flat_stylebox(style_progress_color, 4, 4, 4, 4, 10);
 	Ref<StyleBoxFlat> style_scrollbar_grabber_highlight = make_flat_stylebox(style_focus_color, 4, 4, 4, 4, 10);
 	Ref<StyleBoxFlat> style_scrollbar_grabber_pressed = make_flat_stylebox(style_focus_color * Color(0.75, 0.75, 0.75), 4, 4, 4, 4, 10);
 
 	// HScrollBar
 
-	theme->set_stylebox("scroll", "HScrollBar", style_scrollbar);
+	theme->set_stylebox("scroll", "HScrollBar", style_h_scrollbar);
 	theme->set_stylebox("scroll_focus", "HScrollBar", focus);
 	theme->set_stylebox("grabber", "HScrollBar", style_scrollbar_grabber);
 	theme->set_stylebox("grabber_highlight", "HScrollBar", style_scrollbar_grabber_highlight);
@@ -531,7 +536,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 
 	// VScrollBar
 
-	theme->set_stylebox("scroll", "VScrollBar", style_scrollbar);
+	theme->set_stylebox("scroll", "VScrollBar", style_v_scrollbar);
 	theme->set_stylebox("scroll_focus", "VScrollBar", focus);
 	theme->set_stylebox("grabber", "VScrollBar", style_scrollbar_grabber);
 	theme->set_stylebox("grabber_highlight", "VScrollBar", style_scrollbar_grabber_highlight);
@@ -633,10 +638,10 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	Ref<StyleBoxLine> separator_horizontal = memnew(StyleBoxLine);
 	separator_horizontal->set_thickness(Math::round(scale));
 	separator_horizontal->set_color(style_separator_color);
-	separator_horizontal->set_default_margin_individual(default_margin, 0, default_margin, 0);
+	separator_horizontal->set_content_margin_individual(default_margin, 0, default_margin, 0);
 	Ref<StyleBoxLine> separator_vertical = separator_horizontal->duplicate();
 	separator_vertical->set_vertical(true);
-	separator_vertical->set_default_margin_individual(0, default_margin, 0, default_margin);
+	separator_vertical->set_content_margin_individual(0, default_margin, 0, default_margin);
 
 	// Always display a border for PopupMenus so they can be distinguished from their background.
 	Ref<StyleBoxFlat> style_popup_panel = make_flat_stylebox(style_popup_color);
@@ -719,7 +724,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	theme->set_constant("title_offset", "GraphNode", 26 * scale);
 	theme->set_constant("title_h_offset", "GraphNode", 0);
 	theme->set_constant("close_offset", "GraphNode", 22 * scale);
-	theme->set_constant("close_h_offset", "GraphNode", 22 * scale);
+	theme->set_constant("close_h_offset", "GraphNode", 12 * scale);
 	theme->set_constant("port_offset", "GraphNode", 0);
 
 	// Tree

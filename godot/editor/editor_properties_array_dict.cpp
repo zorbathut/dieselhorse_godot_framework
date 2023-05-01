@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  editor_properties_array_dict.cpp                                     */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  editor_properties_array_dict.cpp                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "editor_properties_array_dict.h"
 
@@ -158,17 +158,32 @@ EditorPropertyDictionaryObject::EditorPropertyDictionaryObject() {
 
 ///////////////////// ARRAY ///////////////////////////
 
+void EditorPropertyArray::initialize_array(Variant &p_array) {
+	if (array_type == Variant::ARRAY && subtype != Variant::NIL) {
+		Array array;
+		StringName subtype_class;
+		Ref<Script> subtype_script;
+		if (subtype == Variant::OBJECT && !subtype_hint_string.is_empty()) {
+			if (ClassDB::class_exists(subtype_hint_string)) {
+				subtype_class = subtype_hint_string;
+			}
+		}
+		array.set_typed(subtype, subtype_class, subtype_script);
+		p_array = array;
+	} else {
+		VariantInternal::initialize(&p_array, array_type);
+	}
+}
+
 void EditorPropertyArray::_property_changed(const String &p_property, Variant p_value, const String &p_name, bool p_changing) {
 	if (p_property.begins_with("indices")) {
 		int index = p_property.get_slice("/", 1).to_int();
-		Variant array = object->get_array();
-		array.set(index, p_value);
-		emit_changed(get_edited_property(), array, "", true);
 
-		if (array.get_type() == Variant::ARRAY) {
-			array = array.call("duplicate"); // Duplicate, so undo/redo works better.
-		}
+		Variant array = object->get_array().duplicate();
+		array.set(index, p_value);
+
 		object->set_array(array);
+		emit_changed(get_edited_property(), array, "", true);
 	}
 }
 
@@ -188,18 +203,12 @@ void EditorPropertyArray::_change_type_menu(int p_index) {
 	}
 
 	Variant value;
-	Callable::CallError ce;
-	Variant::construct(Variant::Type(p_index), value, nullptr, 0, ce);
-	Variant array = object->get_array();
+	VariantInternal::initialize(&value, Variant::Type(p_index));
+
+	Variant array = object->get_array().duplicate();
 	array.set(changing_type_index, value);
 
 	emit_changed(get_edited_property(), array, "", true);
-
-	if (array.get_type() == Variant::ARRAY) {
-		array = array.call("duplicate"); // Duplicate, so undo/redo works better.
-	}
-
-	object->set_array(array);
 	update_property();
 }
 
@@ -233,6 +242,8 @@ void EditorPropertyArray::update_property() {
 		}
 		return;
 	}
+
+	object->set_array(array);
 
 	int size = array.call("size");
 	int max_page = MAX(0, size - 1) / page_length;
@@ -304,12 +315,6 @@ void EditorPropertyArray::update_property() {
 		button_add_item->set_visible(page_index == max_page);
 		paginator->update(page_index, max_page);
 		paginator->set_visible(max_page > 0);
-
-		if (array.get_type() == Variant::ARRAY) {
-			array = array.call("duplicate");
-		}
-
-		object->set_array(array);
 
 		int amount = MIN(size - offset, page_length);
 		for (int i = 0; i < amount; i++) {
@@ -401,7 +406,7 @@ void EditorPropertyArray::update_property() {
 }
 
 void EditorPropertyArray::_remove_pressed(int p_index) {
-	Variant array = object->get_array();
+	Variant array = object->get_array().duplicate();
 	array.call("remove_at", p_index);
 
 	emit_changed(get_edited_property(), array, "", false);
@@ -469,8 +474,9 @@ void EditorPropertyArray::drop_data_fw(const Point2 &p_point, const Variant &p_d
 
 		// Handle the case where array is not initialized yet.
 		if (!array.is_array()) {
-			Callable::CallError ce;
-			Variant::construct(array_type, array, nullptr, 0, ce);
+			initialize_array(array);
+		} else {
+			array = array.duplicate();
 		}
 
 		// Loop the file array and add to existing array.
@@ -483,13 +489,7 @@ void EditorPropertyArray::drop_data_fw(const Point2 &p_point, const Variant &p_d
 			}
 		}
 
-		if (array.get_type() == Variant::ARRAY) {
-			array = array.call("duplicate");
-		}
-
 		emit_changed(get_edited_property(), array, "", false);
-		object->set_array(array);
-
 		update_property();
 	}
 }
@@ -536,10 +536,8 @@ void EditorPropertyArray::_notification(int p_what) {
 
 void EditorPropertyArray::_edit_pressed() {
 	Variant array = get_edited_object()->get(get_edited_property());
-	if (!array.is_array()) {
-		Callable::CallError ce;
-		Variant::construct(array_type, array, nullptr, 0, ce);
-
+	if (!array.is_array() && edit->is_pressed()) {
+		initialize_array(array);
 		get_edited_object()->set(get_edited_property(), array);
 	}
 
@@ -560,37 +558,10 @@ void EditorPropertyArray::_length_changed(double p_page) {
 		return;
 	}
 
-	Variant array = object->get_array();
-	int previous_size = array.call("size");
-
+	Variant array = object->get_array().duplicate();
 	array.call("resize", int(p_page));
 
-	if (array.get_type() == Variant::ARRAY) {
-		if (subtype != Variant::NIL) {
-			int size = array.call("size");
-			for (int i = previous_size; i < size; i++) {
-				if (array.get(i).get_type() == Variant::NIL) {
-					Callable::CallError ce;
-					Variant r;
-					Variant::construct(subtype, r, nullptr, 0, ce);
-					array.set(i, r);
-				}
-			}
-		}
-		array = array.call("duplicate"); // Duplicate, so undo/redo works better.
-	} else {
-		int size = array.call("size");
-		// Pool*Array don't initialize their elements, have to do it manually.
-		for (int i = previous_size; i < size; i++) {
-			Callable::CallError ce;
-			Variant r;
-			Variant::construct(array.get(i).get_type(), r, nullptr, 0, ce);
-			array.set(i, r);
-		}
-	}
-
 	emit_changed(get_edited_property(), array, "", false);
-	object->set_array(array);
 	update_property();
 }
 
@@ -603,7 +574,7 @@ void EditorPropertyArray::setup(Variant::Type p_array_type, const String &p_hint
 
 	// The format of p_hint_string is:
 	// subType/subTypeHint:nextSubtype ... etc.
-	if (array_type == Variant::ARRAY && !p_hint_string.is_empty()) {
+	if (!p_hint_string.is_empty()) {
 		int hint_subtype_separator = p_hint_string.find(":");
 		if (hint_subtype_separator >= 0) {
 			String subtype_string = p_hint_string.substr(0, hint_subtype_separator);
@@ -677,14 +648,13 @@ void EditorPropertyArray::_reorder_button_up() {
 
 	if (reorder_from_index != reorder_to_index) {
 		// Move the element.
-		Variant array = object->get_array();
+		Variant array = object->get_array().duplicate();
 
 		Variant value_to_move = array.get(reorder_from_index);
 		array.call("remove_at", reorder_from_index);
 		array.call("insert", reorder_to_index, value_to_move);
 
 		emit_changed(get_edited_property(), array, "", false);
-		object->set_array(array);
 		update_property();
 	}
 
@@ -702,8 +672,6 @@ void EditorPropertyArray::_reorder_button_up() {
 }
 
 void EditorPropertyArray::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_can_drop_data_fw"), &EditorPropertyArray::can_drop_data_fw);
-	ClassDB::bind_method(D_METHOD("_drop_data_fw"), &EditorPropertyArray::drop_data_fw);
 }
 
 EditorPropertyArray::EditorPropertyArray() {
@@ -715,7 +683,7 @@ EditorPropertyArray::EditorPropertyArray() {
 	edit->set_clip_text(true);
 	edit->connect("pressed", callable_mp(this, &EditorPropertyArray::_edit_pressed));
 	edit->set_toggle_mode(true);
-	edit->set_drag_forwarding(this);
+	SET_DRAG_FORWARDING_CD(edit, EditorPropertyArray);
 	edit->connect("draw", callable_mp(this, &EditorPropertyArray::_button_draw));
 	add_child(edit);
 	add_focusable(edit);
@@ -744,14 +712,13 @@ void EditorPropertyDictionary::_property_changed(const String &p_property, Varia
 		object->set_new_item_value(p_value);
 	} else if (p_property.begins_with("indices")) {
 		int index = p_property.get_slice("/", 1).to_int();
-		Dictionary dict = object->get_dict();
+
+		Dictionary dict = object->get_dict().duplicate();
 		Variant key = dict.get_key_at_index(index);
 		dict[key] = p_value;
 
-		emit_changed(get_edited_property(), dict, "", true);
-
-		dict = dict.duplicate(); // Duplicate, so undo/redo works better.
 		object->set_dict(dict);
+		emit_changed(get_edited_property(), dict, "", true);
 	}
 }
 
@@ -771,24 +738,19 @@ void EditorPropertyDictionary::_add_key_value() {
 		return;
 	}
 
-	Dictionary dict = object->get_dict();
-
+	Dictionary dict = object->get_dict().duplicate();
 	dict[object->get_new_item_key()] = object->get_new_item_value();
 	object->set_new_item_key(Variant());
 	object->set_new_item_value(Variant());
 
 	emit_changed(get_edited_property(), dict, "", false);
-
-	dict = dict.duplicate(); // Duplicate, so undo/redo works better.
-	object->set_dict(dict);
 	update_property();
 }
 
 void EditorPropertyDictionary::_change_type_menu(int p_index) {
 	if (changing_type_index < 0) {
 		Variant value;
-		Callable::CallError ce;
-		Variant::construct(Variant::Type(p_index), value, nullptr, 0, ce);
+		VariantInternal::initialize(&value, Variant::Type(p_index));
 		if (changing_type_index == -1) {
 			object->set_new_item_key(value);
 		} else {
@@ -798,12 +760,10 @@ void EditorPropertyDictionary::_change_type_menu(int p_index) {
 		return;
 	}
 
-	Dictionary dict = object->get_dict();
-
+	Dictionary dict = object->get_dict().duplicate();
 	if (p_index < Variant::VARIANT_MAX) {
 		Variant value;
-		Callable::CallError ce;
-		Variant::construct(Variant::Type(p_index), value, nullptr, 0, ce);
+		VariantInternal::initialize(&value, Variant::Type(p_index));
 		Variant key = dict.get_key_at_index(changing_type_index);
 		dict[key] = value;
 	} else {
@@ -812,10 +772,11 @@ void EditorPropertyDictionary::_change_type_menu(int p_index) {
 	}
 
 	emit_changed(get_edited_property(), dict, "", false);
-
-	dict = dict.duplicate(); // Duplicate, so undo/redo works better.
-	object->set_dict(dict);
 	update_property();
+}
+
+void EditorPropertyDictionary::setup(PropertyHint p_hint) {
+	property_hint = p_hint;
 }
 
 void EditorPropertyDictionary::update_property() {
@@ -834,6 +795,7 @@ void EditorPropertyDictionary::update_property() {
 	}
 
 	Dictionary dict = updated_val;
+	object->set_dict(updated_val);
 
 	edit->set_text(vformat(TTR("Dictionary (size %d)"), dict.size()));
 
@@ -881,9 +843,6 @@ void EditorPropertyDictionary::update_property() {
 		int amount = MIN(size - offset, page_length);
 		int total_amount = page_index == max_page ? amount + 2 : amount; // For the "Add Key/Value Pair" box on last page.
 
-		dict = dict.duplicate();
-
-		object->set_dict(dict);
 		VBoxContainer *add_vbox = nullptr;
 		double default_float_step = EDITOR_GET("interface/inspector/default_float_step");
 
@@ -929,7 +888,13 @@ void EditorPropertyDictionary::update_property() {
 					prop = editor;
 				} break;
 				case Variant::STRING: {
-					prop = memnew(EditorPropertyText);
+					if (i != amount && property_hint == PROPERTY_HINT_MULTILINE_TEXT) {
+						// If this is NOT the new key field and there's a multiline hint,
+						// show the field as multiline
+						prop = memnew(EditorPropertyMultilineText);
+					} else {
+						prop = memnew(EditorPropertyText);
+					}
 
 				} break;
 
@@ -1042,6 +1007,14 @@ void EditorPropertyDictionary::update_property() {
 				} break;
 				case Variant::RID: {
 					prop = memnew(EditorPropertyRID);
+
+				} break;
+				case Variant::SIGNAL: {
+					prop = memnew(EditorPropertySignal);
+
+				} break;
+				case Variant::CALLABLE: {
+					prop = memnew(EditorPropertyCallable);
 
 				} break;
 				case Variant::OBJECT: {
@@ -1217,9 +1190,8 @@ void EditorPropertyDictionary::_notification(int p_what) {
 
 void EditorPropertyDictionary::_edit_pressed() {
 	Variant prop_val = get_edited_object()->get(get_edited_property());
-	if (prop_val.get_type() == Variant::NIL) {
-		Callable::CallError ce;
-		Variant::construct(Variant::DICTIONARY, prop_val, nullptr, 0, ce);
+	if (prop_val.get_type() == Variant::NIL && edit->is_pressed()) {
+		VariantInternal::initialize(&prop_val, Variant::DICTIONARY);
 		get_edited_object()->set(get_edited_property(), prop_val);
 	}
 
@@ -1264,14 +1236,13 @@ EditorPropertyDictionary::EditorPropertyDictionary() {
 void EditorPropertyLocalizableString::_property_changed(const String &p_property, Variant p_value, const String &p_name, bool p_changing) {
 	if (p_property.begins_with("indices")) {
 		int index = p_property.get_slice("/", 1).to_int();
-		Dictionary dict = object->get_dict();
+
+		Dictionary dict = object->get_dict().duplicate();
 		Variant key = dict.get_key_at_index(index);
 		dict[key] = p_value;
 
-		emit_changed(get_edited_property(), dict, "", true);
-
-		dict = dict.duplicate(); // Duplicate, so undo/redo works better.
 		object->set_dict(dict);
+		emit_changed(get_edited_property(), dict, "", true);
 	}
 }
 
@@ -1280,29 +1251,22 @@ void EditorPropertyLocalizableString::_add_locale_popup() {
 }
 
 void EditorPropertyLocalizableString::_add_locale(const String &p_locale) {
-	Dictionary dict = object->get_dict();
-
+	Dictionary dict = object->get_dict().duplicate();
 	object->set_new_item_key(p_locale);
 	object->set_new_item_value(String());
 	dict[object->get_new_item_key()] = object->get_new_item_value();
 
 	emit_changed(get_edited_property(), dict, "", false);
-
-	dict = dict.duplicate(); // Duplicate, so undo/redo works better.
-	object->set_dict(dict);
 	update_property();
 }
 
 void EditorPropertyLocalizableString::_remove_item(Object *p_button, int p_index) {
-	Dictionary dict = object->get_dict();
+	Dictionary dict = object->get_dict().duplicate();
 
 	Variant key = dict.get_key_at_index(p_index);
 	dict.erase(key);
 
 	emit_changed(get_edited_property(), dict, "", false);
-
-	dict = dict.duplicate(); // Duplicate, so undo/redo works better.
-	object->set_dict(dict);
 	update_property();
 }
 
@@ -1322,6 +1286,7 @@ void EditorPropertyLocalizableString::update_property() {
 	}
 
 	Dictionary dict = updated_val;
+	object->set_dict(dict);
 
 	edit->set_text(vformat(TTR("Localizable String (size %d)"), dict.size()));
 
@@ -1367,10 +1332,6 @@ void EditorPropertyLocalizableString::update_property() {
 		int offset = page_index * page_length;
 
 		int amount = MIN(size - offset, page_length);
-
-		dict = dict.duplicate();
-
-		object->set_dict(dict);
 
 		for (int i = 0; i < amount; i++) {
 			String prop_name;
@@ -1443,9 +1404,8 @@ void EditorPropertyLocalizableString::_notification(int p_what) {
 
 void EditorPropertyLocalizableString::_edit_pressed() {
 	Variant prop_val = get_edited_object()->get(get_edited_property());
-	if (prop_val.get_type() == Variant::NIL) {
-		Callable::CallError ce;
-		Variant::construct(Variant::DICTIONARY, prop_val, nullptr, 0, ce);
+	if (prop_val.get_type() == Variant::NIL && edit->is_pressed()) {
+		VariantInternal::initialize(&prop_val, Variant::DICTIONARY);
 		get_edited_object()->set(get_edited_property(), prop_val);
 	}
 
