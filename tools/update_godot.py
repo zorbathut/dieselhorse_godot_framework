@@ -1,0 +1,72 @@
+
+import argparse
+import shutil
+import sys
+import util
+
+util.cwdhack()
+
+if not sys.platform.startswith("linux"):
+    print("Currently Linux-only (though may not be hard to port)")
+    raise
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--commit", required = True)
+args = parser.parse_args()
+
+util.run([
+    "git",
+    "clone",
+    ".",
+    "update_godot",
+], check=True)
+
+util.run([
+    "git",
+    "checkout",
+    "thirdparty_godot",
+], cwd = "update_godot", check=True)
+
+util.run([
+    "git",
+    "clone",
+    "https://github.com/godotengine/godot.git",
+    "update_godot_engine",
+], check=True)
+
+util.run([
+    "git",
+    "checkout",
+    args.commit,
+], cwd = "update_godot_engine", check=True)
+
+shutil.rmtree("update_godot/godot")
+shutil.copytree("update_godot_engine", "update_godot/godot")
+
+util.run([
+    "git",
+    "add",
+    "-f",
+    ".",
+], cwd = "update_godot", check=True)
+
+util.run([
+    "git",
+    "commit",
+    "-m",
+    f"Godot {args.commit}"
+], cwd = "update_godot", check=True)
+
+util.run([
+    "git",
+    "checkout",
+    "main",
+], cwd = "update_godot", check=True)
+
+util.run([
+    "git",
+    "merge",
+    "thirdparty_godot",
+], cwd = "update_godot", check=True)
+
+# ?? I'm not sure what to do here ??
