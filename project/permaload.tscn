@@ -1,0 +1,14 @@
+[gd_scene load_steps=6 format=3 uid="uid://c43xt3fodsf26"]
+
+[ext_resource type="Script" path="res://src/Permaload.cs" id="1_ogffv"]
+[ext_resource type="PackedScene" uid="uid://6eb6tukh7n0b" path="res://ui/debug/debug.tscn" id="2_ac50j"]
+[ext_resource type="PackedScene" uid="uid://jqtbij64wfvb" path="res://level/arena.tscn" id="3_gg8wb"]
+[ext_resource type="PackedScene" uid="uid://dxnsbpjg100e7" path="res://vfx/blood_avatar.tscn" id="4_ov5ts"]
+[ext_resource type="PackedScene" uid="uid://btubq4qe1yn0a" path="res://vfx/blood_monster.tscn" id="5_thdcg"]
+
+[node name="permaload" type="Node"]
+script = ExtResource("1_ogffv")
+DebugUI = ExtResource("2_ac50j")
+Arena = ExtResource("3_gg8wb")
+BloodAvatar = ExtResource("4_ov5ts")
+BloodMonster = ExtResource("5_thdcg")
