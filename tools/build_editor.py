@@ -21,7 +21,7 @@ def run():
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
     
-    # Wipe out the GodotNuGetFallbackFolder because Godot does not properly update it
+    # Wipe out and recreate the GodotNuGetFallbackFolder because Godot does not properly update it
     fallbackdir = util.platformswitch(
         windows = os.path.expandvars("%APPDATA%/Godot/mono/GodotNuGetFallbackFolder"),
         linux = os.path.expanduser("~/.local/share/godot/mono/GodotNuGetFallbackFolder"))
@@ -29,32 +29,38 @@ def run():
         shutil.rmtree(fallbackdir)
         os.makedirs(fallbackdir)
     
+    # Build the binary itself (yay this is no longer two-pass)
     util.run([
             "scons",
             "-j", f"{cores}",
             f"p={platform}",
             "target=editor",
-            "tools=yes",
             "module_mono_enabled=yes",
+            "debug_symbols=yes",
         ], check=True, cwd="godot")
-        
+    
+    # Generate Mono glue files.
     util.run([
             util.godot_bin(),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
         ], check=True, cwd="godot")
 
+    # Create our local NuGetLocal directory.
     nugetdir = util.platformswitch(linux = os.path.expanduser("~/.nuget/NuGetLocal"), windows = os.path.expandvars("%APPDATA%/NuGetLocal"))
     if not os.path.exists(nugetdir):
         print(f"Making {nugetdir}")
         os.makedirs(nugetdir)
     
+    # Configure NuGet to understand this directory.
+    # We should probably change this directory name.
     util.run([
             "dotnet", "nuget",
             "add", "source", nugetdir,
             "--name", "NuGetLocal",
         ])  # not checking, it'll fail on the seond run if we do
     
+    # Build NuGet packages.
     util.run([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
@@ -62,7 +68,7 @@ def run():
            "--push-nupkgs-local", nugetdir,
         ], check=True, cwd="godot")
 
-    # priority back up
+    # Ramp priority back up for the editor itself.
     if util.platformswitch(linux = False, windows = True):
         proc.nice(psutil.NORMAL_PRIORITY_CLASS)
 
