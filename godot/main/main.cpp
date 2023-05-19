@@ -681,6 +681,9 @@ int Main::test_entrypoint(int argc, char *argv[], bool &tests_need_run) {
 Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_phase) {
 	OS::get_singleton()->initialize();
 
+	// Add our logger so we can log *everything*
+	OS::get_singleton()->add_logger(memnew(UserLogManagerLogger()));
+
 	engine = memnew(Engine);
 
 	MAIN_PRINT("Main: Initialize CORE");

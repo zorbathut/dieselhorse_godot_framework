@@ -31,6 +31,7 @@
 #include "logger.h"
 
 #include "core/config/project_settings.h"
+#include "core/core_bind.h"
 #include "core/core_globals.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"
@@ -264,5 +265,112 @@ void CompositeLogger::add_logger(Logger *p_logger) {
 CompositeLogger::~CompositeLogger() {
 	for (int i = 0; i < loggers.size(); ++i) {
 		memdelete(loggers[i]);
+	}
+}
+
+UserLogManagerLogger *UserLogManagerLogger::singleton = nullptr;
+
+UserLogManagerLogger::UserLogManagerLogger() {
+	ERR_FAIL_COND_MSG(singleton != nullptr, "Somehow created two UserLogManagerLoggers");
+
+	singleton = this;
+}
+
+UserLogManagerLogger::~UserLogManagerLogger() {
+	ERR_FAIL_COND_MSG(singleton != this, "UserLogManagerLogger::singleton not correct on exit");
+
+	singleton = nullptr;
+}
+
+void UserLogManagerLogger::logv(const char *p_format, va_list p_list, bool p_err) {
+	va_list list_copy;
+	va_copy(list_copy, p_list);
+
+	int len = vsnprintf(nullptr, 0, p_format, p_list);
+
+	char *buf = (char *)Memory::alloc_static(len + 1);
+	vsnprintf(buf, len + 1, p_format, list_copy);
+	va_end(list_copy);
+
+	Dictionary message;
+	message["text"] = buf;
+	message["type"] = "info";
+
+	process(std::move(message));
+
+	Memory::free_static(buf);
+}
+
+void UserLogManagerLogger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type) {
+	Dictionary message;
+	message["function"] = p_function;
+	message["file"] = p_file;
+	message["line"] = p_line;
+	message["text"] = p_code;
+	message["rationale"] = p_rationale;
+	switch (p_type) {
+		case ERR_ERROR:
+			message["type"] = "error";
+			break;
+		case ERR_WARNING:
+			message["type"] = "warning";
+			break;
+		case ERR_SCRIPT:
+			message["type"] = "script";
+			break;
+		case ERR_SHADER:
+			message["type"] = "shader";
+			break;
+	}
+
+	process(std::move(message));
+}
+
+void UserLogManagerLogger::process(const Dictionary &&p_message) {
+	{
+		// Shove another item into the buffer, if we can.
+		MutexLock lock(buffer_mutex);
+		if (buffering_active) {
+			if (::Engine::get_singleton()->get_frames_drawn() > 1) {
+				// Give up; if we haven't already been hooked, we probably aren't going to be, stop wasting RAM.
+				buffered_logs.clear();
+				buffering_active = false;
+			} else {
+				buffered_logs.append(p_message);
+			}
+			return;
+		}
+	}
+
+	core_bind::LogManager *logManager = core_bind::LogManager::get_singleton();
+	if (!logManager) {
+		return;
+	}
+
+	logManager->process(std::move(p_message));
+}
+
+void UserLogManagerLogger::flush() {
+	core_bind::LogManager *logManager = core_bind::LogManager::get_singleton();
+
+	int index = 0;
+	while (true) {
+		Dictionary message;
+		{
+			MutexLock lock(buffer_mutex);
+			if (index >= buffered_logs.size()) {
+				// We intentionally clear this only once we're *past* the end.
+				// This guarantees that there's no window for a message in another thread
+				// to arrive before the final buffered message.
+				buffered_logs.clear();
+				buffering_active = false;
+				break;
+			}
+
+			message = buffered_logs[index++];
+		}
+
+		// Do this outside the lock, just in case it ends up spawning more messages.
+		logManager->process(std::move(message));
 	}
 }

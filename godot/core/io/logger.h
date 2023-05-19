@@ -37,6 +37,10 @@
 
 #include <stdarg.h>
 
+namespace core_bind {
+class LogManager;
+}
+
 class Logger {
 protected:
 	bool should_log(bool p_err);
@@ -104,6 +108,28 @@ public:
 	void add_logger(Logger *p_logger);
 
 	virtual ~CompositeLogger();
+};
+
+class UserLogManagerLogger : public Logger {
+	static UserLogManagerLogger *singleton;
+
+	Mutex buffer_mutex;
+	Vector<Dictionary> buffered_logs;
+	bool buffering_active = true;
+
+public:
+	UserLogManagerLogger();
+	~UserLogManagerLogger();
+
+	static UserLogManagerLogger *get_singleton() { return singleton; }
+
+	virtual void logv(const char *p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
+	virtual void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type = ERR_ERROR) override;
+
+private:
+	friend class core_bind::LogManager;
+	void process(const Dictionary &&p_message);
+	void flush();
 };
 
 #endif // LOGGER_H

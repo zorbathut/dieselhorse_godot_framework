@@ -1793,4 +1793,41 @@ void EngineDebugger::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("send_message", "message", "data"), &EngineDebugger::send_message);
 }
 
+////// LogManager //////
+
+LogManager *LogManager::singleton = nullptr;
+
+LogManager::LogManager() {
+	ERR_FAIL_COND_MSG(singleton != nullptr, "Somehow created two LogManagers");
+
+	singleton = this;
+}
+
+LogManager::~LogManager() {
+	ERR_FAIL_COND_MSG(singleton != this, "LogManager::singleton not correct on exit");
+
+	singleton = nullptr;
+}
+
+void LogManager::register_log_capture(const Callable &p_callable) {
+	log_capture = p_callable;
+
+	UserLogManagerLogger *log_manager = UserLogManagerLogger::get_singleton();
+	if (log_manager != nullptr) {
+		log_manager->flush();
+	}
+}
+
+void LogManager::process(const Dictionary &&p_message) {
+	Variant message_variant = p_message;
+	const Variant *args[1] = { &message_variant };
+	Variant retval;
+	Callable::CallError err;
+	log_capture.callp(args, 1, retval, err);
+}
+
+void LogManager::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("register_log_capture", "callable"), &LogManager::register_log_capture);
+}
+
 } // namespace core_bind

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="LogManager" inherits="Object" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Exposes the internal logging systems.
+	</brief_description>
+	<description>
+		[LogManager] provides callbacks to receive log messages, both from scripts and from internal editor functionality.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="register_log_capture">
+			<return type="void" />
+			<param index="0" name="method" type="Callable" />
+			<description>
+				TODO THIS DOCUMENTATION IS INCOMPLETE
+
+				Registers a callback for the log capture system. It will be called with a single Variant containing a dictionary containing "type" and "text" fields, and optionally including "function", "file", "line", and "rationale".
+
+				If the callback is registered before the first frame, it will immediately call the callback rapidly with all messages from the start of the game, in order.
+
+				There's currently no way to unregister the callback or register more than one callback. This should probably be fixed if it becomes part of the engine.
+			</description>
+		</method>
+	</methods>
+</class>
