@@ -16,6 +16,7 @@
 * at the moment there's a glitch in Manjaro that requires `python-tomli` as well
 
 
+
 # To run the editor:
 
 * Run `build_and_run_editor`
