@@ -15,58 +15,80 @@ parser.add_argument("--commit", required = True)
 args = parser.parse_args()
 
 util.run([
-    "git",
-    "clone",
-    ".",
-    "update_godot",
-], check=True)
+        "git",
+        "clone",
+        ".",
+        "update_godot",
+    ], check=True)
 
 util.run([
-    "git",
-    "checkout",
-    "thirdparty_godot",
-], cwd = "update_godot", check=True)
+        "git",
+        "checkout",
+        "thirdparty_godot",
+    ], cwd = "update_godot", check=True)
 
 util.run([
-    "git",
-    "clone",
-    "https://github.com/godotengine/godot.git",
-    "update_godot_engine",
-], check=True)
+        "git",
+        "clone",
+        "https://github.com/godotengine/godot.git",
+        "update_godot_engine",
+    ], check=True)
 
 util.run([
-    "git",
-    "checkout",
-    args.commit,
-], cwd = "update_godot_engine", check=True)
+        "git",
+        "checkout",
+        args.commit,
+    ], cwd = "update_godot_engine", check=True)
 
 shutil.rmtree("update_godot/godot")
 shutil.copytree("update_godot_engine", "update_godot/godot")
 
 util.run([
-    "git",
-    "add",
-    "-f",
-    ".",
-], cwd = "update_godot", check=True)
+        "git",
+        "add",
+        "-f",
+        ".",
+    ], cwd = "update_godot", check=True)
 
 util.run([
-    "git",
-    "commit",
-    "-m",
-    f"Godot {args.commit}"
-], cwd = "update_godot", check=True)
+        "git",
+        "commit",
+        "-m",
+        f"Godot {args.commit}"
+    ], cwd = "update_godot", check=True)
 
 util.run([
-    "git",
-    "checkout",
-    "main",
-], cwd = "update_godot", check=True)
+        "git",
+        "checkout",
+        "main",
+    ], cwd = "update_godot", check=True)
+
+if util.run([
+        "git",
+        "merge",
+        "thirdparty_godot",
+    ], cwd = "update_godot").returncode != 0:
+
+    input("Merge conflicts; fix, commit, then hit enter")
 
 util.run([
-    "git",
-    "merge",
-    "thirdparty_godot",
-], cwd = "update_godot", check=True)
+        "git",
+        "fetch",
+        "update_godot",
+        "thirdparty_godot",
+    ], check=True)
 
-# ?? I'm not sure what to do here ??
+util.run([
+        "git",
+        "branch",
+        "-f",
+        "thirdparty_godot",
+        "update_godot/thirdparty_godot",
+    ], check=True)
+
+util.run([
+        "git",
+        "pull",
+        "update_godot",
+        "main",
+    ], check=True)

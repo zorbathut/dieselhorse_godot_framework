@@ -3,4 +3,4 @@
 import tools.bootstrap
 import sys
 
-tools.bootstrap.execute("cmd", sys.argv[1:])
+tools.bootstrap.execute("cmd", sys.argv[1:], shell=True)

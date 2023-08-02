@@ -19,6 +19,10 @@ def platformswitch(linux, windows):
 def run(command, **kwargs):
     print("Executing: " + " ".join(command))
 
+    # if you don't do this, it silently fails to pass parameters through
+    if "shell" in kwargs and kwargs["shell"] == True:
+        command = " ".join(command)
+
     return platformswitch(
         linux = lambda: subprocess.run(command, **kwargs),
         windows = lambda: subprocess.run(command, shell = True, **kwargs))()

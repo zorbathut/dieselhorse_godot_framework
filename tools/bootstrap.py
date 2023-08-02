@@ -4,7 +4,7 @@ import sys
 # this runs from main directory so we need to specify stuff
 import tools.util
 
-def execute(token, args = []):
+def execute(token, args = [], shell = False):
     poetry = tools.util.platformswitch(
         linux = "poetry",
         windows = "%APPDATA%/pypoetry/venv/Scripts/poetry")
@@ -19,4 +19,4 @@ def execute(token, args = []):
             "run",
             "python",
             f"{token}.py",
-        ] + args, check=True, cwd="tools")    
+        ] + args, check=True, cwd="tools", shell=shell)
