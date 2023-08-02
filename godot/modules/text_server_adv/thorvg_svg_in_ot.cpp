@@ -49,13 +49,15 @@ using namespace godot;
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
 
-#include "modules/modules_enabled.gen.h" // For svg.
+#include "modules/modules_enabled.gen.h" // For svg, freetype.
 #endif
 
 #ifdef MODULE_SVG_ENABLED
+#ifdef MODULE_FREETYPE_ENABLED
+
+#include "thorvg_svg_in_ot.h"
 
 #include "thorvg_bounds_iterator.h"
-#include "thorvg_svg_in_ot.h"
 
 #include <freetype/otsvg.h>
 #include <ft2build.h>
@@ -119,17 +121,23 @@ FT_Error tvg_svg_in_ot_preset_slot(FT_GlyphSlot p_slot, FT_Bool p_cache, FT_Poin
 				for (int i = 0; i < parser->get_attribute_count(); i++) {
 					xml_body += vformat(" %s=\"%s\"", parser->get_attribute_name(i), parser->get_attribute_value(i));
 				}
-				xml_body += ">";
+
+				if (parser->is_empty()) {
+					xml_body += "/>";
+				} else {
+					xml_body += ">";
+				}
 			} else if (parser->get_node_type() == XMLParser::NODE_TEXT) {
 				xml_body += parser->get_node_data();
 			} else if (parser->get_node_type() == XMLParser::NODE_ELEMENT_END) {
 				xml_body += vformat("</%s>", parser->get_node_name());
 			}
 		}
-		String temp_xml = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 0 0\">" + xml_body;
+		String temp_xml_str = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1 1\">" + xml_body;
+		CharString temp_xml = temp_xml_str.utf8();
 
 		std::unique_ptr<tvg::Picture> picture = tvg::Picture::gen();
-		tvg::Result result = picture->load(temp_xml.utf8().get_data(), temp_xml.utf8().length(), "svg+xml", false);
+		tvg::Result result = picture->load(temp_xml.get_data(), temp_xml.length(), "svg+xml", false);
 		if (result != tvg::Result::Success) {
 			ERR_FAIL_V_MSG(FT_Err_Invalid_SVG_Document, "Failed to load SVG document (bounds detection).");
 		}
@@ -146,10 +154,22 @@ FT_Error tvg_svg_in_ot_preset_slot(FT_GlyphSlot p_slot, FT_Bool p_cache, FT_Poin
 			new_h = (new_w / aspect);
 		}
 
-		gl_state.xml_code = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"" + rtos(min_x) + " " + rtos(min_y) + " " + rtos(new_w) + " " + rtos(new_h) + "\">" + xml_body;
+		String xml_code_str = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"" + rtos(min_x) + " " + rtos(min_y) + " " + rtos(new_w) + " " + rtos(new_h) + "\">" + xml_body;
+#ifndef GDEXTENSION
+		gl_state.xml_code = xml_code_str.utf8();
+#else
+		CharString xml_code = xml_code_str.utf8();
+		gl_state.xml_code_length = xml_code.length();
+		gl_state.xml_code = memnew_arr(char, gl_state.xml_code_length);
+		memcpy(gl_state.xml_code, xml_code.get_data(), gl_state.xml_code_length);
+#endif
 
 		picture = tvg::Picture::gen();
-		result = picture->load(gl_state.xml_code.utf8().get_data(), gl_state.xml_code.utf8().length(), "svg+xml", false);
+#ifndef GDEXTENSION
+		result = picture->load(gl_state.xml_code.get_data(), gl_state.xml_code.length(), "svg+xml", false);
+#else
+		result = picture->load(gl_state.xml_code, gl_state.xml_code_length, "svg+xml", false);
+#endif
 		if (result != tvg::Result::Success) {
 			ERR_FAIL_V_MSG(FT_Err_Invalid_SVG_Document, "Failed to load SVG document (glyph metrics).");
 		}
@@ -237,7 +257,11 @@ FT_Error tvg_svg_in_ot_render(FT_GlyphSlot p_slot, FT_Pointer *p_state) {
 	ERR_FAIL_COND_V_MSG(!gl_state.ready, FT_Err_Invalid_SVG_Document, "SVG glyph not ready.");
 
 	std::unique_ptr<tvg::Picture> picture = tvg::Picture::gen();
-	tvg::Result res = picture->load(gl_state.xml_code.utf8().get_data(), gl_state.xml_code.utf8().length(), "svg+xml", false);
+#ifndef GDEXTENSION
+	tvg::Result res = picture->load(gl_state.xml_code.get_data(), gl_state.xml_code.length(), "svg+xml", false);
+#else
+	tvg::Result res = picture->load(gl_state.xml_code, gl_state.xml_code_length, "svg+xml", false);
+#endif
 	if (res != tvg::Result::Success) {
 		ERR_FAIL_V_MSG(FT_Err_Invalid_SVG_Document, "Failed to load SVG document (glyph rendering).");
 	}
@@ -284,4 +308,5 @@ SVG_RendererHooks *get_tvg_svg_in_ot_hooks() {
 	return &tvg_svg_in_ot_hooks;
 }
 
+#endif // MODULE_FREETYPE_ENABLED
 #endif // MODULE_SVG_ENABLED
