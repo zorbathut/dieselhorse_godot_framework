@@ -1,15 +1,12 @@
-<Project Sdk="Godot.NET.Sdk/4.0.2">
+<Project Sdk="Godot.NET.Sdk/4.1.1">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
-
   <ItemGroup>
     <Content Include="dec/**" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Remove="thirdparty/arbor/generator/**/*" />
     <ProjectReference Include="thirdparty/arbor/generator/generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
