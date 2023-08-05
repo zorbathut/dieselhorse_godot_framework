@@ -578,7 +578,14 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 		}
 		args.push_back(0);
 
-		execvp(p_path.utf8().get_data(), &args[0]);
+		Vector<const char *> envVars;
+		for (char** env = environ; *env != 0; env++) {
+			envVars.push_back(*env);
+		}
+		envVars.push_back("OBS_VKCAPTURE=1");
+		envVars.push_back(0);
+
+		execvpe(p_path.utf8().get_data(), &args[0], (char**)&envVars[0]);
 		// The execvp() function only returns if an error occurs.
 		ERR_PRINT("Could not create child process: " + p_path);
 		raise(SIGKILL);
