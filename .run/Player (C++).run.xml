@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Player (C++)" type="CppProject" factoryName="C++ Project">
+    <configuration_1>
+      <option name="CONFIGURATION" value="Debug" />
+      <option name="PLATFORM" value="Any CPU" />
+      <option name="PROJECT_FILE_PATH" value="" />
+      <option name="CURRENT_LAUNCH_PROFILE" value="Local" />
+      <option name="EXE_PATH" value="$PROJECT_DIR$/godot/bin/godot.linuxbsd.editor.x86_64.mono" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/project/" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+    </configuration_1>
+    <option name="DEFAULT_PROJECT_PATH" value="" />
+    <method v="2">
+      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_build_editor" />
+      <option name="Build" default="false" projectName="runemonger" projectPath="$PROJECT_DIR$/project/runemonger.csproj" />
+    </method>
+  </configuration>
+</component>

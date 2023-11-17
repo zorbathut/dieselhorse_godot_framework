@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Client/Server C#" type="CompoundRunConfigurationType">
+    <toRun name="Player Client (C#)" type="RunExe" />
+    <toRun name="Player Server (C#)" type="RunExe" />
+    <method v="2" />
+  </configuration>
+</component>
