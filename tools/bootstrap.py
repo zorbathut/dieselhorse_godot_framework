@@ -12,6 +12,7 @@ def execute(token, args = [], shell = False):
     tools.util.run([
             poetry,
             "install",
+            "--no-root",
         ], check=True, cwd="tools")
     
     tools.util.run([
