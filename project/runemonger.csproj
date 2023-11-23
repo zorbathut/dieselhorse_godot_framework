@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="dec/**" />
+    <Content Include="src\network\ARCHITECTURE.md" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="thirdparty/arbor/generator/**/*" />
