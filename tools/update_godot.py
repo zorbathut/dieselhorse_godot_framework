@@ -83,7 +83,7 @@ util.run([
         "branch",
         "-f",
         "thirdparty_godot",
-        "update_godot/thirdparty_godot",
+        "update_godot/FETCH_HEAD",
     ], check=True)
 
 util.run([
