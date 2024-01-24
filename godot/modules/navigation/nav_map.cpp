@@ -431,6 +431,17 @@ Vector<Vector3> NavMap::get_path(Vector3 p_origin, Vector3 p_destination, bool p
 	if (p_optimize) {
 		// Set the apex poly/point to the end point
 		gd::NavigationPoly *apex_poly = &navigation_polys[least_cost_id];
+
+		Vector3 back_pathway[2] = { apex_poly->back_navigation_edge_pathway_start, apex_poly->back_navigation_edge_pathway_end };
+		const Vector3 back_edge_closest_point = Geometry3D::get_closest_point_to_segment(end_point, back_pathway);
+		if (end_point.is_equal_approx(back_edge_closest_point)) {
+			// The end point is basically on top of the last crossed edge, funneling around the corners would at best do nothing.
+			// At worst it would add an unwanted path point before the last point due to precision issues so skip to the next polygon.
+			if (apex_poly->back_navigation_poly_id != -1) {
+				apex_poly = &navigation_polys[apex_poly->back_navigation_poly_id];
+			}
+		}
+
 		Vector3 apex_point = end_point;
 
 		gd::NavigationPoly *left_poly = apex_poly;
@@ -804,6 +815,9 @@ void NavMap::sync() {
 		// Resize the polygon count.
 		int count = 0;
 		for (const NavRegion *region : regions) {
+			if (!region->get_enabled()) {
+				continue;
+			}
 			count += region->get_polygons().size();
 		}
 		polygons.resize(count);
@@ -811,6 +825,9 @@ void NavMap::sync() {
 		// Copy all region polygons in the map.
 		count = 0;
 		for (const NavRegion *region : regions) {
+			if (!region->get_enabled()) {
+				continue;
+			}
 			const LocalVector<gd::Polygon> &polygons_source = region->get_polygons();
 			for (uint32_t n = 0; n < polygons_source.size(); n++) {
 				polygons[count + n] = polygons_source[n];
@@ -936,6 +953,9 @@ void NavMap::sync() {
 
 		// Search for polygons within range of a nav link.
 		for (const NavLink *link : links) {
+			if (!link->get_enabled()) {
+				continue;
+			}
 			const Vector3 start = link->get_start_position();
 			const Vector3 end = link->get_end_position();
 
@@ -1043,7 +1063,8 @@ void NavMap::sync() {
 		}
 
 		// Update the update ID.
-		map_update_id = (map_update_id + 1) % 9999999;
+		// Some code treats 0 as a failure case, so we avoid returning 0.
+		map_update_id = map_update_id % 9999999 + 1;
 	}
 
 	// Do we have modified obstacle positions?
@@ -1086,8 +1107,14 @@ void NavMap::_update_rvo_obstacles_tree_2d() {
 		obstacle_vertex_count += obstacle->get_vertices().size();
 	}
 
+	// Cleaning old obstacles.
+	for (size_t i = 0; i < rvo_simulation_2d.obstacles_.size(); ++i) {
+		delete rvo_simulation_2d.obstacles_[i];
+	}
+	rvo_simulation_2d.obstacles_.clear();
+
 	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree
-	std::vector<RVO2D::Obstacle2D *> raw_obstacles;
+	std::vector<RVO2D::Obstacle2D *> &raw_obstacles = rvo_simulation_2d.obstacles_;
 	raw_obstacles.reserve(obstacle_vertex_count);
 
 	// The following block is modified copy from RVO2D::AddObstacle()
@@ -1104,8 +1131,14 @@ void NavMap::_update_rvo_obstacles_tree_2d() {
 		rvo_2d_vertices.reserve(_obstacle_vertices.size());
 
 		uint32_t _obstacle_avoidance_layers = obstacle->get_avoidance_layers();
+		real_t _obstacle_height = obstacle->get_height();
 
 		for (const Vector3 &_obstacle_vertex : _obstacle_vertices) {
+#ifdef TOOLS_ENABLED
+			if (_obstacle_vertex.y != 0) {
+				WARN_PRINT_ONCE("Y coordinates of static obstacle vertices are ignored. Please use obstacle position Y to change elevation of obstacle.");
+			}
+#endif
 			rvo_2d_vertices.push_back(RVO2D::Vector2(_obstacle_vertex.x + _obstacle_position.x, _obstacle_vertex.z + _obstacle_position.z));
 		}
 
@@ -1114,6 +1147,9 @@ void NavMap::_update_rvo_obstacles_tree_2d() {
 		for (size_t i = 0; i < rvo_2d_vertices.size(); i++) {
 			RVO2D::Obstacle2D *rvo_2d_obstacle = new RVO2D::Obstacle2D();
 			rvo_2d_obstacle->point_ = rvo_2d_vertices[i];
+			rvo_2d_obstacle->height_ = _obstacle_height;
+			rvo_2d_obstacle->elevation_ = _obstacle_position.y;
+
 			rvo_2d_obstacle->avoidance_layers_ = _obstacle_avoidance_layers;
 
 			if (i != 0) {

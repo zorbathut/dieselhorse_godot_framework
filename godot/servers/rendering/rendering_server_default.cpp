@@ -88,10 +88,10 @@ void RenderingServerDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 	RSG::scene->render_probes();
 
-	RSG::viewport->draw_viewports();
+	RSG::viewport->draw_viewports(p_swap_buffers);
 	RSG::canvas_render->update();
 
-	if (OS::get_singleton()->get_current_rendering_driver_name() != "opengl3") {
+	if (!OS::get_singleton()->get_current_rendering_driver_name().begins_with("opengl3")) {
 		// Already called for gl_compatibility renderer.
 		RSG::rasterizer->end_frame(p_swap_buffers);
 	}
@@ -258,20 +258,8 @@ uint64_t RenderingServerDefault::get_rendering_info(RenderingInfo p_info) {
 	return RSG::utilities->get_rendering_info(p_info);
 }
 
-String RenderingServerDefault::get_video_adapter_name() const {
-	return RSG::utilities->get_video_adapter_name();
-}
-
-String RenderingServerDefault::get_video_adapter_vendor() const {
-	return RSG::utilities->get_video_adapter_vendor();
-}
-
 RenderingDevice::DeviceType RenderingServerDefault::get_video_adapter_type() const {
 	return RSG::utilities->get_video_adapter_type();
-}
-
-String RenderingServerDefault::get_video_adapter_api_version() const {
-	return RSG::utilities->get_video_adapter_api_version();
 }
 
 void RenderingServerDefault::set_frame_profiling_enabled(bool p_enable) {
@@ -396,6 +384,10 @@ void RenderingServerDefault::draw(bool p_swap_buffers, double frame_step) {
 	} else {
 		_draw(p_swap_buffers, frame_step);
 	}
+}
+
+void RenderingServerDefault::_call_on_render_thread(const Callable &p_callable) {
+	p_callable.call();
 }
 
 RenderingServerDefault::RenderingServerDefault(bool p_create_thread) :
