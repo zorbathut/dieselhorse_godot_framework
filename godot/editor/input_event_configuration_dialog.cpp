@@ -31,6 +31,7 @@
 #include "editor/input_event_configuration_dialog.h"
 #include "core/input/input_map.h"
 #include "editor/editor_scale.h"
+#include "editor/editor_string_names.h"
 #include "editor/event_listener_line_edit.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/line_edit.h"
@@ -552,20 +553,19 @@ void InputEventConfigurationDialog::_notification(int p_what) {
 			event_listener->grab_focus();
 		} break;
 
-		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_THEME_CHANGED: {
-			input_list_search->set_right_icon(input_list_search->get_theme_icon(SNAME("Search"), SNAME("EditorIcons")));
+			input_list_search->set_right_icon(get_editor_theme_icon(SNAME("Search")));
 
-			key_mode->set_item_icon(KEYMODE_KEYCODE, get_theme_icon(SNAME("Keyboard"), SNAME("EditorIcons")));
-			key_mode->set_item_icon(KEYMODE_PHY_KEYCODE, get_theme_icon(SNAME("KeyboardPhysical"), SNAME("EditorIcons")));
-			key_mode->set_item_icon(KEYMODE_UNICODE, get_theme_icon(SNAME("KeyboardLabel"), SNAME("EditorIcons")));
+			key_mode->set_item_icon(KEYMODE_KEYCODE, get_editor_theme_icon(SNAME("Keyboard")));
+			key_mode->set_item_icon(KEYMODE_PHY_KEYCODE, get_editor_theme_icon(SNAME("KeyboardPhysical")));
+			key_mode->set_item_icon(KEYMODE_UNICODE, get_editor_theme_icon(SNAME("KeyboardLabel")));
 
-			icon_cache.keyboard = get_theme_icon(SNAME("Keyboard"), SNAME("EditorIcons"));
-			icon_cache.mouse = get_theme_icon(SNAME("Mouse"), SNAME("EditorIcons"));
-			icon_cache.joypad_button = get_theme_icon(SNAME("JoyButton"), SNAME("EditorIcons"));
-			icon_cache.joypad_axis = get_theme_icon(SNAME("JoyAxis"), SNAME("EditorIcons"));
+			icon_cache.keyboard = get_editor_theme_icon(SNAME("Keyboard"));
+			icon_cache.mouse = get_editor_theme_icon(SNAME("Mouse"));
+			icon_cache.joypad_button = get_editor_theme_icon(SNAME("JoyButton"));
+			icon_cache.joypad_axis = get_editor_theme_icon(SNAME("JoyAxis"));
 
-			event_as_text->add_theme_font_override("font", get_theme_font(SNAME("bold"), SNAME("EditorFonts")));
+			event_as_text->add_theme_font_override("font", get_theme_font(SNAME("bold"), EditorStringName(EditorFonts)));
 
 			_update_input_list();
 		} break;
@@ -612,12 +612,13 @@ InputEventConfigurationDialog::InputEventConfigurationDialog() {
 	allowed_input_types = INPUT_KEY | INPUT_MOUSE_BUTTON | INPUT_JOY_BUTTON | INPUT_JOY_MOTION;
 
 	set_title(TTR("Event Configuration"));
-	set_min_size(Size2i(550 * EDSCALE, 0)); // Min width
+	set_min_size(Size2i(550, 0) * EDSCALE);
 
 	VBoxContainer *main_vbox = memnew(VBoxContainer);
 	add_child(main_vbox);
 
 	event_as_text = memnew(Label);
+	event_as_text->set_custom_minimum_size(Size2(500, 0) * EDSCALE);
 	event_as_text->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	event_as_text->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	event_as_text->add_theme_font_size_override("font_size", 18 * EDSCALE);
