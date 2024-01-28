@@ -10,6 +10,7 @@ psutil = "*"
 
 # needed for the build system
 scons = "*"
+requests = "^2.31.0"
 
 [build-system]
 requires = ["poetry-core"]
