@@ -10,6 +10,8 @@ import util
 util.cwdhack()
 
 def run():
+    double_precision = True
+    
     # kick priority down to make builds smoother
     # can't do this on linux unfortunately; shell out to a niced build_editor?
     if util.platformswitch(linux = False, windows = True):
@@ -37,6 +39,7 @@ def run():
             "target=editor",
             "module_mono_enabled=yes",
             "debug_symbols=yes",
+            f"precision={double_precision and 'double' or 'single'}",
         ], check=True, cwd="godot")
     
     # Generate Mono glue files.
@@ -66,6 +69,7 @@ def run():
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
            "--push-nupkgs-local", nugetdir,
+           f"--precision={double_precision and 'double' or 'single'}",
         ], check=True, cwd="godot")
 
     # Ramp priority back up for the editor itself.

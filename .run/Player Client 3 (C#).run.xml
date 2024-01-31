@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Player Client 3 (C#)" type="RunExe" factoryName=".NET Executable" singleton="false">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/godot/bin/godot.linuxbsd.editor.x86_64.mono" />
+    <option name="EXE_PATH" value="$PROJECT_DIR$/godot/bin/godot.linuxbsd.editor.double.x86_64.mono" />
     <option name="PROGRAM_PARAMETERS" value="-- --connect=localhost:11235" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/project" />
     <option name="PASS_PARENT_ENVS" value="1" />

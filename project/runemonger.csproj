@@ -3,6 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <GodotFloat64>true</GodotFloat64>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="dec/**" />
