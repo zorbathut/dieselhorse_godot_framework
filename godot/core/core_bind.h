@@ -563,28 +563,6 @@ public:
 	~EngineDebugger();
 };
 
-class LogManager : public Object {
-	GDCLASS(LogManager, Object);
-
-	Callable log_capture;
-
-protected:
-	static void _bind_methods();
-	static LogManager *singleton;
-
-public:
-	LogManager();
-	~LogManager();
-
-	static LogManager *get_singleton() { return singleton; }
-
-	void register_log_capture(const Callable &p_callable);
-
-private:
-	friend class ::UserLogManagerLogger;
-	void process(const Dictionary &&p_message);
-};
-
 } // namespace core_bind
 
 VARIANT_ENUM_CAST(core_bind::ResourceLoader::ThreadLoadStatus);

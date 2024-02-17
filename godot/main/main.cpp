@@ -763,9 +763,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	OS::get_singleton()->initialize();
 
-	// Add our logger so we can log *everything*
-	OS::get_singleton()->add_logger(memnew(UserLogManagerLogger()));
-	
 	// Benchmark tracking must be done after `OS::get_singleton()->initialize()` as on some
 	// platforms, it's used to set up the time utilities.
 	OS::get_singleton()->benchmark_begin_measure("startup_begin");
