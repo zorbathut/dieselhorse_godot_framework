@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "runemonger", "project\runemonger.csproj", "{68B32155-84C4-407C-8FFD-0879961F8FC8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "generator", "project\thirdparty\arbor\generator\generator.csproj", "{6354C629-E656-42F6-A74C-C1FA51F73C00}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
