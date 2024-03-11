@@ -12,8 +12,10 @@ def copyglob(sources, destination):
     os.makedirs(destination, exist_ok=True)
 
     for source in sources:
+        print("", source)
         source_files = glob.glob(source)
         for file in source_files:
+            print("", "", file)
             shutil.copy(file, destination)
 
 def run():
@@ -23,7 +25,7 @@ def run():
     copyglob(['../ghi/src/*.cs'], 'project/thirdparty/ghi')
 
     copyglob(['../arbor/src/*.cs'], 'project/thirdparty/arbor')
-    copyglob(['../arbor/generator/*.cs', '../arbor/generator/.gitignore', '../arbor/generator/*.csproj'], 'project/thirdparty/arbor/generator')
+    copyglob(['../arbor/generator/*.cs', '../arbor/generator/*.csproj'], 'project/thirdparty/arbor/generator')
 
 if __name__ == '__main__':
     run()

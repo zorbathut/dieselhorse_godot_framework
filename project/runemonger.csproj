@@ -8,6 +8,7 @@
   <ItemGroup>
     <Content Include="dec/**" />
     <Content Include="src\network\ARCHITECTURE.md" />
+    <Content Include="thirdparty\.gitignore" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="thirdparty/arbor/generator/**/*" />
