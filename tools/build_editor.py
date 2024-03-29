@@ -23,14 +23,6 @@ def run():
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
     
-    # Wipe out and recreate the GodotNuGetFallbackFolder because Godot does not properly update it
-    fallbackdir = util.platformswitch(
-        windows = os.path.expandvars("%APPDATA%/Godot/mono/GodotNuGetFallbackFolder"),
-        linux = os.path.expanduser("~/.local/share/godot/mono/GodotNuGetFallbackFolder"))
-    if os.path.exists(fallbackdir):
-        shutil.rmtree(fallbackdir)
-        os.makedirs(fallbackdir)
-    
     # Build the binary itself (yay this is no longer two-pass)
     util.run([
             "scons",
@@ -48,27 +40,12 @@ def run():
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
         ], check=True, cwd="godot")
-
-    # Create our local NuGetLocal directory.
-    nugetdir = util.platformswitch(linux = os.path.expanduser("~/.nuget/NuGetLocal"), windows = os.path.expandvars("%APPDATA%/NuGetLocal"))
-    if not os.path.exists(nugetdir):
-        print(f"Making {nugetdir}")
-        os.makedirs(nugetdir)
-    
-    # Configure NuGet to understand this directory.
-    # We should probably change this directory name.
-    util.run([
-            "dotnet", "nuget",
-            "add", "source", nugetdir,
-            "--name", "NuGetLocal",
-        ])  # not checking, it'll fail on the seond run if we do
     
     # Build NuGet packages.
     util.run([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
-           "--push-nupkgs-local", nugetdir,
            f"--precision={double_precision and 'double' or 'single'}",
         ], check=True, cwd="godot")
 
