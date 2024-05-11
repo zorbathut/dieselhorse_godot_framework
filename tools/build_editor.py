@@ -40,6 +40,9 @@ def run():
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
         ], check=True, cwd="godot")
+
+    # Make necessary directory
+    os.makedirs("godot/bin/GodotSharp/Tools/nupkgs", exist_ok=True)
     
     # Build NuGet packages.
     util.run([
