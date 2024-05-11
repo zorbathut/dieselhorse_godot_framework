@@ -141,6 +141,12 @@
 				Returns the top-level [Control] at the mouse cursor position within this viewport. If no [Control] is at the mouse cursor location, returns null.
 			</description>
 		</method>
+		<method name="gui_get_mouse_over_window" qualifiers="const">
+			<return type="Window" />
+			<description>
+				Returns the top-level [Window] at the mouse cursor position within this viewport. If no [Window] is at the mouse cursor location, returns null.
+			</description>
+		</method>
 		<method name="gui_is_drag_successful" qualifiers="const">
 			<return type="bool" />
 			<description>

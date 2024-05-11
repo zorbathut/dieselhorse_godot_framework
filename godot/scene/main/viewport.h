@@ -611,6 +611,7 @@ public:
 	Control *gui_get_focus_owner() const;
 
 	Control *gui_get_mouse_over() const;
+	Window *gui_get_mouse_over_window() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
