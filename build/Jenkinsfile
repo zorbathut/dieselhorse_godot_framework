@@ -2,9 +2,12 @@ pipeline {
     agent any
     
     stages {
-        stage('Hello') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Hello World'
+                script {
+                    // Execute the shell script to build the Docker image
+                    sh 'build/godot-build-containers/build.sh'
+                }
             }
         }
     }
