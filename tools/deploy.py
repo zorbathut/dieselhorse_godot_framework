@@ -1,4 +1,5 @@
  
+import build_editor
 import multiprocessing
 import os
 import psutil
@@ -10,6 +11,14 @@ import util
 util.cwdhack()
 
 def run():
+    if util.platformswitch(linux = False, windows = True):
+        print("This definitely won't work on Windows.")
+        sys.exit(1)
+
+    # need local editor infrastructure to exist for this
+    build_editor.run()
+
+    # this really shouldn't be redundant
     double_precision = True
 
     # kick priority down to make builds smoother
@@ -31,7 +40,6 @@ def run():
             "target=template_release",
             "arch=x86_64",
             "production=yes",
-            "lto=full",
             "module_mono_enabled=yes",
             "debug_symbols=yes",
             f"precision={double_precision and 'double' or 'single'}",
