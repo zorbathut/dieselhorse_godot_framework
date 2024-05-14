@@ -3506,7 +3506,7 @@ Control *Viewport::gui_get_mouse_over() const {
 	return gui.mouse_over;
 }
 
-Control *Viewport::gui_get_mouse_over_window() const {
+Window *Viewport::gui_get_mouse_over_window() const {
 	ERR_READ_THREAD_GUARD_V(nullptr);
 	return gui.subwindow_over;
 }
