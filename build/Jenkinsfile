@@ -4,8 +4,10 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                docker.image("quay.io/podman/stable:v5.0.2-immutable").inside {
-                    sh 'build/godot-build-containers/build.sh'
+                script {
+                    docker.image("quay.io/podman/stable:v5.0.2-immutable").inside {
+                        sh 'build/godot-build-containers/build.sh'
+                    }
                 }
             }
         }
