@@ -3,6 +3,8 @@ pipeline {
     
     environment {
         GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
+        
+        LINUX_IMAGE_TAR = "godot-linux-${GBCMSB_ID}.tar"
     }
 
     stages {
@@ -12,9 +14,34 @@ pipeline {
                     docker.image("quay.io/podman/stable:v5.0.2-immutable").inside('--privileged') {
                         dir('build/godot-build-containers') {
                             sh './msb.sh'
+                            
+                            // export
+                            sh "podman save localhost/godot-linux:${GBCMSB_ID} -o ${LINUX_IMAGE_TAR}"
                         }
                     }
+
+                    // Import the image into the Docker environment of the Jenkins host
+                    sh "docker load -i build/godot-build-containers/${LINUX_IMAGE_TAR}"
                 }
+            }
+        }
+        stage('Build Linux') {
+            steps {
+                script {
+                    docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
+                        sh 'python build_editor.py'
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                // Clean up the Docker container and image tar file
+                sh "docker rm -f \$(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID})"
+                sh "rm -f ${LINUX_IMAGE_TAR}"
             }
         }
     }
