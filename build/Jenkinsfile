@@ -10,7 +10,9 @@ pipeline {
             steps {
                 script {
                     docker.image("quay.io/podman/stable:v5.0.2-immutable").inside('--privileged') {
-                        sh 'build/godot-build-containers/msb.sh'
+                        dir('build/godot-build-containers') {
+                            sh './msb.sh'
+                        }
                     }
                 }
             }
