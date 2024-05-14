@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        $GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
+        GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
     }
 
     stages {
