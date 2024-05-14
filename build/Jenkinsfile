@@ -1,12 +1,16 @@
 pipeline {
     agent any
     
+    environment {
+        $GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
+    }
+
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
                     docker.image("quay.io/podman/stable:v5.0.2-immutable").inside {
-                        sh 'build/godot-build-containers/build.sh'
+                        sh 'build/godot-build-containers/msb.sh'
                     }
                 }
             }
