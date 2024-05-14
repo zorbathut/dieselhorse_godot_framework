@@ -4,3 +4,6 @@
 
 update_godot
 update_godot_engine
+
+# temp storage for releases
+/deploy
