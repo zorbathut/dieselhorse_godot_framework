@@ -12,5 +12,6 @@ RUN dnf -y install --setopt=install_weak_deps=False \
 
 # moonskrive changes
 RUN dnf -y install python poetry
+ENV POETRY_VIRTUALENVS_PATH=/tmp/venvs
 
 CMD /bin/bash
