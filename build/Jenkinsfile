@@ -11,7 +11,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.image("quay.io/podman/stable:v5.0.2-immutable").inside('--privileged') {
+                    docker.image("quay.io/podman/stable:v5.0.2-immutable").inside('--privileged -v /var/lib/jenkins/podman-storage:/var/lib/containers/storage') {
                         dir('build/godot-build-containers') {
                             sh './msb.sh'
                             
