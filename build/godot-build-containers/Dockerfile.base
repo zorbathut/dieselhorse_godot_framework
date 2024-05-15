@@ -7,11 +7,8 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN dnf -y install --setopt=install_weak_deps=False \
       bash bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
-      dotnet-sdk-8.0 && \
-    pip install scons==4.6.0
+      dotnet-sdk-8.0 python poetry gcc python3-devel
 
-# moonskrive changes
-RUN dnf -y install python poetry
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
 
