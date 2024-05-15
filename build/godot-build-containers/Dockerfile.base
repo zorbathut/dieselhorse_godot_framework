@@ -7,7 +7,7 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN dnf -y install --setopt=install_weak_deps=False \
       bash bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
-      dotnet-sdk-8.0 python poetry gcc gcc-c++ python3-devel
+      dotnet-sdk-8.0 python poetry gcc gcc-c++ libstdc++ python3-devel
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
