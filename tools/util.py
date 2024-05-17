@@ -19,13 +19,25 @@ def platformswitch(linux, windows):
 def run(command, **kwargs):
     print("Executing: " + " ".join(command))
 
+    # decorate our args
+    platformargs = platformswitch(
+        linux = {},
+        windows = {},
+    )
+
+    ourargs = {**platformargs, **kwargs}
+
+    if platformswitch(linux = False, windows = True) and "\\" in command[0] and "cwd" in ourargs:
+        # windows, weirdly, evaluates the executable first, *then* cwd's
+        # so if we have a relative executable name we need to decorate it with our cwd
+        command[0] = os.path.join(ourargs["cwd"], command[0])
+
     # if you don't do this, it silently fails to pass parameters through
-    if "shell" in kwargs and kwargs["shell"] == True:
+    # seriously how is subprocess such a mess
+    if "shell" in ourargs and ourargs["shell"] == True:
         command = " ".join(command)
 
-    return platformswitch(
-        linux = lambda: subprocess.run(command, **kwargs),
-        windows = lambda: subprocess.run(command, shell = True, **kwargs))()
+    return subprocess.run(command, **kwargs)
 
 def godot_bin():
     return platformswitch(
