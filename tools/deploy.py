@@ -40,6 +40,7 @@ def run():
             "target=template_release",
             "arch=x86_64",
             "production=yes",
+            #"lto=full", # currently crashes    
             "module_mono_enabled=yes",
             "debug_symbols=yes",
             f"precision={double_precision and 'double' or 'single'}",
@@ -63,7 +64,9 @@ def run():
             f"--precision={double_precision and 'double' or 'single'}",
         ], check=True, cwd="godot")
 
-    # Make necessary directory
+    # Clear and remake necessary directory
+    if os.path.exists("deploy/linux"):
+        shutil.rmtree("deploy/linux")
     os.makedirs("deploy/linux", exist_ok=True)
 
     # Run headless export
@@ -74,6 +77,9 @@ def run():
             "--export-release", "linux",
             "../deploy/linux/moonskrive",
         ], check=True)
+
+    # Copy dec directory over
+    shutil.copytree("project/dec", "deploy/linux/dec")
 
     # Ramp priority back up for the editor itself.
     if util.platformswitch(linux = False, windows = True):
