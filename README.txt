@@ -10,10 +10,10 @@
 
 
 
-# Manjaro initial setup
+# Manjaro Linux initial setup
 
 * `pamac install python python-poetry dotnet-sdk-6.0` (you don't need the supporting ASP.NET packages)
-* at the moment there's a glitch in Manjaro that requires `python-tomli` as well
+* a while ago there was a glitch in Manjaro that requires `python-tomli` as well; it might be fixed, if you're doing setup, try it without and see if it works
 
 
 
