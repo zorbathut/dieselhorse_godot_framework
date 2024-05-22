@@ -52,6 +52,19 @@ def run():
            f"--precision={double_precision and 'double' or 'single'}",
         ], check=True, cwd="godot")
 
+    # Set up our fake universal link
+    # We append .exe to it because Windows wants it and nothing else minds.
+    universal_editor_path = "godot/bin/godot.universal.editor.double.x86_64.mono.exe"
+    if os.path.exists(universal_editor_path):
+        os.remove(universal_editor_path)
+    
+    util.platformswitch(
+        linux = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin())), universal_editor_path),
+        
+        # This can be made faster by using a shortcut or mklink, but that's tough
+        windows = lambda: shutil.copyfile(os.path.join("godot", util.godot_bin()), universal_editor_path),
+    )()
+
     # Ramp priority back up for the editor itself.
     if util.platformswitch(linux = False, windows = True):
         proc.nice(psutil.NORMAL_PRIORITY_CLASS)
