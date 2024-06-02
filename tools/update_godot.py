@@ -14,6 +14,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--commit", required = True)
 args = parser.parse_args()
 
+if util.run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout != "main":
+    print("Error: Not on main branch (this is probably fixable but it'll take some work)")
+    sys.exit(1)
+
 util.run([
         "git",
         "clone",
@@ -83,12 +87,18 @@ util.run([
         "branch",
         "-f",
         "thirdparty_godot",
-        "update_godot/FETCH_HEAD",
+        "FETCH_HEAD",
     ], check=True)
 
 util.run([
         "git",
-        "pull",
+        "fetch",
         "update_godot",
         "main",
+    ], check=True)
+
+util.run([
+        "git",
+        "merge",
+        "FETCH_HEAD",
     ], check=True)
