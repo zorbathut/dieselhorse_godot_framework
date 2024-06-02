@@ -6,3 +6,7 @@ def get_env():
     env = os.environ.copy()
     env['GODOT_VERSION_STATUS'] = 'moonskrive'
     return env
+
+def get_float_precision():
+    #return "single"
+    return "double"
