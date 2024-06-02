@@ -1,5 +1,6 @@
  
 import build_editor
+import build_utils
 import multiprocessing
 import os
 import psutil
@@ -44,14 +45,14 @@ def run():
             "module_mono_enabled=yes",
             "debug_symbols=yes",
             f"precision={double_precision and 'double' or 'single'}",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Generate Mono glue files.
     util.run([
             util.godot_bin(),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Make necessary directory
     os.makedirs("godot/bin/GodotSharp/Tools/nupkgs", exist_ok=True)
@@ -62,7 +63,7 @@ def run():
             "./modules/mono/build_scripts/build_assemblies.py",
             "--godot-output-dir", "./bin",
             f"--precision={double_precision and 'double' or 'single'}",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Clear and remake necessary directory
     if os.path.exists("deploy/linux"):
@@ -76,7 +77,7 @@ def run():
             "--path", "project",
             "--export-release", "linux",
             "../deploy/linux/moonskrive",
-        ], check=True)
+        ], check=True, env=build_utils.get_env())
 
     # Copy dec directory over
     shutil.copytree("project/dec", "deploy/linux/dec")

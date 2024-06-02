@@ -1,10 +1,9 @@
 
+import build_utils
 import multiprocessing
 import os
 import psutil
 import shutil
-import subprocess
-import sys
 import util
 
 util.cwdhack()
@@ -32,14 +31,14 @@ def run():
             "module_mono_enabled=yes",
             "debug_symbols=yes",
             f"precision={double_precision and 'double' or 'single'}",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Generate Mono glue files.
     util.run([
             util.godot_bin(),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Make necessary directory
     os.makedirs("godot/bin/GodotSharp/Tools/nupkgs", exist_ok=True)
@@ -50,7 +49,7 @@ def run():
            "./modules/mono/build_scripts/build_assemblies.py",
            "--godot-output-dir", "./bin",
            f"--precision={double_precision and 'double' or 'single'}",
-        ], check=True, cwd="godot")
+        ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Set up our fake universal link
     # We append .exe to it because Windows wants it and nothing else minds.
