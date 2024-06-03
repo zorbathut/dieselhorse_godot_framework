@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33122.133
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "runemonger", "runemonger.csproj", "{78B0908F-5966-4C23-BA86-B02626D4444B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "moonskrive", "moonskrive.csproj", "{78B0908F-5966-4C23-BA86-B02626D4444B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "generator", "thirdparty\arbor\generator\generator.csproj", "{668D02E8-F543-4B5C-8DF0-190B459E5CE8}"
 EndProject
