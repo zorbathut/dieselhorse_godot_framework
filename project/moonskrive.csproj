@@ -1,20 +1,37 @@
 <Project Sdk="Godot.NET.Sdk/4.2.1-moonskrive">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>11.0</LangVersion>
+
+    <!-- necessary to deal with weird version mismatches on gdUnit4; fixing this would require local builds -->
+    <NoWarn>NU1605</NoWarn>
+
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <GodotFloat64>true</GodotFloat64>
   </PropertyGroup>
+
   <ItemGroup>
     <Content Include="dec/**" />
     <Content Include="src\network\ARCHITECTURE.md" />
     <Content Include="thirdparty\.gitignore" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Remove="thirdparty/arbor/generator/**/*" />
     <ProjectReference Include="thirdparty/arbor/generator/generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ZstdSharp.Port" Version="0.7.4" />
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="gdUnit4.api" Version="4.2.*" />
+    <PackageReference Include="gdUnit4.test.adapter" Version="1.*" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- this is apparently Rider-specific -->
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)/moonskrive.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
 </Project>

@@ -1,9 +1,9 @@
-# why
-/.mono
-/logs
-
-update_godot
-update_godot_engine
+# temp storage for the update process
+/update_godot
+/update_godot_engine
 
 # temp storage for releases
 /deploy
+
+# IDE stuff
+/*DotSettings.user
