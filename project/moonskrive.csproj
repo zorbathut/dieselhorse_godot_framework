@@ -20,6 +20,9 @@
   <ItemGroup>
     <Compile Remove="thirdparty/arbor/generator/**/*" />
     <ProjectReference Include="thirdparty/arbor/generator/generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+
+    <Compile Remove="thirdparty/greact/generator/**/*" />
+    <ProjectReference Include="thirdparty/greact/generator/generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
