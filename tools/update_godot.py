@@ -103,4 +103,5 @@ util.run([
         "git",
         "merge",
         "FETCH_HEAD",
+        "--no-commit",
     ], check=True)
