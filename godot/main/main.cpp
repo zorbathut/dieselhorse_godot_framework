@@ -89,6 +89,7 @@
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/doc_data_class_path.gen.h"
 #include "editor/doc_tools.h"
+#include "editor/editor_file_system.h"
 #include "editor/editor_help.h"
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
@@ -179,6 +180,7 @@ static OS::ProcessID editor_pid = 0;
 static bool found_project = false;
 static bool auto_build_solutions = false;
 static String debug_server_uri;
+static bool wait_for_import = false;
 #ifndef DISABLE_DEPRECATED
 static int converter_max_kb_file = 4 * 1024; // 4MB
 static int converter_max_line_length = 100000;
@@ -505,6 +507,7 @@ void Main::print_help(const char *p_binary) {
 	OS::get_singleton()->print("  --main-loop <main_loop_name>      Run a MainLoop specified by its global class name.\n");
 	OS::get_singleton()->print("  --check-only                      Only parse for errors and quit (use with --script).\n");
 #ifdef TOOLS_ENABLED
+	OS::get_singleton()->print("  --import                          Starts the editor, waits for any resources to be imported, and then quits.\n");
 	OS::get_singleton()->print("  --export-release <preset> <path>  Export the project in release mode using the given preset and output path. The preset name should match one defined in export_presets.cfg.\n");
 	OS::get_singleton()->print("                                    <path> should be absolute or relative to the project directory, and include the filename for the binary (e.g. 'builds/game.exe').\n");
 	OS::get_singleton()->print("                                    The target directory must exist.\n");
@@ -1288,12 +1291,17 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 				OS::get_singleton()->print("Missing file to load argument after --validate-extension-api, aborting.");
 				goto error;
 			}
-
+		} else if (I->get() == "--import") {
+			editor = true;
+			cmdline_tool = true;
+			wait_for_import = true;
+			quit_after = 1;
 		} else if (I->get() == "--export-release" || I->get() == "--export-debug" ||
 				I->get() == "--export-pack") { // Export project
 			// Actually handling is done in start().
 			editor = true;
 			cmdline_tool = true;
+			wait_for_import = true;
 			main_args.push_back(I->get());
 #ifndef DISABLE_DEPRECATED
 		} else if (I->get() == "--export") { // For users used to 3.x syntax.
@@ -1783,13 +1791,47 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	}
 
 		// AMD GPUs.
-		BLOCK_DEVICE("ATI", "AMD Radeon(TM) R2 Graphics");
-		BLOCK_DEVICE("ATI", "AMD Radeon(TM) R3 Graphics");
-		BLOCK_DEVICE("ATI", "AMD Radeon HD 8400 / R3 Series");
-		BLOCK_DEVICE("ATI", "AMD Radeon R5 M200 Series");
-		BLOCK_DEVICE("ATI", "AMD Radeon R5 M230 Series");
-		BLOCK_DEVICE("ATI", "AMD Radeon R5 M255");
-		BLOCK_DEVICE("AMD", "AMD Radeon (TM) R5 M330");
+		BLOCK_DEVICE("ATI", "Radeon 9"); // ATI Radeon 9000 Series
+		BLOCK_DEVICE("ATI", "Radeon X"); // ATI Radeon X500-X2000 Series
+		BLOCK_DEVICE("ATI", "Radeon HD 2"); // AMD/ATI (Mobility) Radeon HD 2xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 3"); // AMD/ATI (Mobility) Radeon HD 3xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 4"); // AMD/ATI (Mobility) Radeon HD 4xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 5"); // AMD/ATI (Mobility) Radeon HD 5xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 6"); // AMD/ATI (Mobility) Radeon HD 6xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 7"); // AMD/ATI (Mobility) Radeon HD 7xxx Series
+		BLOCK_DEVICE("ATI", "Radeon HD 8"); // AMD/ATI (Mobility) Radeon HD 8xxx Series
+		BLOCK_DEVICE("ATI", "Radeon(TM) R2 Graphics"); // APUs
+		BLOCK_DEVICE("ATI", "Radeon(TM) R3 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon(TM) R4 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon(TM) R5 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon(TM) R6 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon(TM) R7 Graphics");
+		BLOCK_DEVICE("AMD", "Radeon(TM) R7 Graphics");
+		BLOCK_DEVICE("AMD", "Radeon(TM) R8 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon R5 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon R6 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon R7 Graphics");
+		BLOCK_DEVICE("AMD", "Radeon R7 Graphics");
+		BLOCK_DEVICE("AMD", "Radeon R8 Graphics");
+		BLOCK_DEVICE("ATI", "Radeon R5 2"); // Rx 2xx Series
+		BLOCK_DEVICE("ATI", "Radeon R7 2");
+		BLOCK_DEVICE("ATI", "Radeon R9 2");
+		BLOCK_DEVICE("ATI", "Radeon R5 M2"); // Rx M2xx Series
+		BLOCK_DEVICE("ATI", "Radeon R7 M2");
+		BLOCK_DEVICE("ATI", "Radeon R9 M2");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R9 Fury");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R5 3"); // Rx 3xx Series
+		BLOCK_DEVICE("AMD", "Radeon (TM) R5 3");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R7 3");
+		BLOCK_DEVICE("AMD", "Radeon (TM) R7 3");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R9 3");
+		BLOCK_DEVICE("AMD", "Radeon (TM) R9 3");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R5 M3"); // Rx M3xx Series
+		BLOCK_DEVICE("AMD", "Radeon (TM) R5 M3");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R7 M3");
+		BLOCK_DEVICE("AMD", "Radeon (TM) R7 M3");
+		BLOCK_DEVICE("ATI", "Radeon (TM) R9 M3");
+		BLOCK_DEVICE("AMD", "Radeon (TM) R9 M3");
 
 #undef BLOCK_DEVICE
 
@@ -2020,11 +2062,13 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		OS::get_singleton()->set_environment("DISABLE_MANGOHUD", "1"); // GH-57403.
 		OS::get_singleton()->set_environment("DISABLE_RTSS_LAYER", "1"); // GH-57937.
 		OS::get_singleton()->set_environment("DISABLE_VKBASALT", "1");
+		OS::get_singleton()->set_environment("DISABLE_VK_LAYER_reshade_1", "1"); // GH-70849.
 	} else {
 		// Re-allow using Vulkan overlays, disabled while using the editor.
 		OS::get_singleton()->unset_environment("DISABLE_MANGOHUD");
 		OS::get_singleton()->unset_environment("DISABLE_RTSS_LAYER");
 		OS::get_singleton()->unset_environment("DISABLE_VKBASALT");
+		OS::get_singleton()->unset_environment("DISABLE_VK_LAYER_reshade_1");
 	}
 #endif
 
@@ -3709,6 +3753,12 @@ bool Main::iteration() {
 	if ((quit_after > 0) && (Engine::get_singleton()->_process_frames >= quit_after)) {
 		exit = true;
 	}
+
+#ifdef TOOLS_ENABLED
+	if (wait_for_import && EditorFileSystem::get_singleton()->doing_first_scan()) {
+		exit = false;
+	}
+#endif
 
 	if (fixed_fps != -1) {
 		return exit;
