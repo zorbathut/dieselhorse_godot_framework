@@ -14,8 +14,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--commit", required = True)
 args = parser.parse_args()
 
-if util.run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout != "main":
-    print("Error: Not on main branch (this is probably fixable but it'll take some work)")
+if util.run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout != "dev":
+    print("Error: Not on dev branch (this is probably fixable but it'll take some work)")
     sys.exit(1)
 
 util.run([
@@ -64,7 +64,7 @@ util.run([
 util.run([
         "git",
         "checkout",
-        "main",
+        "dev",
     ], cwd = "update_godot", check=True)
 
 if util.run([
@@ -94,7 +94,7 @@ util.run([
         "git",
         "fetch",
         "update_godot",
-        "main",
+        "dev",
     ], check=True)
 
 util.run([
