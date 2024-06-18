@@ -105,3 +105,6 @@ util.run([
         "FETCH_HEAD",
         "--no-commit",
     ], check=True)
+
+shutil.rmtree("update_godot")
+shutil.rmtree("update_godot_engine")
