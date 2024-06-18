@@ -16,7 +16,7 @@ def platformswitch(linux, windows):
     else:
         raise InvalidOperation("Unidentified OS :(")
 
-def run(command, **kwargs):
+def run(command, capture_output = False, **kwargs):
     print("Executing: " + " ".join(command))
 
     # decorate our args
@@ -37,7 +37,7 @@ def run(command, **kwargs):
     if "shell" in ourargs and ourargs["shell"] == True:
         command = " ".join(command)
 
-    return subprocess.run(command, **kwargs)
+    return subprocess.run(command, capture_output = capture_output, **kwargs)
 
 def godot_bin():
     return platformswitch(

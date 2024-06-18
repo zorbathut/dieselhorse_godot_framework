@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--commit", required = True)
 args = parser.parse_args()
 
-if util.run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout != "dev":
+if util.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output = True).stdout.decode().strip() != "dev":
     print("Error: Not on dev branch (this is probably fixable but it'll take some work)")
     sys.exit(1)
 
