@@ -34,6 +34,8 @@ util.run([
 util.run([
         "git",
         "clone",
+        "--depth", "1",
+        "--branch", args.commit,
         "https://github.com/godotengine/godot.git",
         "update_godot_engine",
     ], check=True)
