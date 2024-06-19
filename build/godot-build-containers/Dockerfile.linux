@@ -1,10 +1,11 @@
 ARG img_version
 FROM godot-fedora:${img_version}
 
-ENV GODOT_SDK_LINUX_X86_64=/root/x86_64-godot-linux-gnu_sdk-buildroot
+ENV GODOT_SDK_LINUX_X86_64=/buildutils/x86_64-godot-linux-gnu_sdk-buildroot
 ENV BASE_PATH=${PATH}
 
 RUN dnf install -y wayland-devel && \
+    mkdir /buildutils && cd /buildutils && \
     curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2024-01-17/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2 && \
     tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2 && \
     rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2 && \
