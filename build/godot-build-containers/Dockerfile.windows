@@ -1,5 +1,8 @@
 ARG img_version
-FROM godot-fedora:${img_version}
+
+# we need to be able to build local stuff in order to generate mono layer and have the editor available
+# we could also copy those files after being built
+FROM godot-linux:${img_version}
 
 RUN dnf -y install --setopt=install_weak_deps=False \
       mingw32-gcc mingw32-gcc-c++ mingw32-winpthreads-static mingw64-gcc mingw64-gcc-c++ mingw64-winpthreads-static
