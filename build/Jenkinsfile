@@ -25,12 +25,24 @@ pipeline {
                 }
             }
         }
-        stage('Build Linux') {
+        stage('Deploy Linux') {
             steps {
                 script {
                     docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
-                        sh 'python build_editor.py'
+                        sh 'python tool.py deploy'
                     }
+                }
+            }
+        }
+        stage('Create Linux artifact') {
+            steps {
+                script {
+                    def zipFileName = 'moonskrive_linux.zip'
+                    sh """
+                        cd deploy
+                        zip -r ${zipFileName} linux
+                    """
+                    archiveArtifacts artifacts: "deploy/${zipFileName}", fingerprint: true
                 }
             }
         }
