@@ -20,6 +20,11 @@ def run():
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
     
+    # Print files in `godot` directory but not subdirectories
+    for file in os.listdir("godot"):
+        if os.path.isfile(os.path.join("godot", file)):
+            print(file)
+
     # Build the binary itself (yay this is no longer two-pass)
     util.run([
             "scons",
