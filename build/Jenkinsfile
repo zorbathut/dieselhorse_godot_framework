@@ -5,6 +5,7 @@ pipeline {
         GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
         
         LINUX_IMAGE_TAR = "godot-linux-${GBCMSB_ID}.tar"
+        WINDOWS_IMAGE_TAR = "godot-windows-${GBCMSB_ID}.tar"
     }
 
     stages {
@@ -17,34 +18,49 @@ pipeline {
                             
                             // export
                             sh "podman save localhost/godot-linux:${GBCMSB_ID} -o ${LINUX_IMAGE_TAR}"
+                            sh "podman save localhost/godot-windows:${GBCMSB_ID} -o ${WINDOWS_IMAGE_TAR}"
                         }
                     }
 
                     // Import the image into the Docker environment of the Jenkins host
                     sh "docker load -i build/godot-build-containers/${LINUX_IMAGE_TAR}"
+                    sh "docker load -i build/godot-build-containers/${WINDOWS_IMAGE_TAR}"
                 }
             }
         }
-        stage('Deploy Linux') {
+        stage('Build/deploy Linux') {
             steps {
                 script {
                     docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
-                        sh 'python tool.py deploy'
+                        sh 'python tool.py deploy --target=linux'
                     }
                 }
             }
         }
-        stage('Create Linux artifact') {
+        stage('Build/deploy Windows') {
             steps {
                 script {
-                    def zipFileName = 'moonskrive_linux.zip'
+                    docker.image("localhost/godot-windows:${GBCMSB_ID}").inside {
+                        sh 'python tool.py deploy --target=windows'
+                    }
+                }
+            }
+        }
+        
+        stage('Create artifacts') {
+            steps {
+                script {
+                    def linuxZipFileName = 'moonskrive_linux.zip'
+                    def windowsZipFileName = 'moonskrive_windows.zip'
                     docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
                         sh """
                             cd deploy
-                            zip -r ${zipFileName} linux
+                            zip -r ${linuxZipFileName} linux
+                            zip -r ${windowsZipFileName} windows
                         """
                     }
-                    archiveArtifacts artifacts: "deploy/${zipFileName}", fingerprint: true
+                    archiveArtifacts artifacts: "deploy/${linuxZipFileName}", fingerprint: true
+                    archiveArtifacts artifacts: "deploy/${windowsZipFileName}", fingerprint: true
                 }
             }
         }
@@ -58,8 +74,12 @@ pipeline {
                     if [ $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID} | wc -l) -gt 0 ]; then
                         docker rm -f $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID})
                     fi
+                    if [ $(docker ps -a -q --filter ancestor=localhost/godot-windows:${GBCMSB_ID} | wc -l) -gt 0 ]; then
+                        docker rm -f $(docker ps -a -q --filter ancestor=localhost/godot-windows:${GBCMSB_ID})
+                    fi
                 '''
                 sh "rm -f ${LINUX_IMAGE_TAR}"
+                sh "rm -f ${WINDOWS_IMAGE_TAR}"
             }
         }
     }
