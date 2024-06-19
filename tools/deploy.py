@@ -1,4 +1,5 @@
- 
+
+import argparse 
 import build_editor
 import build_utils
 import multiprocessing
@@ -11,21 +12,18 @@ import util
 
 util.cwdhack()
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--target", required = True, choices=["linux", "windows"])
+args = parser.parse_args()
+
 def run():
     if util.platformswitch(linux = False, windows = True):
         print("This definitely won't work on Windows.")
         sys.exit(1)
 
-    # need local editor infrastructure to exist for this
+    # we do this both to build the mono glue files and to build the editor that we can use to run the deploy code
+    # it's possible we should build this separately in our jenkins build, then copy it over
     build_editor.run()
-
-    # kick priority down to make builds smoother
-    # can't do this on linux unfortunately; shell out to a niced build_editor?
-    if util.platformswitch(linux = False, windows = True):
-        proc = psutil.Process(os.getpid())
-        proc.nice(psutil.IDLE_PRIORITY_CLASS)
-
-    platform = util.platformswitch(linux = "linuxbsd", windows = "windows")
 
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
@@ -34,23 +32,19 @@ def run():
     util.run([
             "scons",
             "-j", f"{cores}",
-            f"p={platform}",
+            f"p={args.target}",
             "target=template_release",
             "arch=x86_64",
             "production=yes",
-            #"lto=full", # currently crashes    
             "module_mono_enabled=yes",
             "debug_symbols=yes",
-            f"precision={build_utils.get_float_precision()}",
+            f"precision={build_utils.get_float_precision()}", 
         ], check=True, cwd="godot", env=build_utils.get_env())
 
-    # Generate Mono glue files.
-    util.run([
-            util.godot_bin(),
-            "--headless",
-            "--generate-mono-glue", "./modules/mono/glue",
-        ], check=True, cwd="godot", env=build_utils.get_env())
-
+    # Mono glue files already exist from us building the editor
+    # Don't need to build them a second time
+    # (but do need to build the editor)
+    
     # Make necessary directory
     os.makedirs("godot/bin/GodotSharp/Tools/nupkgs", exist_ok=True)
 
@@ -63,25 +57,22 @@ def run():
         ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Clear and remake necessary directory
-    if os.path.exists("deploy/linux"):
-        shutil.rmtree("deploy/linux")
-    os.makedirs("deploy/linux", exist_ok=True)
+    deploydir = f"deploy/{args.target}"
+    if os.path.exists(deploydir):
+        shutil.rmtree(deploydir)
+    os.makedirs(deploydir, exist_ok=True)
 
     # Run headless export
     util.run([
-            f"godot/bin/godot.{platform}.editor.double.x86_64.mono",
+            "godot/" + util.godot_bin(),
             "--headless",
             "--path", "project",
-            "--export-release", "linux",
-            "../deploy/linux/moonskrive",
+            "--export-release", args.target,
+            f"../{deploydir}/moonskrive",
         ], check=True, env=build_utils.get_env())
 
     # Copy dec directory over
-    shutil.copytree("project/dec", "deploy/linux/dec")
-
-    # Ramp priority back up for the editor itself.
-    if util.platformswitch(linux = False, windows = True):
-        proc.nice(psutil.NORMAL_PRIORITY_CLASS)
+    shutil.copytree("project/dec", f"{deploydir}/dec")
 
 if __name__ == '__main__':
     run()
