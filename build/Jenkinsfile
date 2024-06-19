@@ -40,7 +40,11 @@ pipeline {
         always {
             script {
                 // Clean up the Docker container and image tar file
-                sh "docker rm -f \$(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID})"
+                sh '''
+                    if [ $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID} | wc -l) -gt 0 ]; then
+                        docker rm -f $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID})
+                    fi
+                '''
                 sh "rm -f ${LINUX_IMAGE_TAR}"
             }
         }
