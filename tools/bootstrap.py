@@ -20,5 +20,6 @@ def execute(token, args = [], shell = False):
             poetry,
             "run",
             "python",
+            "-u", # unbuffered to avoid problems with output ordering on jenkins
             f"{token}.py",
         ] + args, check=True, cwd="tools", shell=shell)
