@@ -1,5 +1,6 @@
 
 import os
+import pprint
 import subprocess
 import sys
 
@@ -37,6 +38,7 @@ def run(command, **kwargs):
     if "shell" in ourargs and ourargs["shell"] == True:
         command = " ".join(command)
 
+    pprint.pprint(command, kwargs)
     return subprocess.run(command, **kwargs)
 
 def godot_bin():
