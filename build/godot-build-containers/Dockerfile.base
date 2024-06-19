@@ -12,7 +12,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
       dotnet-sdk-8.0
 
 # moonskrive framework
-RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel gcc
+# it's unclear why exactly fontconfig is needed
+RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel gcc fontconfig
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
