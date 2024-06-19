@@ -33,8 +33,8 @@
     <PackageReference Include="gdUnit4.test.adapter" Version="1.*" />
 
     <!-- Re-specified here so we can apply NU1605 directly to this; this prevents gdUnit from warning about it -->
-    <PackageReference Include="Godot.SourceGenerators" Version="4.2.1-moonskrive" NoWarn="NU1605" />
-    <PackageReference Include="GodotSharp" Version="4.2.1-moonskrive" NoWarn="NU1605" />
+    <PackageReference Include="Godot.SourceGenerators" Version="4.2.2-moonskrive" NoWarn="NU1605" />
+    <PackageReference Include="GodotSharp" Version="4.2.2-moonskrive" NoWarn="NU1605" />
   </ItemGroup>
 
   <PropertyGroup>
