@@ -38,10 +38,12 @@ pipeline {
             steps {
                 script {
                     def zipFileName = 'moonskrive_linux.zip'
-                    sh """
-                        cd deploy
-                        zip -r ${zipFileName} linux
-                    """
+                    docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
+                        sh """
+                            cd deploy
+                            zip -r ${zipFileName} linux
+                        """
+                    }
                     archiveArtifacts artifacts: "deploy/${zipFileName}", fingerprint: true
                 }
             }
