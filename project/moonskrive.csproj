@@ -21,8 +21,8 @@
     <Compile Remove="thirdparty/arbor/arbor-generator/**/*" />
     <ProjectReference Include="thirdparty/arbor/arbor-generator/arbor-generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 
-    <Compile Remove="thirdparty/greact/generator/**/*" />
-    <ProjectReference Include="thirdparty/greact/generator/generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Remove="thirdparty/greact/greact-generator/**/*" />
+    <ProjectReference Include="thirdparty\greact\greact-generator\greact-generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

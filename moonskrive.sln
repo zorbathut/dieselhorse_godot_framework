@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "moonskrive", "project\moons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arbor-generator", "project\thirdparty\arbor\arbor-generator\arbor-generator.csproj", "{6354C629-E656-42F6-A74C-C1FA51F73C00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "greact-generator", "project\thirdparty\greact\generator\generator.csproj", "{F417A1D3-5A56-447B-B31B-91C193B68C58}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "greact-generator", "project\thirdparty\greact\greact-generator\greact-generator.csproj", "{F417A1D3-5A56-447B-B31B-91C193B68C58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
