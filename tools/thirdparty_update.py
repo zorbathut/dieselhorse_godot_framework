@@ -25,7 +25,7 @@ def run():
     copyglob(['../ghi/src/*.cs'], 'project/thirdparty/ghi')
 
     copyglob(['../arbor/src/*.cs'], 'project/thirdparty/arbor')
-    copyglob(['../arbor/generator/*.cs', '../arbor/generator/*.csproj'], 'project/thirdparty/arbor/generator')
+    copyglob(['../arbor/arbor-generator/*.cs', '../arbor/arbor-generator/*.csproj'], 'project/thirdparty/arbor/arbor-generator')
 
 if __name__ == '__main__':
     run()
