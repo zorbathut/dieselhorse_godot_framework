@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "greact-generator", "project
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gdUnit4Api", "project\thirdparty\gdunit4\api\gdUnit4Api.csproj", "{BE62568F-2887-4970-AB67-01299E65162B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gdUnit4TestsAdapter", "project\thirdparty\gdunit4\testadapter\gdUnit4TestsAdapter.csproj", "{81161C6D-2A73-4C1C-B6F5-20EA43DD0EC7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gdUnit4TestAdapter", "project\thirdparty\gdunit4\testadapter\gdUnit4TestAdapter.csproj", "{81161C6D-2A73-4C1C-B6F5-20EA43DD0EC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

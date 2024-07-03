@@ -22,7 +22,7 @@
     <ProjectReference Include="thirdparty\greact\greact-generator\greact-generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 
     <Compile Remove="thirdparty/gdunit4/**/*" />
-    <ProjectReference Include="thirdparty\gdunit4\testadapter\gdUnit4TestsAdapter.csproj" />
+    <ProjectReference Include="thirdparty\gdunit4\testadapter\gdUnit4TestAdapter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
