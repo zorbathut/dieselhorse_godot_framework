@@ -6,9 +6,6 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <GodotFloat64>true</GodotFloat64>
-
-    <!-- Hides warnings about multiply-specified packages (Godot.SourceGenerators, GodotSharp) -->
-    <NoWarn>NU1504</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,18 +20,13 @@
 
     <Compile Remove="thirdparty/greact/greact-generator/**/*" />
     <ProjectReference Include="thirdparty\greact\greact-generator\greact-generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+
+    <Compile Remove="thirdparty/gdunit4/**/*" />
+    <ProjectReference Include="thirdparty\gdunit4\testadapter\gdUnit4TestsAdapter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ZstdSharp.Port" Version="0.7.4" />
-
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="gdUnit4.api" Version="4.2.*" />
-    <PackageReference Include="gdUnit4.test.adapter" Version="1.*" />
-
-    <!-- Re-specified here so we can apply NU1605 directly to this; this prevents gdUnit from warning about it -->
-    <PackageReference Include="Godot.SourceGenerators" Version="4.2.2-moonskrive" NoWarn="NU1605" />
-    <PackageReference Include="GodotSharp" Version="4.2.2-moonskrive" NoWarn="NU1605" />
   </ItemGroup>
 
   <PropertyGroup>
