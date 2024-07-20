@@ -25,6 +25,6 @@ public class Simple : Base
     {
         Init();
 
-        var context = new Foundation.ContextManager(Foundation.ContextUtil.CreateMap());
+        var context = new Foundation.Coordinator(Foundation.ContextUtil.CreateMap());
     }
 }
