@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <Content Include="dec/**" />
-    <Content Include="src\network\ARCHITECTURE.md" />
+    <Content Include="src/**/*.md" />
     <Content Include="thirdparty\.gitignore" />
   </ItemGroup>
 
