@@ -11,7 +11,7 @@ public class Base
         if (!initted)
         {
             // this is really not the right way to initialize, honestly
-            var bootstrap = new Bootstrap();
+            var bootstrap = new Foundation.Bootstrap();
             bootstrap._Ready();
 
             initted = true;
