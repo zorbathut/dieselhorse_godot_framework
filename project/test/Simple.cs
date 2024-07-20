@@ -25,6 +25,6 @@ public class Simple : Base
     {
         Init();
 
-        var context = new ContextManager();
+        var context = new ContextManager(ContextUtil.CreateMap());
     }
 }
