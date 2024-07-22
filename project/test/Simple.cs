@@ -54,4 +54,19 @@ public class Simple : Base
 
         Assert.AreEqual(1, gameScoped.Env.List.Count(e => e.HasComponent<Comp.Player>()));
     }
+
+    [TestCase]
+    public void DeadPlayer()
+    {
+        Init();
+
+        using var gameScoped = new GameScoped();
+        gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn() { playerId = 0 });
+
+        // kill the player's avatar
+        gameScoped.Env.Remove(gameScoped.Env.List.Single(e => e.HasComponent<Comp.Avatar>()));
+
+        // do we still run properly?
+        gameScoped.Process(new Comp.PlayerInput());
+    }
 }
