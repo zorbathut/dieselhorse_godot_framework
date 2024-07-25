@@ -1,6 +1,8 @@
 Includes Save arrow icon by Delapouite, https://game-icons.net/1x1/delapouite/save-arrow.html
 Includes Stopwatch icon by Skoll, https://game-icons.net/1x1/skoll/stopwatch.html
 
+Includes character art by GandalfHardcore, https://gandalfhardcore.itch.io/free-pixel-art
+
 ----
 
 Includes gdUnit4Net
