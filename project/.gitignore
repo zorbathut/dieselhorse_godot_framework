@@ -3,5 +3,4 @@
 
 /.vs/
 
-# if we ever start including replays as part of our test suite, we'll have to change this
-/*.replay.msk
+/debugOutput
