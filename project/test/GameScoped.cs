@@ -37,7 +37,7 @@ public class GameScoped : System.IDisposable
                 frame.events.Add(globalEvent);
             }
 
-            writeable.Resource.data.Add((Env.SingletonRO<Comp.Global>().timeFrame + 1, frame));
+            writeable.Resource.data.Add((Env.SingletonRO<Comp.Global>().timestamp + Duration.FromFrames(1), frame));
         }
 
         executor.Process();
