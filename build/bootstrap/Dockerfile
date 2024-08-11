@@ -1,4 +1,4 @@
-FROM docker:dind
+FROM docker
 
 # poetry because we need it to run
 # the others because we need them for psutil

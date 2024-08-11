@@ -5,9 +5,11 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    sh "(cd build/bootstrap && docker build -t my-image:${env.BUILD_ID} .)"
+                    def customImage = docker.build("my-image:${env.BUILD_ID}", "-f build/bootstrap/Dockerfile .")
 
-                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group -v .:/workspace -w /workspace --user 1000:1000 my-image:${env.BUILD_ID} python tool.py build"
+                    customImage.inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group') {
+                        sh 'sleep infinity'
+                    }
 
                     archiveArtifacts artifacts: "artifact/*", fingerprint: true
                 }
