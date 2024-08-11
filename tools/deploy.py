@@ -78,12 +78,12 @@ def run():
         # All the debug info is shoved in the executable, so let's pull that out
         util.run([
                 "strip",
-                f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}",
+                f"{deploydir}/{build_utils.get_project_name()}",
             ], check=True)
     
     if util.platformswitch(linux = False, windows = True):
         # Needs an .exe suffix
-        os.rename(f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}", f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}.exe")
+        os.rename(f"{deploydir}/{build_utils.get_project_name()}", f"{deploydir}/{build_utils.get_project_name()}.exe")
 
 if __name__ == '__main__':
     run()
