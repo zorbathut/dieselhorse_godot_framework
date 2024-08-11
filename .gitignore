@@ -4,6 +4,7 @@
 
 # temp storage for releases
 /deploy
+/artifact
 
 # IDE stuff
 /*DotSettings.user
