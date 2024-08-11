@@ -9,77 +9,13 @@ pipeline {
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
                 script {
-                    docker.image("quay.io/podman/stable:v5.0.2-immutable").inside('--privileged -v /var/lib/jenkins/podman-storage:/var/lib/containers/storage') {
-                        dir('build/godot-build-containers') {
-                            sh './msb.sh'
-                            
-                            // export
-                            sh "podman save localhost/godot-linux:${GBCMSB_ID} -o ${LINUX_IMAGE_TAR}"
-                            sh "podman save localhost/godot-windows:${GBCMSB_ID} -o ${WINDOWS_IMAGE_TAR}"
-                        }
-                    }
+                    sh 'python tool.py deploy_full'
 
-                    // Import the image into the Docker environment of the Jenkins host
-                    sh "docker load -i build/godot-build-containers/${LINUX_IMAGE_TAR}"
-                    sh "docker load -i build/godot-build-containers/${WINDOWS_IMAGE_TAR}"
+                    archiveArtifacts artifacts: "artifact/*", fingerprint: true
                 }
-            }
-        }
-        stage('Build/deploy Linux') {
-            steps {
-                script {
-                    docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
-                        sh 'python tool.py deploy --target=linux'
-                    }
-                }
-            }
-        }
-        stage('Build/deploy Windows') {
-            steps {
-                script {
-                    docker.image("localhost/godot-windows:${GBCMSB_ID}").inside {
-                        sh 'python tool.py deploy --target=windows'
-                    }
-                }
-            }
-        }
-        
-        stage('Create artifacts') {
-            steps {
-                script {
-                    def linuxZipFileName = 'moonskrive_linux.zip'
-                    def windowsZipFileName = 'moonskrive_windows.zip'
-                    docker.image("localhost/godot-linux:${GBCMSB_ID}").inside {
-                        sh """
-                            cd deploy
-                            zip -r ${linuxZipFileName} linux
-                            zip -r ${windowsZipFileName} windows
-                        """
-                    }
-                    archiveArtifacts artifacts: "deploy/${linuxZipFileName}", fingerprint: true
-                    archiveArtifacts artifacts: "deploy/${windowsZipFileName}", fingerprint: true
-                }
-            }
-        }
-    }
-    
-    post {
-        always {
-            script {
-                // Clean up the Docker container and image tar file
-                sh '''
-                    if [ $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID} | wc -l) -gt 0 ]; then
-                        docker rm -f $(docker ps -a -q --filter ancestor=localhost/godot-linux:${GBCMSB_ID})
-                    fi
-                    if [ $(docker ps -a -q --filter ancestor=localhost/godot-windows:${GBCMSB_ID} | wc -l) -gt 0 ]; then
-                        docker rm -f $(docker ps -a -q --filter ancestor=localhost/godot-windows:${GBCMSB_ID})
-                    fi
-                '''
-                sh "rm -f ${LINUX_IMAGE_TAR}"
-                sh "rm -f ${WINDOWS_IMAGE_TAR}"
             }
         }
     }

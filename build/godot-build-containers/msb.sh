@@ -4,7 +4,7 @@ basedir=$(cd $(dirname "$0"); pwd)
 
 source $basedir/setup.sh
 
-img_version=$GBCMSB_ID
+img_version=$1
 files_root="$basedir/files"
 
 mkdir -p logs
