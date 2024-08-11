@@ -15,6 +15,13 @@ WINDOWS_IMAGE_TAR = f"godot-windows-{GBCMSB_ID}.tar"
 
 DOCKER_UID = ["--user", f"{os.getuid()}:{os.getgid()}"]
 
+VOLUMESPEC = ["-v", f"{os.getcwd()}:{os.getcwd()}"]
+# sure am glad that works in all cases!
+# just close your eyes for a second okay
+if "VOLUMES_FROM" in os.environ:
+    VOLUMESPEC = ["--volumes-from", os.environ["VOLUMES_FROM"]]
+# whew! don't worry, I didn't write any code, this is all fine
+
 def build_docker_image():
     """Build Docker Image."""
     docker_image = "quay.io/podman/stable:v5.0.2-immutable"
@@ -32,9 +39,10 @@ def build_docker_image():
     save_windows_image = f"podman save localhost/godot-windows:{GBCMSB_ID} -o {WINDOWS_IMAGE_TAR}"
     
     docker_run_command = [
-        "docker", "run", "--rm", "--privileged"] + DOCKER_UID + ["-v", f"{storage_path}:/var/lib/containers/storage", 
-        "-v", f"{os.getcwd()}:/workspace", "-w", "/workspace/build/godot-build-containers",
-        docker_image, "/bin/bash", "-c",
+        "docker", "run", "--rm", "--privileged"] + DOCKER_UID + VOLUMESPEC + [
+            "-v", f"{storage_path}:/var/lib/containers/storage",
+            "-w", f"{os.getcwd()}/build/godot-build-containers",
+            docker_image, "/bin/bash", "-c",
         f"{msb_command} && {save_linux_image} && {save_windows_image}"
     ]
     
@@ -47,7 +55,9 @@ def build_docker_image():
 def build_deploy(target):
     """Build and deploy for a specific target."""
     image_name = f"localhost/godot-{target}:{GBCMSB_ID}"
-    util.run(["docker", "run"] + DOCKER_UID + ["--rm", "-v", f"{os.getcwd()}:/workspace", "-w", "/workspace", image_name, "python", "tool.py", "deploy", f"--target={target}"], check = True)
+    util.run(["docker", "run", "--rm"] + DOCKER_UID + VOLUMESPEC + [
+        "-w", f"{os.getcwd()}",
+        image_name, "python", "tool.py", "deploy", f"--target={target}"], check = True)
 
 def create_artifacts():
     """Create artifacts by zipping directories."""
@@ -65,7 +75,7 @@ def create_artifacts():
     ]
 
     util.run([
-        "docker", "run"] + DOCKER_UID + ["--rm", "-v", f"{os.getcwd()}:/workspace", "-w", "/workspace",
+        "docker", "run"] + DOCKER_UID + VOLUMESPEC + ["--rm", "-w", f"{os.getcwd()}",
         f"localhost/godot-linux:{GBCMSB_ID}", "/bin/bash", "-c", 
         " && ".join(commands)
     ], check = True)

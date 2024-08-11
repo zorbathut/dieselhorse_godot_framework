@@ -5,13 +5,11 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    def customImage = docker.build("my-image:${env.BUILD_ID}", "-f build/bootstrap/Dockerfile .")
-
-                    customImage.inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group') {
-                        sh 'sleep infinity'
-                    }
-
-                    archiveArtifacts artifacts: "artifact/*", fingerprint: true
+                    sh "(cd build/bootstrap && docker build -t my-image:${env.BUILD_ID} .)"
+ 
+                    sh "docker run  --rm --volumes-from jenkins-agent -e VOLUMES_FROM=jenkins_agent -w ${env.PWD} my-image:${env.BUILD_ID} python tool.py deploy_full"
+ 
+                     archiveArtifacts artifacts: "artifact/*", fingerprint: true
                 }
             }
         }
