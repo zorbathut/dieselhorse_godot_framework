@@ -1,18 +1,15 @@
 pipeline {
     agent any
     
-    environment {
-        GBCMSB_ID = "gbcmsb-${BUILD_NUMBER}"
-        
-        LINUX_IMAGE_TAR = "godot-linux-${GBCMSB_ID}.tar"
-        WINDOWS_IMAGE_TAR = "godot-windows-${GBCMSB_ID}.tar"
-    }
-
     stages {
         stage('Build') {
             steps {
                 script {
-                    sh 'python tool.py deploy_full'
+                    def customImage = docker.build("my-image:${env.BUILD_ID}", "-f build/bootstrap/Dockerfile .")
+                    
+                    customImage.inside('--privileged') {
+                        sh 'python tool.py deploy_full'
+                    }
 
                     archiveArtifacts artifacts: "artifact/*", fingerprint: true
                 }
