@@ -8,7 +8,6 @@ def get_env():
 
     # use the build-environment path for Linux builds
     if "GODOT_SDK_LINUX_X86_64" in env:
-        print(f"Using Linux SDK path: {env["GODOT_SDK_LINUX_X86_64"]}")
         env["PATH"] = env["GODOT_SDK_LINUX_X86_64"] + "/bin" + ':' + env["PATH"]
 
     return env
