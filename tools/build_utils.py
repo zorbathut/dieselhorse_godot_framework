@@ -16,3 +16,6 @@ def get_env():
 def get_float_precision():
     #return "single"
     return "double"
+
+def get_project_name():
+    return "moonskrive"

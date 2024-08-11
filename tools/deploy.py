@@ -68,11 +68,22 @@ def run():
             "--headless",
             "--path", "project",
             "--export-release", args.target,
-            f"../{deploydir}/moonskrive",
+            f"../{deploydir}/{build_utils.get_project_name()}",
         ], check=True, env=build_utils.get_env())
 
     # Copy dec directory over
     shutil.copytree("project/dec", f"{deploydir}/dec")
+
+    if util.platformswitch(linux = True, windows = False):
+        # All the debug info is shoved in the executable, so let's pull that out
+        util.run([
+                "strip",
+                f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}",
+            ], check=True)
+    
+    if util.platformswitch(linux = False, windows = True):
+        # Needs an .exe suffix
+        os.rename(f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}", f"{deploydir}/{build_utils.get_project_name()}/{build_utils.get_project_name()}.exe")
 
 if __name__ == '__main__':
     run()
