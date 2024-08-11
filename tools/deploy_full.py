@@ -67,10 +67,10 @@ def create_artifacts():
 
     commands = [
         f"mv deploy/linux deploy/{projectname}",
-        f"zip -9 -r deploy/{linux_zip} deploy/{projectname}",
+        f"(cd deploy && zip -9 -r {linux_zip} {projectname})",
         f"mv deploy/{projectname} deploy/linux",
         f"mv deploy/windows deploy/{projectname}",
-        f"zip -9 -r deploy/{windows_zip} deploy/{projectname}",
+        f"(cd deploy && zip -9 -r {windows_zip} {projectname})",
         f"mv deploy/{projectname} deploy/windows",
     ]
 
