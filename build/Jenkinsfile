@@ -7,7 +7,7 @@ pipeline {
                 script {
                     def customImage = docker.build("my-image:${env.BUILD_ID}", "-f build/bootstrap/Dockerfile .")
 
-                    customImage.inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                    customImage.inside('--privileged -v /var/run/docker.sock:/var/run/docker.sock -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group') {
                         sh 'python tool.py deploy_full'
                     }
 

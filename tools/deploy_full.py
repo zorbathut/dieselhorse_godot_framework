@@ -13,7 +13,7 @@ GBCMSB_ID = f"gbcmsb-{BUILD_NUMBER}"
 LINUX_IMAGE_TAR = f"godot-linux-{GBCMSB_ID}.tar"
 WINDOWS_IMAGE_TAR = f"godot-windows-{GBCMSB_ID}.tar"
 
-DOCKER_UID = []
+DOCKER_UID = ["--user", f"{os.getuid()}:{os.getgid()}"]
 
 def build_docker_image():
     """Build Docker Image."""
