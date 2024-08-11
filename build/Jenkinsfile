@@ -6,11 +6,8 @@ pipeline {
             steps {
                 script {
                     def customImage = docker.build("my-image:${env.BUILD_ID}", "-f build/bootstrap/Dockerfile .")
-                    
-                    def uid = sh(script: 'id -u', returnStdout: true).trim()
-                    def gid = sh(script: 'id -g', returnStdout: true).trim()
 
-                    customImage.inside('--privileged -u ${uid}:${gid}') {
+                    customImage.inside('--privileged') {
                         sh 'python tool.py deploy_full'
                     }
 
