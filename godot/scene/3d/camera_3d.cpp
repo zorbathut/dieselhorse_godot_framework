@@ -691,9 +691,9 @@ Vector<Vector3> Camera3D::get_frustum_plane_intersection(const Plane &p_plane) c
 	Projection cm;
 
 	if (mode == PROJECTION_ORTHOGONAL) {
-		cm.set_orthogonal(size, viewport_size.aspect(), near, far, keep_aspect == KEEP_WIDTH);
+		cm.set_orthogonal(size, viewport_size.aspect(), _near, _far, keep_aspect == KEEP_WIDTH);
 	} else {
-		cm.set_perspective(fov, viewport_size.aspect(), near, far, keep_aspect == KEEP_WIDTH);
+		cm.set_perspective(fov, viewport_size.aspect(), _near, _far, keep_aspect == KEEP_WIDTH);
 	}
 
 	Vector3 endpoints[8];

@@ -601,7 +601,7 @@ public:
 	Control *gui_get_hovered_control() const;
 
 	Control *gui_get_mouse_over() const;
-	Window *gui_get_mouse_over_window() const;
+	Window *gui_get_hovered_window() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 

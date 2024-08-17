@@ -4716,9 +4716,7 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("gui_release_focus"), &Viewport::gui_release_focus);
 	ClassDB::bind_method(D_METHOD("gui_get_focus_owner"), &Viewport::gui_get_focus_owner);
 	ClassDB::bind_method(D_METHOD("gui_get_hovered_control"), &Viewport::gui_get_hovered_control);
-
-	ClassDB::bind_method(D_METHOD("gui_get_mouse_over"), &Viewport::gui_get_mouse_over);
-	ClassDB::bind_method(D_METHOD("gui_get_mouse_over_window"), &Viewport::gui_get_mouse_over_window);
+	ClassDB::bind_method(D_METHOD("gui_get_hovered_window"), &Viewport::gui_get_hovered_window);
 
 	ClassDB::bind_method(D_METHOD("gui_find_control", "point"), &Viewport::gui_find_control);
 
