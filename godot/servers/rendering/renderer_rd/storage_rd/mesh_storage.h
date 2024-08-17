@@ -153,6 +153,7 @@ private:
 		AABB aabb;
 		AABB custom_aabb;
 		uint64_t skeleton_aabb_version = 0;
+		RID skeleton_aabb_rid;
 
 		Vector<RID> material_cache;
 
@@ -219,6 +220,7 @@ private:
 		bool uses_custom_data = false;
 		int visible_instances = -1;
 		AABB aabb;
+		AABB custom_aabb;
 		bool aabb_dirty = false;
 		bool buffer_set = false;
 		bool motion_vectors_enabled = false;
@@ -644,6 +646,9 @@ public:
 
 	virtual void multimesh_set_visible_instances(RID p_multimesh, int p_visible) override;
 	virtual int multimesh_get_visible_instances(RID p_multimesh) const override;
+
+	virtual void multimesh_set_custom_aabb(RID p_multimesh, const AABB &p_aabb) override;
+	virtual AABB multimesh_get_custom_aabb(RID p_multimesh) const override;
 
 	virtual AABB multimesh_get_aabb(RID p_multimesh) const override;
 

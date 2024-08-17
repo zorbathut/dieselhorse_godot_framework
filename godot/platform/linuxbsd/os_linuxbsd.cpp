@@ -40,6 +40,10 @@
 #include "x11/display_server_x11.h"
 #endif
 
+#ifdef WAYLAND_ENABLED
+#include "wayland/display_server_wayland.h"
+#endif
+
 #include "modules/modules_enabled.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
 #include "modules/regex/regex.h"
@@ -180,7 +184,7 @@ String OS_LinuxBSD::get_processor_name() const {
 
 	while (!f->eof_reached()) {
 		const String line = f->get_line();
-		if (line.find("model name") != -1) {
+		if (line.contains("model name")) {
 			return line.split(":")[1].strip_edges();
 		}
 	}
@@ -265,7 +269,7 @@ String OS_LinuxBSD::get_systemd_os_release_info_value(const String &key) const {
 	if (f.is_valid()) {
 		while (!f->eof_reached()) {
 			const String line = f->get_line();
-			if (line.find(key) != -1) {
+			if (line.contains(key)) {
 				String value = line.split("=")[1].strip_edges();
 				value = value.trim_prefix("\"");
 				return value.trim_suffix("\"");
@@ -341,7 +345,7 @@ Vector<String> OS_LinuxBSD::get_video_adapter_driver_info() const {
 			continue;
 		}
 		String device_class = columns[1].trim_suffix(":");
-		String vendor_device_id_mapping = columns[2];
+		const String &vendor_device_id_mapping = columns[2];
 
 #ifdef MODULE_REGEX_ENABLED
 		if (regex_id_format.search(vendor_device_id_mapping).is_null()) {
@@ -499,7 +503,7 @@ Vector<String> OS_LinuxBSD::lspci_get_device_value(Vector<String> vendor_device_
 	return values;
 }
 
-Error OS_LinuxBSD::shell_open(String p_uri) {
+Error OS_LinuxBSD::shell_open(const String &p_uri) {
 	Error ok;
 	int err_code;
 	List<String> args;
@@ -1189,6 +1193,10 @@ OS_LinuxBSD::OS_LinuxBSD() {
 
 #ifdef X11_ENABLED
 	DisplayServerX11::register_x11_driver();
+#endif
+
+#ifdef WAYLAND_ENABLED
+	DisplayServerWayland::register_wayland_driver();
 #endif
 
 #ifdef FONTCONFIG_ENABLED

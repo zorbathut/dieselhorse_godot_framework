@@ -118,6 +118,7 @@
 			<param index="5" name="spacing_bottom" type="int" default="0" />
 			<param index="6" name="spacing_space" type="int" default="0" />
 			<param index="7" name="spacing_glyph" type="int" default="0" />
+			<param index="8" name="baseline_offset" type="float" default="0.0" />
 			<description>
 				Returns [TextServer] RID of the font cache for specific variation.
 			</description>
@@ -278,7 +279,7 @@
 				To print available variation axes of a variable font:
 				[codeblock]
 				var fv = FontVariation.new()
-				fv.set_base_font = load("res://RobotoFlex.ttf")
+				fv.base_font = load("res://RobotoFlex.ttf")
 				var variation_list = fv.get_supported_variation_list()
 				for tag in variation_list:
 				    var name = TextServerManager.get_primary_interface().tag_to_name(tag)
