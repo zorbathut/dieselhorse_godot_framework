@@ -31,6 +31,7 @@
 #ifndef UTILITIES_DUMMY_H
 #define UTILITIES_DUMMY_H
 
+#include "light_storage.h"
 #include "material_storage.h"
 #include "mesh_storage.h"
 #include "servers/rendering/storage/utilities.h"
@@ -55,12 +56,16 @@ public:
 			return RS::INSTANCE_MESH;
 		} else if (RendererDummy::MeshStorage::get_singleton()->owns_multimesh(p_rid)) {
 			return RS::INSTANCE_MULTIMESH;
+		} else if (RendererDummy::LightStorage::get_singleton()->owns_lightmap(p_rid)) {
+			return RS::INSTANCE_LIGHTMAP;
 		}
 		return RS::INSTANCE_NONE;
 	}
 
 	virtual bool free(RID p_rid) override {
-		if (RendererDummy::TextureStorage::get_singleton()->owns_texture(p_rid)) {
+		if (RendererDummy::LightStorage::get_singleton()->free(p_rid)) {
+			return true;
+		} else if (RendererDummy::TextureStorage::get_singleton()->owns_texture(p_rid)) {
 			RendererDummy::TextureStorage::get_singleton()->texture_free(p_rid);
 			return true;
 		} else if (RendererDummy::MeshStorage::get_singleton()->owns_mesh(p_rid)) {
@@ -108,7 +113,7 @@ public:
 	virtual void set_debug_generate_wireframes(bool p_generate) override {}
 
 	virtual bool has_os_feature(const String &p_feature) const override {
-		return p_feature == "rgtc" || p_feature == "bptc" || p_feature == "s3tc" || p_feature == "etc" || p_feature == "etc2";
+		return p_feature == "rgtc" || p_feature == "bptc" || p_feature == "s3tc" || p_feature == "etc2";
 	}
 
 	virtual void update_memory_info() override {}

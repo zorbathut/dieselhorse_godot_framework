@@ -28,9 +28,8 @@
 			The custom HTML page that wraps the exported web build. If left empty, the default HTML shell is used.
 			For more information, see the [url=$DOCS_URL/tutorials/platform/web/customizing_html5_shell.html]Customizing HTML5 Shell[/url] tutorial.
 		</member>
-		<member name="html/experimental_virtual_keyboard" type="bool" setter="" getter="">
+		<member name="html/experimental_virtual_keyboard" type="bool" setter="" getter="" experimental="">
 			If [code]true[/code], embeds support for a virtual keyboard into the web page, which is shown when necessary on touchscreen devices.
-			[b]Warning:[/b] This feature is experimental and may be changed in a future release.
 		</member>
 		<member name="html/export_icon" type="bool" setter="" getter="">
 			If [code]true[/code], the project icon will be used as the favicon for this application's web page.
@@ -55,6 +54,10 @@
 		<member name="progressive_web_app/enabled" type="bool" setter="" getter="">
 			If [code]true[/code], turns this web build into a [url=https://en.wikipedia.org/wiki/Progressive_web_app]progressive web application[/url] (PWA).
 		</member>
+		<member name="progressive_web_app/ensure_cross_origin_isolation_headers" type="bool" setter="" getter="">
+			When enabled, the progressive web app will make sure that each request has cross-origin isolation headers (COEP/COOP).
+			This can simplify the setup to serve the exported game.
+		</member>
 		<member name="progressive_web_app/icon_144x144" type="String" setter="" getter="">
 			File path to the smallest icon for this web application. If not defined, defaults to the project icon.
 			[b]Note:[/b] If the icon is not 144x144, it will be automatically resized for the final build.
@@ -78,6 +81,10 @@
 		</member>
 		<member name="variant/extensions_support" type="bool" setter="" getter="">
 			If [code]true[/code] enables [GDExtension] support for this web build.
+		</member>
+		<member name="variant/thread_support" type="bool" setter="" getter="">
+			If [code]true[/code], the exported game will support threads. It requires [url=https://web.dev/articles/coop-coep]a "cross-origin isolated" website[/url], which may be difficult to set up and is limited for security reasons (such as not being able to communicate with third-party websites).
+			If [code]false[/code], the exported game will not support threads. As a result, it is more prone to performance and audio issues, but will only require to be run on an HTTPS website.
 		</member>
 		<member name="vram_texture_compression/for_desktop" type="bool" setter="" getter="">
 			If [code]true[/code], allows textures to be optimized for desktop through the S3TC algorithm.
