@@ -62,29 +62,32 @@ def build_deploy(target):
 def create_artifacts():
     """Create artifacts by zipping directories."""
     projectname = build_utils.get_project_name()
-    linux_zip = f'{projectname}_linux.zip'
-    windows_zip = f'{projectname}_windows.zip'
-
-    commands = [
-        f"mv deploy/linux deploy/{projectname}",
-        f"(cd deploy && zip -9 -r {linux_zip} {projectname})",
-        f"mv deploy/{projectname} deploy/linux",
-        f"mv deploy/windows deploy/{projectname}",
-        f"(cd deploy && zip -9 -r {windows_zip} {projectname})",
-        f"mv deploy/{projectname} deploy/windows",
-    ]
-
+    
+    # Get a list of directories to zip
+    dirs_to_zip = [d for d in os.listdir("deploy") if os.path.isdir(os.path.join("deploy", d))]
+    
+    # Prepare commands for Docker
+    commands = []
+    for dir_name in dirs_to_zip:
+        commands.extend([
+            f"(cd deploy && zip -9 -r {dir_name}.zip {dir_name})",
+        ])
+    
+    # Run Docker command to create zip files
     util.run([
         "docker", "run"] + DOCKER_UID + VOLUMESPEC + ["--rm", "-w", f"{os.getcwd()}",
-        f"localhost/godot-linux:{GBCMSB_ID}", "/bin/bash", "-c", 
+        f"localhost/godot-linux:{GBCMSB_ID}", "/bin/bash", "-c",
         " && ".join(commands)
-    ], check = True)
-
-    # prep as artifact
-    shutil.rmtree("artifact", ignore_errors = True)
-    os.makedirs("artifact", exist_ok = True)
-    shutil.move(f"deploy/{linux_zip}", os.path.join(os.getcwd(), "artifact", linux_zip))
-    shutil.move(f"deploy/{windows_zip}", os.path.join(os.getcwd(), "artifact", windows_zip))
+    ], check=True)
+    
+    # Prepare artifact directory
+    shutil.rmtree("artifact", ignore_errors=True)
+    os.makedirs("artifact", exist_ok=True)
+    
+    # Move zip files to artifact directory
+    for zip_file in os.listdir("deploy"):
+        if zip_file.endswith(".zip"):
+            shutil.move(os.path.join("deploy", zip_file), os.path.join("artifact", zip_file))
 
 def clean_up():
     """Clean up Docker containers and images."""

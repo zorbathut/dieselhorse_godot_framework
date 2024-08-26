@@ -57,10 +57,14 @@ def run():
         ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Clear and remake necessary directory
-    deploydir = f"deploy/{args.target}"
+    deploydir = f"deploy/{build_utils.get_project_name()}-{args.target}-{build_utils.get_project_version()}"
     if os.path.exists(deploydir):
         shutil.rmtree(deploydir)
     os.makedirs(deploydir, exist_ok=True)
+
+    # Shove a version file in our .pck
+    with open(f"project/buildinfo.xml", "w") as f:
+        f.write(f"<BuildInfo><version>{build_utils.get_project_version()}</version></BuildInfo>")
 
     # Run headless export
     util.run([

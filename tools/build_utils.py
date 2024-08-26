@@ -1,5 +1,6 @@
 
 import os
+import util
 
 def get_env():
     """Get the environment variables for the current platform."""
@@ -18,3 +19,7 @@ def get_float_precision():
 
 def get_project_name():
     return "tsoh"
+
+def get_project_version():
+    # make sure to convert to an actual string
+    return util.run(["git", "describe", "--tags", "--always", "--dirty"], check=True, capture_output=True).stdout.strip().decode("utf-8")
