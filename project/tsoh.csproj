@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.3.0-moonskrive">
+<Project Sdk="Godot.NET.Sdk/4.3.0-tsoh">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>11.0</LangVersion>
@@ -35,6 +35,6 @@
 
   <PropertyGroup>
     <!-- this is apparently Rider-specific -->
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)/moonskrive.runsettings</RunSettingsFilePath>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)/tsoh.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 </Project>

@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="moonskrive"
+config/name="tsoh"
 run/main_scene="res://global/bootstrap.tscn"
 config/features=PackedStringArray("4.3", "C#", "Double Precision", "Forward Plus")
 config/icon="res://icon.svg"
@@ -23,7 +23,7 @@ window/stretch/mode="canvas_items"
 
 [dotnet]
 
-project/assembly_name="moonskrive"
+project/assembly_name="tsoh"
 project/solution_directory=".."
 
 [input]

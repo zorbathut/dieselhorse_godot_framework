@@ -11,7 +11,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
       bash bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
       dotnet-sdk-8.0
 
-# moonskrive framework
+# tsoh framework
 # it's unclear why exactly fontconfig is needed; godot refuses to run without it?
 RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel gcc fontconfig zip
 
