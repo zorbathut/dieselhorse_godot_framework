@@ -24,6 +24,7 @@ def run():
     print("BUTEST")
     print(util.run(["ls"], capture_output=True).stdout.strip().decode("utf-8"))
     print(util.run(["git", "describe", "--tags", "--always", "--dirty"], capture_output=True).stdout.strip().decode("utf-8"))
+    print(util.run(["git", "status"], capture_output=True).stdout.strip().decode("utf-8"))
     print(util.run(["git", "status"], check=True, capture_output=True).stdout.strip().decode("utf-8"))
     build_utils.get_project_version()
 
