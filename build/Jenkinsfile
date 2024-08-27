@@ -7,9 +7,9 @@ pipeline {
                 script {
                     sh "(cd build/bootstrap && docker build -t my-image:${env.BUILD_ID} .)"
  
-                    sh "docker run  --rm --volumes-from jenkins-agent -e VOLUMES_FROM=jenkins-agent -w ${env.WORKSPACE} my-image:${env.BUILD_ID} python tool.py deploy_full"
+                    sh "docker run  --rm --volumes-from jenkins-agent -e VOLUMES_FROM=jenkins-agent -e BUILD_NUMBER=${env.BUILD_NUMBER} -w ${env.WORKSPACE} my-image:${env.BUILD_ID} python tool.py deploy_full"
  
-                     archiveArtifacts artifacts: "artifact/*", fingerprint: true
+                    archiveArtifacts artifacts: "artifact/*", fingerprint: true
                 }
             }
         }
