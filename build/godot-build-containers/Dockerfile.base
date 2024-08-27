@@ -12,8 +12,11 @@ RUN dnf -y install --setopt=install_weak_deps=False \
       dotnet-sdk-8.0
 
 # tsoh framework
-# it's unclear why exactly fontconfig is needed; godot refuses to run without it?
-RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel gcc fontconfig zip
+# python/poetry for build env
+# python3-devel and gcc for building python modules
+# zip and git for deploy script requirements
+# it's unclear why exactly fontconfig is needed; godot refuses to run without it? I dunno what's going on there.
+RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel gcc fontconfig zip git
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
