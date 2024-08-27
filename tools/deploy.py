@@ -21,6 +21,12 @@ def run():
         print("This definitely won't work on Windows.")
         sys.exit(1)
 
+    print("BUTEST")
+    print(util.run(["ls"], capture_output=True).stdout.strip().decode("utf-8"))
+    print(util.run(["git", "describe", "--tags", "--always", "--dirty"], capture_output=True).stdout.strip().decode("utf-8"))
+    print(util.run(["git", "status"], check=True, capture_output=True).stdout.strip().decode("utf-8"))
+    build_utils.get_project_version()
+
     # we do this both to build the mono glue files and to build the editor that we can use to run the deploy code
     # it's possible we should build this separately in our jenkins build, then copy it over
     build_editor.run()
