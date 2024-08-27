@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eux
 
 basedir=$(cd $(dirname "$0"); pwd)
 
