@@ -27,5 +27,7 @@ def run():
     copyglob(['../arbor/src/*.cs'], 'project/thirdparty/arbor')
     copyglob(['../arbor/arbor-generator/*.cs', '../arbor/arbor-generator/*.csproj'], 'project/thirdparty/arbor/arbor-generator')
 
+    util.run(["dotnet", "restore"], check=True)
+
 if __name__ == '__main__':
     run()
