@@ -3351,6 +3351,13 @@ void RenderingServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(CANVAS_OCCLUDER_POLYGON_CULL_CLOCKWISE);
 	BIND_ENUM_CONSTANT(CANVAS_OCCLUDER_POLYGON_CULL_COUNTER_CLOCKWISE);
 
+	// DH BEGIN - HDSS
+	/* HDSS */
+	
+	ClassDB::bind_method(D_METHOD("hdss_set_value"), &RenderingServer::hdss_set_value);
+
+	// DH END - HDSS
+
 	/* GLOBAL SHADER UNIFORMS */
 
 	ClassDB::bind_method(D_METHOD("global_shader_parameter_add", "name", "type", "default_value"), &RenderingServer::global_shader_parameter_add);

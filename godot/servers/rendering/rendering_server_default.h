@@ -978,6 +978,19 @@ public:
 
 	FUNC1R(Rect2, _debug_canvas_item_get_rect, RID)
 
+	// DH BEGIN - HDSS API
+	/* HDSS API */
+
+#undef ServerName
+#undef server_name
+
+#define ServerName RendererHDSS
+#define server_name RSG::hdss
+
+	FUNC1(hdss_set_value, int)
+
+	// DH END - HDSS API
+
 	/* GLOBAL SHADER UNIFORMS */
 
 #undef server_name

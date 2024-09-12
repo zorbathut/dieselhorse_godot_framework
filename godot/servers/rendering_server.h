@@ -1592,6 +1592,13 @@ public:
 	Rect2 debug_canvas_item_get_rect(RID p_item);
 	virtual Rect2 _debug_canvas_item_get_rect(RID p_item) = 0;
 
+	// DH BEGIN - HDSS
+	/* HDSS */
+
+	virtual void hdss_set_value(int p_value) = 0;
+
+	// DH END - HDSS
+
 	/* GLOBAL SHADER UNIFORMS */
 
 	enum GlobalShaderParameterType {
