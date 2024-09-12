@@ -47,3 +47,7 @@ RendererCompositor *RenderingServerGlobals::rasterizer = nullptr;
 RendererCanvasCull *RenderingServerGlobals::canvas = nullptr;
 RendererViewport *RenderingServerGlobals::viewport = nullptr;
 RenderingMethod *RenderingServerGlobals::scene = nullptr;
+
+// DH BEGIN - HDSS rendering
+RendererHDSS *RenderingServerGlobals::hdss = nullptr;
+// DH END - HDSS rendering

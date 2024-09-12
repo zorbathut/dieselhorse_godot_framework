@@ -7,3 +7,7 @@ env.add_source_files(env.servers_sources, "*.cpp")
 SConscript("dummy/SCsub")
 SConscript("renderer_rd/SCsub")
 SConscript("storage/SCsub")
+
+# DH BEGIN - Add renderer_hdss
+SConscript("renderer_hdss/SCsub")
+# DH END - Add renderer_hdss

@@ -229,12 +229,20 @@ void RenderingServerDefault::_init() {
 	RSG::fog = RSG::rasterizer->get_fog();
 	RSG::canvas_render = RSG::rasterizer->get_canvas();
 	sr->set_scene_render(RSG::rasterizer->get_scene());
+
+	// DH BEGIN - HDSS rendering
+	RSG::hdss = memnew(RendererHDSS);
+	// DH END - HDSS rendering
 }
 
 void RenderingServerDefault::_finish() {
 	if (test_cube.is_valid()) {
 		free(test_cube);
 	}
+
+	// DH BEGIN - HDSS rendering
+	memdelete(RSG::hdss);
+	// DH END - HDSS rendering
 
 	RSG::canvas->finalize();
 	memdelete(RSG::canvas);

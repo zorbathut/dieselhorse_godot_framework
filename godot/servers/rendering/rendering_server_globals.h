@@ -44,6 +44,10 @@
 #include "servers/rendering/storage/texture_storage.h"
 #include "servers/rendering/storage/utilities.h"
 
+// DH BEGIN - HDSS rendering
+#include "servers/rendering/renderer_hdss/renderer_hdss.h"
+// DH END - HDSS rendering
+
 class RendererCanvasCull;
 class RendererViewport;
 class RenderingMethod;
@@ -67,6 +71,10 @@ public:
 	static RendererCanvasCull *canvas;
 	static RendererViewport *viewport;
 	static RenderingMethod *scene;
+
+	// DH BEGIN - HDSS rendering
+	static RendererHDSS *hdss;
+	// DH END - HDSS rendering
 };
 
 #define RSG RenderingServerGlobals

@@ -632,6 +632,16 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 			}
 		}
 
+		// DH BEGIN - HDSS rendering
+		{
+			// There may be an outstanding clear request if a clear was requested, but no 2D elements were drawn.
+			// Clear now otherwise we copy over garbage from the render target.
+			RSG::texture_storage->render_target_do_clear_request(p_viewport->render_target);
+
+			RSG::hdss->render_hdss(p_viewport->render_target, &p_viewport->render_info);
+		}
+		// DH END - HDSS rendering
+
 		if (scenario_draw_canvas_bg) {
 			// There may be an outstanding clear request if a clear was requested, but no 2D elements were drawn.
 			// Clear now otherwise we copy over garbage from the render target.
