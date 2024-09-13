@@ -5,7 +5,7 @@ import util
 def get_env():
     """Get the environment variables for the current platform."""
     env = os.environ.copy()
-    env['GODOT_VERSION_STATUS'] = 'tsoh'
+    env['GODOT_VERSION_STATUS'] = get_project_name()
 
     # use the build-environment path for Linux builds
     if "GODOT_SDK_LINUX_X86_64" in env:
@@ -13,9 +13,12 @@ def get_env():
 
     return env
 
+# separate from the build profile because we need to pass this into the Mono glue generator as well
 def get_float_precision():
-    #return "single"
     return "double"
+
+def get_build_profile():
+    return "build_profile=tsoh.build_profile.json"
 
 def get_project_name():
     return "tsoh"

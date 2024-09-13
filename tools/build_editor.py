@@ -31,9 +31,8 @@ def run():
             "-j", f"{cores}",
             f"p={platform}",
             "target=editor",
-            "module_mono_enabled=yes",
-            "debug_symbols=yes",
             f"precision={build_utils.get_float_precision()}",
+            build_utils.get_build_profile()
         ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Generate Mono glue files.

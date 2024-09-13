@@ -1,0 +1,23 @@
+{
+	"disabled_build_options": {
+		"debug_symbols": "yes",
+		"module_mono_enabled": "yes"
+	},
+	
+	"it_is_not_clear_why_those_are_called_disabled_they_really_arent" : "wtf",
+	
+	"options_to_be_introduced": {
+		"deprecated": "no",
+		"opengl3": "no",
+		"module_enet_enabled": "no",
+		"module_gdscript_enabled": "no",
+		"module_gltf_enabled": "no",
+		"module_mono_enabled": "yes",
+		"module_multiplayer_enabled": "no",
+		"module_navigation_enabled": "no",
+		"module_openxr_enabled": "no",
+		"module_raycast_enabled": "no",
+		"module_webrtc_enabled": "no",
+		"module_webxr_enabled": "no"
+	}
+}

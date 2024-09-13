@@ -36,9 +36,8 @@ def run():
             "target=template_release",
             "arch=x86_64",
             "production=yes",
-            "module_mono_enabled=yes",
-            "debug_symbols=yes",
             f"precision={build_utils.get_float_precision()}", 
+            build_utils.get_build_profile()
         ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Mono glue files already exist from us building the editor
