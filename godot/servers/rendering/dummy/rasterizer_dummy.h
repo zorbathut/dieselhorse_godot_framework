@@ -65,6 +65,10 @@ protected:
 	RendererDummy::Fog fog;
 	RasterizerSceneDummy scene;
 
+	// DH BEGIN - HDSS renderer
+	RendererHDSS hdss;
+	// DH END - HDSS renderer
+
 public:
 	RendererUtilities *get_utilities() override { return &utilities; };
 	RendererLightStorage *get_light_storage() override { return &light_storage; };
@@ -76,6 +80,10 @@ public:
 	RendererFog *get_fog() override { return &fog; };
 	RendererCanvasRender *get_canvas() override { return &canvas; }
 	RendererSceneRender *get_scene() override { return &scene; }
+
+	// DH BEGIN - HDSS renderer
+	RendererHDSS *get_hdss() override { return &hdss; }
+	// DH END - HDSS renderer
 
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) override {}
 

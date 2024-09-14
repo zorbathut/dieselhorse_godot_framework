@@ -987,7 +987,7 @@ public:
 #define ServerName RendererHDSS
 #define server_name RSG::hdss
 
-	FUNC1(hdss_set_value, int)
+	FUNC2(hdss_set_camera, const Rect2 &, float)
 
 	// DH END - HDSS API
 

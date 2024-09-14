@@ -3354,7 +3354,7 @@ void RenderingServer::_bind_methods() {
 	// DH BEGIN - HDSS
 	/* HDSS */
 	
-	ClassDB::bind_method(D_METHOD("hdss_set_value"), &RenderingServer::hdss_set_value);
+	ClassDB::bind_method(D_METHOD("hdss_set_camera"), &RenderingServer::hdss_set_camera);
 
 	// DH END - HDSS
 

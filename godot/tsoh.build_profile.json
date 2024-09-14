@@ -1,18 +1,20 @@
 {
-	"disabled_build_options": {
-		"debug_symbols": "yes",
-		"module_mono_enabled": "yes"
-	},
-	
 	"it_is_not_clear_why_those_are_called_disabled_they_really_arent" : "wtf",
+	"who_wrote_this_thing": "seriously",
+	"also_json_could_you_please_add_comments": "thx in advance",
+	
+	"disabled_build_options": {
+		"debug_symbols": true,
+		"module_mono_enabled": true,
+		"opengl3": false
+	},
 	
 	"options_to_be_introduced": {
 		"deprecated": "no",
-		"opengl3": "no",
+		
 		"module_enet_enabled": "no",
 		"module_gdscript_enabled": "no",
 		"module_gltf_enabled": "no",
-		"module_mono_enabled": "yes",
 		"module_multiplayer_enabled": "no",
 		"module_navigation_enabled": "no",
 		"module_openxr_enabled": "no",

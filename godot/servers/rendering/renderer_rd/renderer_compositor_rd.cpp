@@ -143,6 +143,10 @@ void RendererCompositorRD::initialize() {
 
 		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
 	}
+
+	// DH BEGIN - HDSS rendering
+	hdss->initialize();
+	// DH END - HDSS rendering
 }
 
 uint64_t RendererCompositorRD::frame = 1;
@@ -327,10 +331,18 @@ RendererCompositorRD::RendererCompositorRD() {
 		scene = memnew(RendererSceneRenderImplementation::RenderForwardClustered());
 	}
 
+	// DH BEGIN - HDSS rendering
+	hdss = memnew(RendererHDSS);
+	// DH END - HDSS rendering
+
 	scene->init();
 }
 
 RendererCompositorRD::~RendererCompositorRD() {
+	// DH BEGIN - HDSS rendering
+	memdelete(hdss);
+	// DH END - HDSS rendering
+
 	singleton = nullptr;
 	memdelete(uniform_set_cache);
 	memdelete(framebuffer_cache);

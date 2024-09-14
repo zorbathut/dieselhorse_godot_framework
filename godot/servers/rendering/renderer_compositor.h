@@ -34,6 +34,7 @@
 #include "servers/rendering/environment/renderer_fog.h"
 #include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_canvas_render.h"
+#include "servers/rendering/renderer_hdss/renderer_hdss.h"
 #include "servers/rendering/rendering_method.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 #include "servers/rendering/storage/light_storage.h"
@@ -90,6 +91,10 @@ public:
 	virtual RendererFog *get_fog() = 0;
 	virtual RendererCanvasRender *get_canvas() = 0;
 	virtual RendererSceneRender *get_scene() = 0;
+
+	// DH BEGIN - HDSS renderer
+	virtual RendererHDSS *get_hdss() = 0;
+	// DH END - HDSS renderer
 
 	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) = 0;
 

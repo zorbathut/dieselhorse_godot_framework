@@ -61,6 +61,10 @@ protected:
 	RendererRD::Fog *fog = nullptr;
 	RendererSceneRenderRD *scene = nullptr;
 
+	// DH BEGIN - HDSS renderer
+	RendererHDSS *hdss = nullptr;
+	// DH END - HDSS renderer
+
 	enum BlitMode {
 		BLIT_MODE_NORMAL,
 		BLIT_MODE_USE_LAYER,
@@ -115,6 +119,10 @@ public:
 	RendererFog *get_fog() { return fog; }
 	RendererCanvasRender *get_canvas() { return canvas; }
 	RendererSceneRender *get_scene() { return scene; }
+
+	// DH BEGIN - HDSS renderer
+	RendererHDSS *get_hdss() { return hdss; }
+	// DH END - HDSS renderer
 
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter);
 

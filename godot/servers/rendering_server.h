@@ -1595,7 +1595,7 @@ public:
 	// DH BEGIN - HDSS
 	/* HDSS */
 
-	virtual void hdss_set_value(int p_value) = 0;
+	virtual void hdss_set_camera(const Rect2&, float) = 0;
 
 	// DH END - HDSS
 
