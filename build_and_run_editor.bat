@@ -1,1 +1,1 @@
-py build_and_run_editor.py
+py build_and_run_editor.py %*

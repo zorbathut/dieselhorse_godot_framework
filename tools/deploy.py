@@ -23,7 +23,7 @@ def run():
 
     # we do this both to build the mono glue files and to build the editor that we can use to run the deploy code
     # it's possible we should build this separately in our jenkins build, then copy it over
-    build_editor.run()
+    build_editor.run(False)
 
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
@@ -67,7 +67,7 @@ def run():
 
     # Run headless export
     util.run([
-            "godot/" + util.godot_bin(),
+            "godot/" + util.godot_bin(False),
             "--headless",
             "--path", "project",
             "--export-release", args.target,

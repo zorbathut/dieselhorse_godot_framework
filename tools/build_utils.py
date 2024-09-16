@@ -26,3 +26,6 @@ def get_project_name():
 def get_project_version():
     # make sure to convert to an actual string
     return util.run(["git", "describe", "--tags", "--always", "--dirty"], check=True, capture_output=True).stdout.strip().decode("utf-8")
+
+def decorate_argparse_with_dev(parser):
+    parser.add_argument("--dev", action="store_true", default=False, help="Enable development mode")

@@ -1,4 +1,5 @@
 
+import argparse
 import build_utils
 import multiprocessing
 import os
@@ -8,7 +9,7 @@ import util
 
 util.cwdhack()
 
-def run():
+def run(dev):
     # kick priority down to make builds smoother
     # can't do this on linux unfortunately; shell out to a niced build_editor?
     if util.platformswitch(linux = False, windows = True):
@@ -30,14 +31,15 @@ def run():
             "scons",
             "-j", f"{cores}",
             f"p={platform}",
-            "target=editor",
-            f"precision={build_utils.get_float_precision()}",
+            "target=editor"]
+            + (["dev_build=yes"] if dev else []) +
+            [f"precision={build_utils.get_float_precision()}",
             build_utils.get_build_profile()
         ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Generate Mono glue files.
     util.run([
-            util.godot_bin(),
+            util.godot_bin(dev),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
         ], check=True, cwd="godot", env=build_utils.get_env())
@@ -55,15 +57,15 @@ def run():
 
     # Set up our fake universal link
     # We append .exe to it because Windows wants it and nothing else minds.
-    universal_editor_path = "godot/bin/godot.universal.editor.double.x86_64.mono.exe"
+    universal_editor_path = "godot/bin/godot.universal.editor.exe"
     if os.path.exists(universal_editor_path):
         os.remove(universal_editor_path)
     
     util.platformswitch(
-        linux = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin())), universal_editor_path),
+        linux = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin(dev))), universal_editor_path),
         
         # This can be made faster by using a shortcut or mklink, but that's tough
-        windows = lambda: shutil.copyfile(os.path.join("godot", util.godot_bin()), universal_editor_path),
+        windows = lambda: shutil.copyfile(os.path.join("godot", util.godot_bin(dev)), universal_editor_path),
     )()
 
     # Ramp priority back up for the editor itself.
@@ -71,4 +73,8 @@ def run():
         proc.nice(psutil.NORMAL_PRIORITY_CLASS)
 
 if __name__ == '__main__':
-    run()
+    parser = argparse.ArgumentParser(description="Build editor")
+    build_utils.decorate_argparse_with_dev(parser)
+    args = parser.parse_args()
+
+    run(args.dev)

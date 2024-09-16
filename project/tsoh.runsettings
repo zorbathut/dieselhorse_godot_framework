@@ -3,7 +3,7 @@
     <RunConfiguration>
         <ResultsDirectory>../TestResults</ResultsDirectory>
         <EnvironmentVariables>
-            <GODOT_BIN>../godot/bin/godot.universal.editor.double.x86_64.mono.exe</GODOT_BIN>
+            <GODOT_BIN>../godot/bin/godot.universal.editor.exe</GODOT_BIN>
         </EnvironmentVariables>
     </RunConfiguration>
 
