@@ -1598,7 +1598,7 @@ public:
 	virtual RID hdss_element_create() = 0;
 
 	virtual void hdss_element_set_material(RID p_element, RID p_material) = 0;
-	virtual void hdss_element_set_vertices(RID p_element, const PackedVector3Array &p_vertices) = 0;
+	virtual void hdss_element_set_vertices(RID p_element, const PackedVector2Array &p_vertices) = 0;
 	virtual void hdss_element_set_indices(RID p_element, const PackedInt32Array &p_indices) = 0;
 	virtual void hdss_element_set_uvs(RID p_element, const PackedVector2Array &p_uvs) = 0;
 	virtual void hdss_element_set_transform(RID p_element, const Transform3D &p_transform) = 0;
