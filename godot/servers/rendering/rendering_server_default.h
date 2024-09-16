@@ -987,7 +987,19 @@ public:
 #define ServerName RendererHDSS
 #define server_name RSG::hdss
 
+	FUNCRIDSPLIT(hdss_element)
+
+	FUNC2(hdss_element_set_material, RID, RID)
+	FUNC2(hdss_element_set_vertices, RID, const PackedVector3Array &)
+	FUNC2(hdss_element_set_indices, RID, const PackedInt32Array &)
+	FUNC2(hdss_element_set_uvs, RID, const PackedVector2Array &)
+	FUNC2(hdss_element_set_transform, RID, const Transform3D &)
+
+	FUNC1(hdss_viewport_bind, RID)
+
 	FUNC2(hdss_set_camera, const Rect2 &, float)
+	FUNC0(hdss_draw_clear);
+	FUNC1(hdss_draw_append, RID);
 
 	// DH END - HDSS API
 

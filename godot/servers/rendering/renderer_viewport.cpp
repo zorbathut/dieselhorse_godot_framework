@@ -593,7 +593,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 			// Clear now otherwise we copy over garbage from the render target.
 			RSG::texture_storage->render_target_do_clear_request(p_viewport->render_target);
 
-			RSG::hdss->render_hdss(p_viewport->render_target, &p_viewport->render_info);
+			RSG::hdss->render_hdss(p_viewport->self, p_viewport->render_target, &p_viewport->render_info);
 		}
 		// DH END - HDSS rendering
 

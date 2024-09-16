@@ -3353,8 +3353,20 @@ void RenderingServer::_bind_methods() {
 
 	// DH BEGIN - HDSS
 	/* HDSS */
-	
-	ClassDB::bind_method(D_METHOD("hdss_set_camera"), &RenderingServer::hdss_set_camera);
+
+	ClassDB::bind_method(D_METHOD("hdss_element_create"), &RenderingServer::hdss_element_create);
+
+	ClassDB::bind_method(D_METHOD("hdss_element_set_material", "element", "material"), &RenderingServer::hdss_element_set_material);
+	ClassDB::bind_method(D_METHOD("hdss_element_set_vertices", "element", "vertices"), &RenderingServer::hdss_element_set_vertices);
+	ClassDB::bind_method(D_METHOD("hdss_element_set_indices", "element", "indices"), &RenderingServer::hdss_element_set_indices);
+	ClassDB::bind_method(D_METHOD("hdss_element_set_uvs", "element", "uvs"), &RenderingServer::hdss_element_set_uvs);
+	ClassDB::bind_method(D_METHOD("hdss_element_set_transform", "element", "transform"), &RenderingServer::hdss_element_set_transform);
+
+	ClassDB::bind_method(D_METHOD("hdss_viewport_bind", "viewport"), &RenderingServer::hdss_viewport_bind);
+
+	ClassDB::bind_method(D_METHOD("hdss_set_camera", "rect", "rotate"), &RenderingServer::hdss_set_camera);
+	ClassDB::bind_method(D_METHOD("hdss_draw_clear"), &RenderingServer::hdss_draw_clear);
+	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
 
 	// DH END - HDSS
 

@@ -1595,7 +1595,19 @@ public:
 	// DH BEGIN - HDSS
 	/* HDSS */
 
-	virtual void hdss_set_camera(const Rect2&, float) = 0;
+	virtual RID hdss_element_create() = 0;
+
+	virtual void hdss_element_set_material(RID p_element, RID p_material) = 0;
+	virtual void hdss_element_set_vertices(RID p_element, const PackedVector3Array &p_vertices) = 0;
+	virtual void hdss_element_set_indices(RID p_element, const PackedInt32Array &p_indices) = 0;
+	virtual void hdss_element_set_uvs(RID p_element, const PackedVector2Array &p_uvs) = 0;
+	virtual void hdss_element_set_transform(RID p_element, const Transform3D &p_transform) = 0;
+
+	virtual void hdss_viewport_bind(RID p_viewport) = 0;
+
+	virtual void hdss_set_camera(const Rect2 &p_rect, float p_rotate) = 0;
+	virtual void hdss_draw_clear() = 0;
+	virtual void hdss_draw_append(RID p_element) = 0;
 
 	// DH END - HDSS
 
