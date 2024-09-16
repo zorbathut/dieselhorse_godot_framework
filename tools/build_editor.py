@@ -21,10 +21,8 @@ def run(dev):
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
     
-    # Print files in `godot` directory but not subdirectories
-    for file in os.listdir("godot"):
-        if os.path.isfile(os.path.join("godot", file)):
-            print(file)
+    # Clear out old generated binaries
+    shutil.rmtree("godot/bin", ignore_errors=True)
 
     # Build the binary itself (yay this is no longer two-pass)
     util.run([
