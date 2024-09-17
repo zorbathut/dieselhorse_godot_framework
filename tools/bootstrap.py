@@ -6,9 +6,26 @@ import sys
 import tools.util
 
 def execute(token, args = [], shell = False):
-    poetry = tools.util.platformswitch(
-        linux = "poetry",
-        windows = os.path.expandvars("%APPDATA%/pypoetry/venv/Scripts/poetry"))
+    poetry_options = [
+        shutil.which("poetry"),
+        os.path.expandvars("%APPDATA%/pypoetry/venv/Scripts/poetry.exe"),   # windows default install location
+        "C:/Users/runneradmin/.local/bin/poetry.exe", # snok/install-poetry
+    ]
+
+    poetry = None
+    for option in poetry_options:
+        if option is None:
+            continue
+
+        if os.path.exists(option):
+            poetry = option
+            break
+    
+    if poetry is None:
+        print("Poetry not found!")
+        sys.exit(1)
+
+    print(f"Poetry found at {poetry}")
     
     tools.util.run([
             poetry,
