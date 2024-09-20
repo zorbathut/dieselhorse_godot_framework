@@ -1,0 +1,95 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Editor",
+
+            "preLaunchTask": "buildFull",
+            
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "args": ["project.godot"],
+            "cwd": "${workspaceFolder}/project",
+            "stopAtEntry": false
+        },
+
+        {
+            "name": "Game (C# debugger)",
+
+            "preLaunchTask": "buildCS",
+
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "cwd": "${workspaceFolder}/project",
+            "env": {
+                "OBS_VKCAPTURE": "1"
+            },
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+
+        {
+            "name": "Game (C++ debugger)",
+
+            "preLaunchTask": "buildFull",
+
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "cwd": "${workspaceFolder}/project",
+            "environment": [
+                {
+                    "name": "OBS_VKCAPTURE",
+                    "value": "1"
+                }
+            ],
+            "stopAtEntry": false
+        },
+
+        {
+            "name": "Game server (C# debugger)",
+
+            "preLaunchTask": "buildCS",
+
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "cwd": "${workspaceFolder}/project",
+            "args": ["--", "--serve=11235"],
+            "env": {
+                "OBS_VKCAPTURE": "1"
+            },
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+        },
+
+        {
+            "name": "Game client (C# debugger)",
+
+            "preLaunchTask": "buildCS",
+
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "cwd": "${workspaceFolder}/project",
+            "args": ["--", "--connect=localhost:11235"],
+            "env": {
+                "OBS_VKCAPTURE": "1"
+            },
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+        },
+    ],
+
+    "compounds": [
+        {
+            "name": "Client/Server (C# debugger)",
+            "configurations": [
+                "Game server (C# debugger)",
+                "Game client (C# debugger)",
+            ]
+        }
+    ]
+}
