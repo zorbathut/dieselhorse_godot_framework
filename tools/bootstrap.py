@@ -49,6 +49,8 @@ def execute(token, args = [], shell = False):
             "install",
             "--no-root",
         ], check=True, cwd="tools")
+       
+    print("Poetry install complete")
     
     tools.util.run([
             poetry,
