@@ -48,6 +48,9 @@ public:
 		MODE_PARTICLES,
 		MODE_SKY,
 		MODE_FOG,
+		// DH BEGIN - hdss shaders
+		MODE_HDSS,
+		// DH END - hdss shaders
 		MODE_MAX
 	};
 

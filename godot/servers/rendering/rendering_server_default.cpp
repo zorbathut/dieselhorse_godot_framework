@@ -231,6 +231,7 @@ void RenderingServerDefault::_init() {
 	sr->set_scene_render(RSG::rasterizer->get_scene());
 
 	// DH BEGIN - HDSS rendering
+	RSG::hdss_storage = RSG::rasterizer->get_hdss_storage();
 	RSG::hdss = RSG::rasterizer->get_hdss();
 	// DH END - HDSS rendering
 }

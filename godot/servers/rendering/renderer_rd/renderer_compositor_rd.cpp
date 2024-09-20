@@ -33,6 +33,10 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 
+// DH BEGIN - HDSS rendering
+#include "servers/rendering/renderer_hdss/hdss_storage.h"
+// DH END - HDSS rendering
+
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount) {
 	Error err = RD::get_singleton()->screen_prepare_for_drawing(p_screen);
 	if (err != OK) {
@@ -145,7 +149,8 @@ void RendererCompositorRD::initialize() {
 	}
 
 	// DH BEGIN - HDSS rendering
-	hdss->initialize();
+	hdss->init();
+	hdss_storage->init();
 	// DH END - HDSS rendering
 }
 
@@ -332,6 +337,7 @@ RendererCompositorRD::RendererCompositorRD() {
 	}
 
 	// DH BEGIN - HDSS rendering
+	hdss_storage = memnew(HDSSStorage);
 	hdss = memnew(RendererHDSS);
 	// DH END - HDSS rendering
 
@@ -341,6 +347,7 @@ RendererCompositorRD::RendererCompositorRD() {
 RendererCompositorRD::~RendererCompositorRD() {
 	// DH BEGIN - HDSS rendering
 	memdelete(hdss);
+	memdelete(hdss_storage);
 	// DH END - HDSS rendering
 
 	singleton = nullptr;

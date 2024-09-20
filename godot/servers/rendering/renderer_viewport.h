@@ -39,6 +39,10 @@
 #include "servers/rendering_server.h"
 #include "storage/render_scene_buffers.h"
 
+// DH BEGIN - HDSS rendering
+#include "servers/rendering/renderer_hdss/renderer_hdss.h"
+// DH END - HDSS rendering
+
 #ifndef _3D_DISABLED
 #include "servers/xr/xr_interface.h"
 #endif // _3D_DISABLED

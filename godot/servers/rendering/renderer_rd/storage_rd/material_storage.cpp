@@ -1865,6 +1865,10 @@ void MaterialStorage::shader_set_code(RID p_shader, const String &p_code) {
 		new_type = SHADER_TYPE_SKY;
 	} else if (mode_string == "fog") {
 		new_type = SHADER_TYPE_FOG;
+	// DH BEGIN - hdss shaders
+	} else if (mode_string == "hdss") {
+		new_type = SHADER_TYPE_HDSS;
+	// DH END - hdss shaders
 	} else {
 		new_type = SHADER_TYPE_MAX;
 	}

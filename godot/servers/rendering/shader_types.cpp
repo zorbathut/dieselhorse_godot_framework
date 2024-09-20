@@ -495,6 +495,9 @@ ShaderTypes::ShaderTypes() {
 	shader_types_list.push_back("particles");
 	shader_types_list.push_back("sky");
 	shader_types_list.push_back("fog");
+	// DH BEGIN - hdss shaders
+	shader_types_list.push_back("hdss");
+	// DH END - hdss shaders
 
 	for (const String &type : shader_types_list) {
 		shader_types.insert(type);

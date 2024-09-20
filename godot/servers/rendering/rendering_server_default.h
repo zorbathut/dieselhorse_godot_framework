@@ -43,6 +43,10 @@
 #include "servers/rendering_server.h"
 #include "servers/server_wrap_mt_common.h"
 
+// DH BEGIN - HDSS rendering
+#include "servers/rendering/renderer_hdss/renderer_hdss.h"
+// DH END - HDSS rendering
+
 class RenderingServerDefault : public RenderingServer {
 	enum {
 		MAX_INSTANCE_CULL = 8192,

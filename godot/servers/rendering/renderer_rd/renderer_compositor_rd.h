@@ -62,6 +62,7 @@ protected:
 	RendererSceneRenderRD *scene = nullptr;
 
 	// DH BEGIN - HDSS renderer
+	HDSSStorage *hdss_storage = nullptr;
 	RendererHDSS *hdss = nullptr;
 	// DH END - HDSS renderer
 
@@ -121,6 +122,7 @@ public:
 	RendererSceneRender *get_scene() { return scene; }
 
 	// DH BEGIN - HDSS renderer
+	HDSSStorage *get_hdss_storage() { return hdss_storage; }
 	RendererHDSS *get_hdss() { return hdss; }
 	// DH END - HDSS renderer
 

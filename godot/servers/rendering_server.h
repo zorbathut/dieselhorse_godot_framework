@@ -197,6 +197,9 @@ public:
 		SHADER_PARTICLES,
 		SHADER_SKY,
 		SHADER_FOG,
+		// DH BEGIN - hdss shaders
+		SHADER_HDSS,
+		// DH END - hdss shaders
 		SHADER_MAX
 	};
 

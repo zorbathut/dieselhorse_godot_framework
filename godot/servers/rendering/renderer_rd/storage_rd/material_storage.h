@@ -52,6 +52,9 @@ public:
 		SHADER_TYPE_PARTICLES,
 		SHADER_TYPE_SKY,
 		SHADER_TYPE_FOG,
+		// DH BEGIN - hdss shaders
+		SHADER_TYPE_HDSS,
+		// DH END - hdss shaders
 		SHADER_TYPE_MAX
 	};
 

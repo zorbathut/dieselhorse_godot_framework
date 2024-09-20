@@ -49,5 +49,6 @@ RendererViewport *RenderingServerGlobals::viewport = nullptr;
 RenderingMethod *RenderingServerGlobals::scene = nullptr;
 
 // DH BEGIN - HDSS rendering
+HDSSStorage *RenderingServerGlobals::hdss_storage = nullptr;
 RendererHDSS *RenderingServerGlobals::hdss = nullptr;
 // DH END - HDSS rendering

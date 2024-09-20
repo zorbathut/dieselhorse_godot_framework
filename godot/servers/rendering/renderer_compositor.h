@@ -34,7 +34,6 @@
 #include "servers/rendering/environment/renderer_fog.h"
 #include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_canvas_render.h"
-#include "servers/rendering/renderer_hdss/renderer_hdss.h"
 #include "servers/rendering/rendering_method.h"
 #include "servers/rendering/storage/camera_attributes_storage.h"
 #include "servers/rendering/storage/light_storage.h"
@@ -44,6 +43,11 @@
 #include "servers/rendering/storage/texture_storage.h"
 #include "servers/rendering/storage/utilities.h"
 #include "servers/rendering_server.h"
+
+// DH BEGIN - HDSS rendering
+class RendererHDSS;
+class HDSSStorage;
+// DH END - HDSS rendering
 
 class RendererSceneRender;
 struct BlitToScreen {
@@ -94,6 +98,7 @@ public:
 
 	// DH BEGIN - HDSS renderer
 	virtual RendererHDSS *get_hdss() = 0;
+	virtual HDSSStorage *get_hdss_storage() = 0;
 	// DH END - HDSS renderer
 
 	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) = 0;

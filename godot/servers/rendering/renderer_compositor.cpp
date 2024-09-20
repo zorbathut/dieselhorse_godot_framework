@@ -33,6 +33,10 @@
 #include "core/config/project_settings.h"
 #include "servers/xr_server.h"
 
+// DH BEGIN - HDSS rendering
+#include "servers/rendering/renderer_hdss/renderer_hdss.h"
+// DH END - HDSS rendering
+
 RendererCompositor *RendererCompositor::singleton = nullptr;
 
 RendererCompositor *(*RendererCompositor::_create_func)() = nullptr;
