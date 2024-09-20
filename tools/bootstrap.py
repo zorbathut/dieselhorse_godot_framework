@@ -1,5 +1,6 @@
 
 import os
+import shutil
 import sys
 
 # this runs from main directory so we need to specify stuff
