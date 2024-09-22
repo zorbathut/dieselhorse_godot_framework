@@ -45,10 +45,19 @@
             },
             "problemMatcher": "$msCompile"
         },
+
         {
             "label": "buildFull",
             "dependsOn": [
                 "buildCPP",
+                "buildCS"
+            ],
+            "dependsOrder": "sequence",
+        },
+        {
+            "label": "buildFullDev",
+            "dependsOn": [
+                "buildCPPdev",
                 "buildCS"
             ],
             "dependsOrder": "sequence",

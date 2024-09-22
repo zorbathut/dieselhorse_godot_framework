@@ -33,7 +33,7 @@
         {
             "name": "Game (C++ debugger)",
 
-            "preLaunchTask": "buildFull",
+            "preLaunchTask": "buildFullDev",
 
             "type": "cppdbg",
             "request": "launch",
@@ -46,6 +46,16 @@
                 }
             ],
             "stopAtEntry": false
+        },
+        {
+            "name": "Game (Renderdoc)",
+
+            "preLaunchTask": "buildFull",
+
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "renderdoccmd capture -d ${workspaceFolder}/project ${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "cwd": "${workspaceFolder}/project",
         },
 
         {
