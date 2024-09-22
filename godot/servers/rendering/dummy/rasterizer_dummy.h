@@ -47,10 +47,6 @@
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering_server.h"
 
-// DH BEGIN - HDSS renderer
-#include "servers/rendering/renderer_hdss/hdss_storage.h"
-// DH END - HDSS renderer
-
 class RasterizerDummy : public RendererCompositor {
 private:
 	uint64_t frame = 1;
@@ -69,11 +65,6 @@ protected:
 	RendererDummy::Fog fog;
 	RasterizerSceneDummy scene;
 
-	// DH BEGIN - HDSS renderer
-	RendererHDSS hdss;
-	HDSSStorage hdss_storage;
-	// DH END - HDSS renderer
-
 public:
 	RendererUtilities *get_utilities() override { return &utilities; };
 	RendererLightStorage *get_light_storage() override { return &light_storage; };
@@ -87,8 +78,8 @@ public:
 	RendererSceneRender *get_scene() override { return &scene; }
 
 	// DH BEGIN - HDSS renderer
-	RendererHDSS *get_hdss() override { return &hdss; }
-	HDSSStorage *get_hdss_storage() override { return &hdss_storage; }
+	RendererHDSS *get_hdss() override { return nullptr; }
+	HDSSStorage *get_hdss_storage() override { return nullptr; }
 	// DH END - HDSS renderer
 
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) override {}

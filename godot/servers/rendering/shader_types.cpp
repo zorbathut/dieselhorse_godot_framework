@@ -490,6 +490,18 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_FOG].functions["fog"].built_ins["EMISSION"] = ShaderLanguage::TYPE_VEC3;
 	shader_modes[RS::SHADER_FOG].functions["fog"].main_function = true;
 
+	// DH BEGIN - hdss shaders
+	/************ HDSS **************************/
+
+	shader_modes[RS::SHADER_HDSS].functions["global"].built_ins["TIME"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_HDSS].functions["constants"].built_ins["PI"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_HDSS].functions["constants"].built_ins["TAU"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_HDSS].functions["constants"].built_ins["E"] = constt(ShaderLanguage::TYPE_FLOAT);
+
+	shader_modes[RS::SHADER_HDSS].functions["frag"].built_ins["FRAG_COLOR"] = ShaderLanguage::TYPE_VEC4;
+	shader_modes[RS::SHADER_HDSS].functions["frag"].main_function = true;
+	// DH END - hdss shaders
+
 	shader_types_list.push_back("spatial");
 	shader_types_list.push_back("canvas_item");
 	shader_types_list.push_back("particles");
