@@ -149,14 +149,19 @@ void RendererCompositorRD::initialize() {
 	}
 
 	// DH BEGIN - HDSS rendering
-	hdss->init();
 	hdss_storage->init();
+	hdss->init();
 	// DH END - HDSS rendering
 }
 
 uint64_t RendererCompositorRD::frame = 1;
 
 void RendererCompositorRD::finalize() {
+	// DH BEGIN - HDSS rendering
+	memdelete(hdss);
+	memdelete(hdss_storage);
+	// DH END - HDSS rendering
+
 	memdelete(scene);
 	memdelete(canvas);
 	memdelete(fog);
@@ -345,11 +350,6 @@ RendererCompositorRD::RendererCompositorRD() {
 }
 
 RendererCompositorRD::~RendererCompositorRD() {
-	// DH BEGIN - HDSS rendering
-	memdelete(hdss);
-	memdelete(hdss_storage);
-	// DH END - HDSS rendering
-
 	singleton = nullptr;
 	memdelete(uniform_set_cache);
 	memdelete(framebuffer_cache);

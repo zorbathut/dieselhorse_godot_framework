@@ -1185,6 +1185,11 @@ MaterialStorage::~MaterialStorage() {
 	samplers_rd_free(default_samplers);
 
 	singleton = nullptr;
+
+	// DH BEGIN - cleanup in aisle ten
+	// clear this out so it doesn't crash
+	material_update_list.clear();
+	// DH END - cleanup in aisle ten
 }
 
 bool MaterialStorage::free(RID p_rid) {
