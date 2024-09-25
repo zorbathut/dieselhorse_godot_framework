@@ -5199,6 +5199,10 @@ void DisplayServerX11::process_events() {
 	Input::get_singleton()->flush_buffered_events();
 }
 
+void DisplayServerX11::release_rendering_resources() {
+	cursors_cache.clear();
+}
+
 void DisplayServerX11::release_rendering_thread() {
 #if defined(GLES3_ENABLED)
 	if (gl_manager) {
@@ -6469,6 +6473,8 @@ DisplayServerX11::~DisplayServerX11() {
 		memdelete(native_menu);
 		native_menu = nullptr;
 	}
+
+	ERR_FAIL_COND_MSG(!cursors_cache.is_empty(), "Cursor cache not cleared, call release_rendering_resources before destroying the related RenderingServer.");
 
 	//destroy all windows
 	for (KeyValue<WindowID, WindowData> &E : windows) {
