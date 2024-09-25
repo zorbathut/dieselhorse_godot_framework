@@ -171,7 +171,10 @@ Material::Material() {
 
 Material::~Material() {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free(material);
+
+	// VS BEGIN - I think this is literally a reference *to itself*
+	//RenderingServer::get_singleton()->free(material);
+	// VS END
 }
 
 ///////////////////////////////////
