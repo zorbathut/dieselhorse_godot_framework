@@ -60,6 +60,12 @@ void RenderingServerDefault::_free(RID p_rid) {
 	if (RSG::scene->free(p_rid)) {
 		return;
 	}
+
+	// DH BEGIN - HDSS rendering
+	if (RSG::hdss && RSG::hdss->free(p_rid)) {
+		return;
+	}
+	// DH END - HDSS rendering
 }
 
 /* EVENT QUEUING */
