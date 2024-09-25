@@ -1254,6 +1254,10 @@ void DisplayServerWayland::process_events() {
 	Input::get_singleton()->flush_buffered_events();
 }
 
+void DisplayServerWayland::release_rendering_resources() {
+	custom_cursors.clear();
+}
+
 void DisplayServerWayland::release_rendering_thread() {
 #ifdef GLES3_ENABLED
 	if (egl_manager) {
