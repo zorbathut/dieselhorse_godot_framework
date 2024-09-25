@@ -66,6 +66,10 @@ void RenderingServerDefault::_free(RID p_rid) {
 		return;
 	}
 	// DH END - HDSS rendering
+
+	// DH BEGIN - error reporting >:(
+	ERR_PRINT("Freeing unknown RID: " + itos(p_rid.get_id()));
+	// DH END - error reporting >:(
 }
 
 /* EVENT QUEUING */
