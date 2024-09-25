@@ -39,12 +39,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
             "cwd": "${workspaceFolder}/project",
-            "environment": [
-                {
-                    "name": "OBS_VKCAPTURE",
-                    "value": "1"
-                }
-            ],
             "stopAtEntry": false
         },
         {
