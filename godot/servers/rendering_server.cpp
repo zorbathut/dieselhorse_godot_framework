@@ -3357,9 +3357,13 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_element_create"), &RenderingServer::hdss_element_create);
 
 	ClassDB::bind_method(D_METHOD("hdss_element_set_material", "element", "material"), &RenderingServer::hdss_element_set_material);
+
+	ClassDB::bind_method(D_METHOD("hdss_element_set_vertex_count", "element", "vertex_count"), &RenderingServer::hdss_element_set_vertex_count);
 	ClassDB::bind_method(D_METHOD("hdss_element_set_vertices", "element", "vertices"), &RenderingServer::hdss_element_set_vertices);
-	ClassDB::bind_method(D_METHOD("hdss_element_set_indices", "element", "indices"), &RenderingServer::hdss_element_set_indices);
 	ClassDB::bind_method(D_METHOD("hdss_element_set_uvs", "element", "uvs"), &RenderingServer::hdss_element_set_uvs);
+	ClassDB::bind_method(D_METHOD("hdss_element_set_colors", "element", "colors"), &RenderingServer::hdss_element_set_colors);
+
+	ClassDB::bind_method(D_METHOD("hdss_element_set_indices", "element", "indices"), &RenderingServer::hdss_element_set_indices);
 	ClassDB::bind_method(D_METHOD("hdss_element_set_transform", "element", "transform"), &RenderingServer::hdss_element_set_transform);
 
 	ClassDB::bind_method(D_METHOD("hdss_viewport_bind", "viewport"), &RenderingServer::hdss_viewport_bind);

@@ -994,9 +994,13 @@ public:
 	FUNCRIDSPLIT(hdss_element)
 
 	FUNC2(hdss_element_set_material, RID, RID)
+
+	FUNC2(hdss_element_set_vertex_count, RID, int)
 	FUNC2(hdss_element_set_vertices, RID, const PackedVector2Array &)
-	FUNC2(hdss_element_set_indices, RID, const PackedInt32Array &)
 	FUNC2(hdss_element_set_uvs, RID, const PackedVector2Array &)
+	FUNC2(hdss_element_set_colors, RID, const PackedColorArray &)
+
+	FUNC2(hdss_element_set_indices, RID, const PackedInt32Array &)
 	FUNC2(hdss_element_set_transform, RID, const Transform3D &)
 
 	FUNC1(hdss_viewport_bind, RID)

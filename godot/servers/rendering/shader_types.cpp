@@ -499,6 +499,7 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_HDSS].functions["constants"].built_ins["E"] = constt(ShaderLanguage::TYPE_FLOAT);
 
 	shader_modes[RS::SHADER_HDSS].functions["vertex"].built_ins["IN_UV"] = ShaderLanguage::TYPE_VEC2;
+	shader_modes[RS::SHADER_HDSS].functions["vertex"].built_ins["IN_COLOR"] = ShaderLanguage::TYPE_VEC4;
 	shader_modes[RS::SHADER_HDSS].functions["vertex"].main_function = true;
 
 	shader_modes[RS::SHADER_HDSS].functions["fragment"].built_ins["FRAG_COLOR"] = ShaderLanguage::TYPE_VEC4;
