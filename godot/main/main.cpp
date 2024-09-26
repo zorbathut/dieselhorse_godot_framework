@@ -4126,8 +4126,10 @@ bool Main::iteration() {
 
 	RenderingServer::get_singleton()->sync(); //sync if still drawing from previous frames.
 
+	// DH BEGIN - don't render the final frame, because we do a bunch of GPU cleanup immediately before and it won't render properly
 	if ((DisplayServer::get_singleton()->can_any_window_draw() || DisplayServer::get_singleton()->has_additional_outputs()) &&
-			RenderingServer::get_singleton()->is_render_loop_enabled()) {
+			RenderingServer::get_singleton()->is_render_loop_enabled() && !exit) {
+	// DH END
 		if ((!force_redraw_requested) && OS::get_singleton()->is_in_low_processor_usage_mode()) {
 			if (RenderingServer::get_singleton()->has_changed()) {
 				RenderingServer::get_singleton()->draw(true, scaled_step); // flush visual commands
