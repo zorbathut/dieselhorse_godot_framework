@@ -3356,6 +3356,8 @@ void RenderingServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("hdss_element_create"), &RenderingServer::hdss_element_create);
 
+	ClassDB::bind_method(D_METHOD("hdss_element_validate", "element"), &RenderingServer::hdss_element_validate);
+
 	ClassDB::bind_method(D_METHOD("hdss_element_set_material", "element", "material"), &RenderingServer::hdss_element_set_material);
 
 	ClassDB::bind_method(D_METHOD("hdss_element_set_vertex_count", "element", "vertex_count"), &RenderingServer::hdss_element_set_vertex_count);

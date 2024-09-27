@@ -993,6 +993,8 @@ public:
 
 	FUNCRIDSPLIT(hdss_element)
 
+	FUNC1(hdss_element_validate, RID)
+
 	FUNC2(hdss_element_set_material, RID, RID)
 
 	FUNC2(hdss_element_set_vertex_count, RID, int)

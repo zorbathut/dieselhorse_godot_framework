@@ -1600,6 +1600,8 @@ public:
 
 	virtual RID hdss_element_create() = 0;
 
+	virtual void hdss_element_validate(RID p_element) = 0;
+
 	virtual void hdss_element_set_material(RID p_element, RID p_material) = 0;
 
 	virtual void hdss_element_set_vertex_count(RID p_element, int p_vertex_count) = 0;
