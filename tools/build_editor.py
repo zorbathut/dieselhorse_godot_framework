@@ -12,11 +12,11 @@ util.cwdhack()
 def run(dev):
     # kick priority down to make builds smoother
     # can't do this on linux unfortunately; shell out to a niced build_editor?
-    if util.platformswitch(linux = False, windows = True):
+    if util.platformswitch(linux = False, windows = True, mac = False):
         proc = psutil.Process(os.getpid())
         proc.nice(psutil.IDLE_PRIORITY_CLASS)
 
-    platform = util.platformswitch(linux = "linuxbsd", windows = "windows")
+    platform = util.platformswitch(linux = "linuxbsd", windows = "windows", mac = "osx")
 
     cores = multiprocessing.cpu_count()
     print(f"Running with {cores} cores")
@@ -61,13 +61,14 @@ def run(dev):
     
     util.platformswitch(
         linux = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin(dev))), universal_editor_path),
+        mac = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin(dev))), universal_editor_path),
         
         # This can be made faster by using a shortcut or mklink, but that's tough
         windows = lambda: shutil.copyfile(os.path.join("godot", util.godot_bin(dev)), universal_editor_path),
     )()
 
     # Ramp priority back up for the editor itself.
-    if util.platformswitch(linux = False, windows = True):
+    if util.platformswitch(linux = False, windows = True, mac = False):
         proc.nice(psutil.NORMAL_PRIORITY_CLASS)
 
 if __name__ == '__main__':

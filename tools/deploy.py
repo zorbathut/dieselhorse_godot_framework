@@ -17,10 +17,6 @@ parser.add_argument("--target", required = True, choices=["linux", "windows"])
 args = parser.parse_args()
 
 def run():
-    if util.platformswitch(linux = False, windows = True):
-        print("This definitely won't work on Windows.")
-        sys.exit(1)
-
     # we do this both to build the mono glue files and to build the editor that we can use to run the deploy code
     # it's possible we should build this separately in our jenkins build, then copy it over
     build_editor.run(False)

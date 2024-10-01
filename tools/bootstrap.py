@@ -3,8 +3,7 @@ import os
 import shutil
 import sys
 
-# this runs from main directory so we need to specify stuff
-import tools.util
+import util
 
 def execute(token, args = [], shell = False):
     # Explicitly unbuffer the output
@@ -23,7 +22,7 @@ def execute(token, args = [], shell = False):
         def __getattr__(self, attr):
             return getattr(self.stream, attr)
     sys.stdout = Unbuffered(sys.stdout)
-    
+
     poetry_options = [
         shutil.which("poetry"),
         os.path.expandvars("%APPDATA%/pypoetry/venv/Scripts/poetry.exe"),   # windows default install location
@@ -45,18 +44,21 @@ def execute(token, args = [], shell = False):
 
     print(f"Poetry found at {poetry}")
     
-    tools.util.run([
+    util.run([
             poetry,
             "install",
             "--no-root",
         ], check=True, cwd="tools")
-       
-    print("Poetry install complete")
     
-    tools.util.run([
+    print(f"Poetry install complete")
+    
+    util.run([
             poetry,
             "run",
             "python",
             "-u", # unbuffered to avoid problems with output ordering on jenkins
             f"{token}.py",
         ] + args, check=True, cwd="tools", shell=shell)
+
+if __name__ == '__main__':
+    execute(sys.argv[1], sys.argv[2:])

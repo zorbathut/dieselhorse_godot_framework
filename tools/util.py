@@ -5,14 +5,19 @@ import sys
 
 # right now poetry doesn't let us set the project directory, so we need to find the right directory for scripts first
 def cwdhack():
-    while not os.path.exists("README.txt"):
+    while not os.path.exists("project"):
+        # verify we haven't reached the root, including on windows
+        if os.getcwd() == os.path.dirname(os.getcwd()):
+            raise FileNotFoundError("Couldn't find project directory!")
         os.chdir("..")
 
-def platformswitch(linux, windows):
+def platformswitch(linux, windows, mac):
     if sys.platform.startswith("linux"):
         return linux
     elif sys.platform.startswith("win32"):
         return windows
+    elif sys.platform.startswith("darwin"):
+        return mac
     else:
         raise InvalidOperation("Unidentified OS :(")
 
@@ -23,11 +28,12 @@ def run(command, **kwargs):
     platformargs = platformswitch(
         linux = {},
         windows = {},
+        mac = {},
     )
 
     ourargs = {**platformargs, **kwargs}
 
-    if platformswitch(linux = False, windows = True) and "\\" in command[0] and "cwd" in ourargs:
+    if platformswitch(linux = False, windows = True, mac = False) and "\\" in command[0] and "cwd" in ourargs:
         # windows, weirdly, evaluates the executable first, *then* cwd's
         # so if we have a relative executable name we need to decorate it with our cwd
         command[0] = os.path.join(ourargs["cwd"], command[0])
@@ -43,8 +49,10 @@ def godot_bin(dev):
     if dev:
         return platformswitch(
             linux = "bin/godot.linuxbsd.editor.dev.double.x86_64.mono",
-            windows = "bin\\godot.windows.editor.dev.double.x86_64.mono.exe")
+            windows = "bin\\godot.windows.editor.dev.double.x86_64.mono.exe",
+            mac = "bin/godot.macos.editor.dev.double.x86_64.mono")
     else:
         return platformswitch(
             linux = "bin/godot.linuxbsd.editor.double.x86_64.mono",
-            windows = "bin\\godot.windows.editor.double.x86_64.mono.exe")
+            windows = "bin\\godot.windows.editor.double.x86_64.mono.exe",
+            mac = "bin/godot.macos.editor.double.x86_64.mono")
