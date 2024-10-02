@@ -57,7 +57,7 @@ def build_deploy(target):
     image_name = f"localhost/godot-{target}:{GBCMSB_ID}"
     util.run(["docker", "run", "--rm"] + DOCKER_UID + VOLUMESPEC + [
         "-w", f"{os.getcwd()}",
-        image_name, "tool.bat", "deploy", f"--target={target}"], check = True)
+        image_name, "./tool.bat", "deploy", f"--target={target}"], check = True)
 
 def create_artifacts():
     """Create artifacts by zipping directories."""
