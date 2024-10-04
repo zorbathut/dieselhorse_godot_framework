@@ -20,7 +20,7 @@
             "label": "buildCPP",
 
             "type": "shell",
-            "command": "./build_editor.py",
+            "command": "./build_editor.bat",
             "options": { "cwd": "${workspaceFolder}" },
             
             "group": {
@@ -33,7 +33,7 @@
             "label": "buildCPPdev",
 
             "type": "shell",
-            "command": "./build_editor.py",
+            "command": "./build_editor.bat",
             "args": [
                 "--dev",
             ],
