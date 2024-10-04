@@ -504,6 +504,10 @@ ShaderTypes::ShaderTypes() {
 
 	shader_modes[RS::SHADER_HDSS].functions["fragment"].built_ins["FRAG_COLOR"] = ShaderLanguage::TYPE_VEC4;
 	shader_modes[RS::SHADER_HDSS].functions["fragment"].main_function = true;
+
+	{
+		shader_modes[RS::SHADER_HDSS].modes.push_back({ PNAME("lines") });
+	}
 	// DH END - hdss shaders
 
 	shader_types_list.push_back("spatial");
