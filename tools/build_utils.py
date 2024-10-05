@@ -18,7 +18,7 @@ def get_float_precision():
     return "double"
 
 def get_build_profile():
-    return "build_profile=tsoh.build_profile.json"
+    return f"build_profile={get_project_name()}.build_profile.json"
 
 def get_project_name():
     return "tsoh"
