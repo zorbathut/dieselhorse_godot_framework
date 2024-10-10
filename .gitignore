@@ -10,7 +10,6 @@
 /*DotSettings.user
 **/*csproj.user
 /.vs
-/.idea
 
 # coverage results
 /TestResults
