@@ -330,7 +330,7 @@ void UserLogManagerLogger::logv(const char *p_format, va_list p_list, bool p_err
 	va_end(list_copy);
 
 	Dictionary message;
-	message["text"] = buf;
+	message["text"] = String::utf8(buf);
 	message["type"] = "info";
 
 	process(message);
@@ -347,11 +347,11 @@ void UserLogManagerLogger::log_error(const char *p_function, const char *p_file,
 	}
 
 	Dictionary message;
-	message["function"] = p_function;
-	message["file"] = p_file;
+	message["function"] = String::utf8(p_function);
+	message["file"] = String::utf8(p_file);
 	message["line"] = p_line;
-	message["text"] = p_code;
-	message["rationale"] = p_rationale;
+	message["text"] = String::utf8(p_code);
+	message["rationale"] = String::utf8(p_rationale);
 	switch (p_type) {
 		case ERR_ERROR:
 			message["type"] = "error";
