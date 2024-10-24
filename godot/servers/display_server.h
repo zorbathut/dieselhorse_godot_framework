@@ -566,7 +566,6 @@ public:
 
 	virtual void force_process_and_drop_events();
 
-	virtual void release_rendering_resources();
 	virtual void release_rendering_thread();
 	virtual void swap_buffers();
 
