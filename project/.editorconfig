@@ -312,3 +312,4 @@ resharper_check_namespace_highlighting=none
 
 # don't flag the partial modifier for singularly defined classes as redundant since we rely on code generators for the potential additional parts
 resharper_partial_type_with_single_part_highlighting=none
+resharper_iterator_never_returns_highlighting=none
