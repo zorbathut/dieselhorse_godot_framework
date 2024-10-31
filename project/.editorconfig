@@ -309,3 +309,6 @@ dotnet_naming_rule.interface_types_must_be_prefixed_with_i.style = prefix_interf
 
 #resharper_overides
 resharper_check_namespace_highlighting=none
+
+# don't flag the partial modifier for singularly defined classes as redundant since we rely on code generators for the potential additional parts
+resharper_partial_type_with_single_part_highlighting=none
