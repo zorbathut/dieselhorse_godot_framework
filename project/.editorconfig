@@ -84,7 +84,7 @@ end_of_line = lf
 ###########################
 
 # .NET Code Style Settings
-[*.{cs,csx,cake,vb}]
+[*.cs]
 # "this." and "Me." qualifiers
 # https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference#this_and_me
 dotnet_style_qualification_for_field = false:none
@@ -123,8 +123,6 @@ dotnet_style_prefer_conditional_expression_over_return = false:suggestion
 dotnet_style_coalesce_expression = true:warning
 dotnet_style_null_propagation = true:warning
 
-# C# Code Style Settings
-[*.{cs,csx,cake}]
 # Implicit and explicit types
 # https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference#implicit-and-explicit-types
 csharp_style_var_for_built_in_types = false:none
@@ -204,7 +202,7 @@ csharp_indent_braces = false
 csharp_space_after_comma = true
 csharp_space_after_dot = false
 csharp_space_after_semicolon_in_for_statement = true
-csharp_space_around_declaration_statements = do_not_ignore
+csharp_space_around_declaration_statements = false
 csharp_space_before_comma = false
 csharp_space_before_dot = false
 csharp_space_before_semicolon_in_for_statement = false
@@ -218,7 +216,6 @@ csharp_space_between_square_brackets = false
 # https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions
 #########################
 
-[*.{cs,csx,cake,vb}]
 # Naming Symbols
 # constant_fields - Define constant fields
 dotnet_naming_symbols.constant_fields.applicable_kinds = field
