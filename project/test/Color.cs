@@ -1,5 +1,3 @@
-
-using System.Linq;
 using GdUnit4;
 
 namespace Test;

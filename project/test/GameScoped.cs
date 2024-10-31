@@ -1,6 +1,4 @@
 
-using System;
-
 namespace Test;
 
 public class GameScoped : System.IDisposable

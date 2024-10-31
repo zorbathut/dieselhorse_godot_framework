@@ -1,6 +1,4 @@
 
-using Newtonsoft.Json.Serialization;
-
 namespace Test;
 
 public class Base
