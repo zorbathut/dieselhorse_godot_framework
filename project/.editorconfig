@@ -312,4 +312,7 @@ resharper_check_namespace_highlighting=none
 
 # don't flag the partial modifier for singularly defined classes as redundant since we rely on code generators for the potential additional parts
 resharper_partial_type_with_single_part_highlighting=none
+# don't check iterators for a proper return status since we rely on the enum returned to terminate them
 resharper_iterator_never_returns_highlighting=none
+# allow both `new x(){ y=5 }` and `new x{ y=5}`
+resharper_redundant_empty_object_creation_argument_list_highlighting = none
