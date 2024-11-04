@@ -316,3 +316,6 @@ resharper_partial_type_with_single_part_highlighting=none
 resharper_iterator_never_returns_highlighting=none
 # allow both `new x(){ y=5 }` and `new x{ y=5}`
 resharper_redundant_empty_object_creation_argument_list_highlighting = none
+# we cannot enforce trailing comma to all editors but we can make sure that reshaprer doesn't bother people about it
+resharper_arrange_trailing_comma_in_multiline_lists_highlighting=none
+resharper_arrange_trailing_comma_in_singleline_lists_highlighting=none
