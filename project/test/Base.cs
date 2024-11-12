@@ -12,6 +12,9 @@ public class Base
             var bootstrap = new Foundation.Bootstrap();
             bootstrap._Ready();
 
+            // this is also not really the right way to initialize :V
+            DebugOptions.Init(null);
+
             initted = true;
         }
     }
