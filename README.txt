@@ -37,7 +37,7 @@
 
 It will take a *long* time the first time, but will be pretty speedy after that. You should do this every time you pull new code.
 
-From inside the editor, you can run the game with the play button in the top-right. If you're editing code, Visual Studio, VS Code, and Jetbrains Rider should all be able to run the game directly from the IDE, but note that *you have to run the editor once* to get things started or you'll get a gray screen without explanation.
+From inside the editor, you can run the game with the play button in the top-right. If you're editing code, Visual Studio, VS Code, and Jetbrains Rider should all be able to run the game directly from the IDE.
 
 
 ### Exporting/deploying a build to the users

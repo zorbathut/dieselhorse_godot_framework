@@ -59,13 +59,21 @@ def run(dev):
     if os.path.exists(universal_editor_path):
         os.remove(universal_editor_path)
     
+    godot_src_path = os.path.join("godot", util.godot_bin(dev))
     util.platformswitch(
-        linux = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin(dev))), universal_editor_path),
-        mac = lambda: os.symlink(os.path.abspath(os.path.join("godot", util.godot_bin(dev))), universal_editor_path),
+        linux = lambda: os.symlink(os.path.abspath(godot_src_path), universal_editor_path),
+        mac = lambda: os.symlink(os.path.abspath(godot_src_path), universal_editor_path),
         
         # This can be made faster by using a shortcut or mklink, but that's tough
-        windows = lambda: shutil.copyfile(os.path.join("godot", util.godot_bin(dev)), universal_editor_path),
+        windows = lambda: shutil.copyfile(godot_src_path, universal_editor_path),
     )()
+
+    # import with headless
+    util.run([
+            os.path.abspath(godot_src_path),
+            "--headless",
+            "--import",
+        ], check=True, cwd="project", env=build_utils.get_env())
 
     # Ramp priority back up for the editor itself.
     if util.platformswitch(linux = False, windows = True, mac = False):
