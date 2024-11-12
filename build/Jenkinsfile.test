@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    sh "(cd build/bootstrap && docker build -t my-image:${env.BUILD_ID} .)"
+ 
+                    sh "docker run  --rm --volumes-from jenkins-agent -e VOLUMES_FROM=jenkins-agent -e BUILD_NUMBER=${env.BUILD_NUMBER} -w ${env.WORKSPACE} my-image:${env.BUILD_ID} ./tool.bat build_and_test"
+ 
+                    archiveArtifacts artifacts: "TestResults/test-result.html", fingerprint: true
+                }
+            }
+        }
+    }
+}
