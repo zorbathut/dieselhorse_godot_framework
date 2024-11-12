@@ -35,7 +35,6 @@
 
   <ItemGroup>
     <Folder Include="src\monster\ai\" />
-    <Folder Include="src\monster\BehaviorNodes\" />
   </ItemGroup>
 
   <PropertyGroup>
