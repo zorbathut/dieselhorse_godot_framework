@@ -12,7 +12,9 @@ namespace Godot
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector2I : IEquatable<Vector2I>
+    // DH BEGIN - IComparable
+    public struct Vector2I : IEquatable<Vector2I>, IComparable<Vector2I>
+    // DH END - IComparable
     {
         /// <summary>
         /// Enumerated index values for the axes.
@@ -541,6 +543,27 @@ namespace Godot
             vec.Y %= divisorv.Y;
             return vec;
         }
+
+        // DH BEGIN - IComparable
+        /// <summary>
+        /// Compares two <see cref="Vector2I"/> vectors by first checking if
+        /// the X value of the <paramref name="left"/> vector is less than
+        /// the X value of the <paramref name="right"/> vector.
+        /// If the X values are exactly equal, then it repeats this check
+        /// with the Y values of the two vectors.
+        /// This operator is useful for sorting vectors.
+        /// </summary>
+        /// <param name="other">The other vector.</param>
+        /// <returns>Less than 0 if this precedes other, 0 if they are equal, greater than 0 if this follows other.</returns>
+        public int CompareTo(Vector2I other)
+        {
+            if (X == other.X)
+            {
+                return Y.CompareTo(other.Y);
+            }
+            return X.CompareTo(other.X);
+        }
+        // DH END - IComparable
 
         /// <summary>
         /// Returns <see langword="true"/> if the vectors are equal.
