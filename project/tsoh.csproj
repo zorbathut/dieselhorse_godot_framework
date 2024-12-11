@@ -6,6 +6,9 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <GodotFloat64>true</GodotFloat64>
+
+    <!-- "member" hides "other member" -->
+    <WarningsAsErrors>CS0108</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
