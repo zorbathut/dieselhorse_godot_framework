@@ -57,6 +57,9 @@ public:
 	StringName visibility_changed;
 	StringName input_event;
 	StringName gui_input;
+	// DH BEGIN - gui_input_accepted_in_child
+	StringName gui_input_accepted_in_child;
+	// DH END - gui_input_accepted_in_child
 	StringName item_rect_changed;
 	StringName shader;
 	StringName tree_entered;

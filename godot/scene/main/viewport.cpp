@@ -1545,6 +1545,18 @@ void Viewport::_gui_show_tooltip() {
 	gui.tooltip_popup->child_controls_changed();
 }
 
+// DH BEGIN - gui_input_accepted_in_child
+// this is used for the windowing system so we can detect when a window has been clicked and bring the whole thing up to the front
+void _broadcast_accepted_message(Control *p_control, const Ref<InputEvent> &p_event) {
+	Control *tree_cursor = p_control;
+	while (tree_cursor != nullptr)
+	{
+		tree_cursor->emit_signal(SceneStringName(gui_input_accepted_in_child), p_event);
+		tree_cursor = tree_cursor->get_parent_control();
+	}
+}
+// DH END
+
 bool Viewport::_gui_call_input(Control *p_control, const Ref<InputEvent> &p_input) {
 	bool stopped = false;
 	Ref<InputEvent> ev = p_input;
@@ -1572,11 +1584,17 @@ bool Viewport::_gui_call_input(Control *p_control, const Ref<InputEvent> &p_inpu
 			}
 			if (gui.key_event_accepted) {
 				stopped = true;
+				// DH BEGIN - gui_input_accepted_in_child
+				_broadcast_accepted_message(control, ev);
+				// DH END - gui_input_accepted_in_child
 				break;
 			}
 			if (control->data.mouse_filter == Control::MOUSE_FILTER_STOP && is_pointer_event && !(is_scroll_event && control->data.force_pass_scroll_events)) {
 				// Mouse, ScreenDrag and ScreenTouch events are stopped by default with MOUSE_FILTER_STOP, unless we have a scroll event and force_pass_scroll_events set to true
 				stopped = true;
+				// DH BEGIN - gui_input_accepted_in_child
+				_broadcast_accepted_message(control, ev);
+				// DH END - gui_input_accepted_in_child
 				break;
 			}
 		}
