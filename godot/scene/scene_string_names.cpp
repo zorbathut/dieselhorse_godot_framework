@@ -89,7 +89,7 @@ SceneStringNames::SceneStringNames() {
 	gui_input = StaticCString::create("gui_input");
 	// DH BEGIN - gui_input_accepted_in_child
 	gui_input_accepted_in_child = StaticCString::create("gui_input_accepted_in_child");
-	// DH END
+	// DH END - gui_input_accepted_in_child
 
 	_spatial_editor_group = StaticCString::create("_spatial_editor_group");
 	_request_gizmo = StaticCString::create("_request_gizmo");
