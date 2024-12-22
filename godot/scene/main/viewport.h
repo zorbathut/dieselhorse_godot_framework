@@ -600,9 +600,6 @@ public:
 	Control *gui_get_focus_owner() const;
 	Control *gui_get_hovered_control() const;
 
-	Control *gui_get_mouse_over() const;
-	Window *gui_get_hovered_window() const;
-
 	PackedStringArray get_configuration_warnings() const override;
 
 	void set_debug_draw(DebugDraw p_debug_draw);

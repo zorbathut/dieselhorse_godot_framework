@@ -3456,11 +3456,6 @@ Control *Viewport::gui_get_hovered_control() const {
 	return gui.mouse_over;
 }
 
-Window *Viewport::gui_get_hovered_window() const {
-	ERR_READ_THREAD_GUARD_V(nullptr);
-	return gui.subwindow_over;
-}
-
 void Viewport::set_msaa_2d(MSAA p_msaa) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX(p_msaa, MSAA_MAX);
@@ -4734,7 +4729,6 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("gui_release_focus"), &Viewport::gui_release_focus);
 	ClassDB::bind_method(D_METHOD("gui_get_focus_owner"), &Viewport::gui_get_focus_owner);
 	ClassDB::bind_method(D_METHOD("gui_get_hovered_control"), &Viewport::gui_get_hovered_control);
-	ClassDB::bind_method(D_METHOD("gui_get_hovered_window"), &Viewport::gui_get_hovered_window);
 
 	ClassDB::bind_method(D_METHOD("gui_find_control", "point"), &Viewport::gui_find_control);
 
