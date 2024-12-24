@@ -161,12 +161,12 @@ mainmenu={
 , Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":true,"script":null)
 ]
 }
-terraform_place={
+cursor_accept={
 "deadzone": 0.5,
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":1,"position":Vector2(215, 23),"global_position":Vector2(224, 69),"factor":1.0,"button_index":1,"canceled":false,"pressed":true,"double_click":false,"script":null)
 ]
 }
-terraform_remove={
+cursor_back={
 "deadzone": 0.5,
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":2,"position":Vector2(192, 12),"global_position":Vector2(201, 58),"factor":1.0,"button_index":2,"canceled":false,"pressed":true,"double_click":false,"script":null)
 ]
