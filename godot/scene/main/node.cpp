@@ -3349,6 +3349,10 @@ void Node::_call_input(const Ref<InputEvent> &p_event) {
 		return;
 	}
 	input(p_event);
+
+	// DH BEGIN - Add `input` event
+	emit_signal(SceneStringName(input), p_event);
+	// DH END - Add `input` event
 }
 
 void Node::_call_shortcut_input(const Ref<InputEvent> &p_event) {
@@ -3749,6 +3753,10 @@ void Node::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("tree_exited"));
 	ADD_SIGNAL(MethodInfo("child_entered_tree", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT, "Node")));
 	ADD_SIGNAL(MethodInfo("child_exiting_tree", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT, "Node")));
+
+	// DH BEGIN - Add `input` event
+	ADD_SIGNAL(MethodInfo("input", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
+	// DH END - Add `input` event
 
 	ADD_SIGNAL(MethodInfo("child_order_changed"));
 	ADD_SIGNAL(MethodInfo("replacing_by", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT, "Node")));

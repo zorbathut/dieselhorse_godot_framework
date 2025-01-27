@@ -86,6 +86,9 @@ SceneStringNames::SceneStringNames() {
 	screen_entered = StaticCString::create("screen_entered");
 	screen_exited = StaticCString::create("screen_exited");
 
+	// DH BEGIN - Add `input` event
+	input = StaticCString::create("input");
+	// DH END - Add `input` event
 	gui_input = StaticCString::create("gui_input");
 	// DH BEGIN - gui_input_accepted_in_child
 	gui_input_accepted_in_child = StaticCString::create("gui_input_accepted_in_child");

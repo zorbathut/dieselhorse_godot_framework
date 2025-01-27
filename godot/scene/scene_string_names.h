@@ -56,6 +56,9 @@ public:
 	StringName hidden;
 	StringName visibility_changed;
 	StringName input_event;
+	// DH BEGIN - Add `input` event
+	StringName input;
+	// DH END - Add `input` event
 	StringName gui_input;
 	// DH BEGIN - gui_input_accepted_in_child
 	StringName gui_input_accepted_in_child;
