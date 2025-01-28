@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dec;
 using GdUnit4;
+using Godot;
 using Map;
 using Map.Utils;
 using Chunk = Map.Utils.ChunkSerializer.Chunk;
@@ -12,6 +13,17 @@ namespace Test;
 [TestSuite]
 public class ChunkSerialization : Base
 {
+    [Dec.StaticReferences]
+    public static class Decs
+    {
+        static Decs() { Dec.StaticReferencesAttribute.Initialized(); }
+
+        public static ThingDec Wood;
+        public static ThingDec Gneiss;
+        public static ThingDec Chair;
+        public static ThingDec PROTOTYPE_Berserker;
+    }
+
     [TestCase]
     public void TestSerialization()
     {
@@ -32,8 +44,6 @@ public class ChunkSerialization : Base
         const int columnCount = 14;
 
 
-        var wood = Database<ThingDec>.Get("Wood");
-        var gneis = Database<ThingDec>.Get("Gneiss");
         var chunkLines = new List<string>(rowCount)
         {
             "       a      ",
@@ -62,22 +72,28 @@ public class ChunkSerialization : Base
                         new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, null),
                         new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, null)),
                     'a' => new ChunkSerializer.ChunkTile(
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, wood),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, Decs.Wood),
                         new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, null)),
                     'b' => new ChunkSerializer.ChunkTile(
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, gneis),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, Decs.Gneiss),
                         new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, null)),
                     'c' => new ChunkSerializer.ChunkTile(
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, gneis),
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, wood)),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, Decs.Gneiss),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, Decs.Wood)),
                     'd' => new ChunkSerializer.ChunkTile(
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, wood),
-                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, gneis)),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Background, Decs.Wood),
+                        new KeyValuePair<LayerDec, ThingDec>(LayerDecs.Foreground, Decs.Gneiss)),
                     _ => throw new ArgumentOutOfRangeException()
                 };
                 chunk.tileRows[y].Add(t);
             }
         }
+
+        chunk.things = new List<ChunkSerializer.ChunkThing>()
+        {
+            new() { dec = Decs.Chair, position = Vector2.Down }, new() { dec = Decs.Chair, position = Vector2.Left },
+            new() { dec = Decs.PROTOTYPE_Berserker, position = Vector2.Down }, new() { dec = Decs.PROTOTYPE_Berserker, position = Vector2.Left },
+        };
 
         return chunk;
     }
@@ -106,6 +122,27 @@ public class ChunkSerialization : Base
         {
             Assert.IsTrue(originalComboCodes[i].Key == serializedComboCodes[i].Key, "Character mismatch between chunks");
             Assert.IsTrue(originalComboCodes[i].Value == serializedComboCodes[i].Value, $"Encoded tile data for character {originalComboCodes[i].Key} do not match between source and result");
+        }
+
+        var originalThings = SortChunkThingList(initialChunk.things);
+        var serializedThings = SortChunkThingList(serializedChunk.things);
+
+        AssertChunkThingEquality(originalThings, serializedThings);
+    }
+
+    private static List<ChunkSerializer.ChunkThing> SortChunkThingList(List<ChunkSerializer.ChunkThing> chunkThings)
+    {
+        return chunkThings.OrderBy(c => c.dec.DecName).ThenBy(c => c.position.X).ThenBy(c => c.position.Y).ToList();
+    }
+
+    private static void AssertChunkThingEquality(List<ChunkSerializer.ChunkThing> originalPlaceables, List<ChunkSerializer.ChunkThing> serializedPlaceables)
+    {
+        Assert.IsTrue(originalPlaceables.Count == serializedPlaceables.Count, $"The chunks should have the same amount of placeable keys");
+        for (var rowIndex = 0; rowIndex < originalPlaceables.Count; rowIndex++)
+        {
+            var row1 = originalPlaceables[rowIndex];
+            var row2 = serializedPlaceables[rowIndex];
+            Assert.IsTrue(row1.dec == row2.dec && row1.position.IsEqualApprox(row2.position), $"The chunk things should be equal");
         }
     }
 }
