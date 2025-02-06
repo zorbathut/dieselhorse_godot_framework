@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Required version (e.g., 3.8)
+REQUIRED_PYTHON="3.0"
+
+# Find the correct Python binary
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+else
+    echo "Error: Python is not installed." >&2
+    exit 1
+fi
+
+# Get Python version in major.minor format
+PYTHON_VERSION=$("$PYTHON_CMD" -c "
+import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+
+# Compare versions correctly using Python itself
+VERSION_OK=$("$PYTHON_CMD" -c "import sys; print(sys.version_info[:2] >= tuple(map(int, '$REQUIRED_PYTHON'.split('.'))))")
+
+if [ "$VERSION_OK" != "True" ]; then
+    echo "Error: Python $REQUIRED_PYTHON or higher is required. Found $PYTHON_VERSION ($PYTHON_CMD)." >&2
+    exit 1
+fi
+
+# git internally uses git bash on windows and the regular shell in every other case
+$PYTHON_CMD "$(dirname "$0")/pre-commit.py"

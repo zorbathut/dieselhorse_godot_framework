@@ -6,10 +6,35 @@ import os
 import psutil
 import shutil
 import util
+import subprocess
+import filecmp
 
 util.cwdhack()
 
+def copy_git_hooks():
+    git_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text = True).strip()
+    
+    hook_folder_source_path = os.path.normpath(os.path.join(git_root, "tools", "git_hooks"))
+    
+    hook_folder_destination_path = os.path.normpath(os.path.join(git_root, ".git", "hooks"))
+    
+    print("Installing git hooks")
+    for item in os.listdir(hook_folder_source_path):
+        src_path = os.path.join(hook_folder_source_path, item)
+        dest_path = os.path.join(hook_folder_destination_path, item)
+                
+        if os.path.isfile(src_path):  # Only process files
+            # copy anything not existing or different
+            if not os.path.exists(dest_path) or not filecmp.cmp(src_path, dest_path, shallow=False):
+                print(f"Copying: {os.path.relpath(src_path,git_root)} -> {os.path.relpath(dest_path,git_root)}")
+                shutil.copy2(src_path, dest_path)  # Copy with metadata   
+    
+    print("Git hook installation complete")
+
 def run(dev):
+    
+    copy_git_hooks()
+    
     # kick priority down to make builds smoother
     # can't do this on linux unfortunately; shell out to a niced build_editor?
     if util.platformswitch(linux = False, windows = True, mac = False):
