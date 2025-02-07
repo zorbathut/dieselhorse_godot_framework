@@ -59,7 +59,7 @@ def run():
 
     # Shove a version file in our .pck
     with open(f"project/buildinfo.xml", "w") as f:
-        f.write(f"<BuildInfo><version>{build_utils.get_project_version()}</version></BuildInfo>")
+        f.write(f"<BuildInfo><version>{build_utils.get_project_version()}</version><environment>release</environment></BuildInfo>")
 
     # Run headless export
     util.run([
