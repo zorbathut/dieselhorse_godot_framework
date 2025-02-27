@@ -69,6 +69,9 @@ def run():
             "--export-release", args.target,
             f"../{deploydir}/{build_utils.get_project_name()}",
         ], check=True, env=build_utils.get_env())
+        
+    # Wipe the version file
+    os.remove("project/buildinfo.xml")
 
     # Copy dec directory over
     shutil.copytree("project/dec", f"{deploydir}/dec")
