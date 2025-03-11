@@ -27,7 +27,7 @@ public class Simple : Base
         Init();
 
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateMap() };
+        var context = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateNewGame() };
     }
 
     [TestCase]
@@ -36,7 +36,7 @@ public class Simple : Base
         Init();
 
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateMap() };
+        var context = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateNewGame() };
 
         context.Process();
     }

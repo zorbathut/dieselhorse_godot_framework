@@ -13,7 +13,7 @@ public class GameScoped : System.IDisposable
 
     public GameScoped()
     {
-        executor = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateMap() };
+        executor = new Foundation.Executor(playerInputShunt) { context = Foundation.ContextUtil.CreateNewGame() };
 
         scope = new Ghi.Environment.Scope(Env);
     }
