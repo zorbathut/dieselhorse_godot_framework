@@ -27,7 +27,7 @@ public class Simple : Base
         Init();
 
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = Genesis.CreateNewGame() };
+        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
     }
 
     [TestCase]
@@ -36,7 +36,7 @@ public class Simple : Base
         Init();
 
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = Genesis.CreateNewGame() };
+        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
 
         context.Process();
     }

@@ -13,7 +13,7 @@ public class GameScoped : System.IDisposable
 
     public GameScoped()
     {
-        executor = new Foundation.Executor(playerInputShunt) { context = Genesis.CreateNewGame() };
+        executor = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
 
         scope = new Ghi.Environment.Scope(Env);
     }
