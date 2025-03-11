@@ -50,7 +50,7 @@ public class Simple : Base
 
         Assert.AreEqual(0, gameScoped.Env.List.Count(e => e.HasComponent<Comp.Player>()));
 
-        gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn() { playerId = 0 });
+        gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn());
 
         Assert.AreEqual(1, gameScoped.Env.List.Count(e => e.HasComponent<Comp.Player>()));
     }
@@ -61,7 +61,7 @@ public class Simple : Base
         Init();
 
         using var gameScoped = new GameScoped();
-        gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn() { playerId = 0 });
+        gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn());
 
         // kill the player's avatar
         gameScoped.Env.Remove(gameScoped.Env.List.Single(e => e.HasComponent<Comp.Avatar>()));
