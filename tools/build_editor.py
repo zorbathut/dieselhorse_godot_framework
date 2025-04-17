@@ -99,6 +99,9 @@ def run(dev):
             "--headless",
             "--import",
         ], check=True, cwd="project", env=build_utils.get_env())
+        
+    print("If it just printed a bunch of errors about \"Freeing unknown RID\", you can ignore those.")
+    print("If it didn't, let Zorba know so he can remove this message.")
 
     # Ramp priority back up for the editor itself.
     if util.platformswitch(linux = False, windows = True, mac = False):
