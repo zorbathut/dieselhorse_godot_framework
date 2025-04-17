@@ -9,6 +9,7 @@
     * If you're not a programmer, or have your own favorite programming environment, Build Tools is smaller and easier
         * Recommend downloading from https://aka.ms/vs/17/release/vs_BuildTools.exe
         * If you don't trust that link, go to https://visualstudio.microsoft.com/downloads/, scroll down to "Tools for Visual Studio", download Build Tools for Visual Studio 2022 (later is fine if they've released a new version)
+        * When installing, under Workloads, click "Desktop development with C++" and ".NET desktop build tools"
 	* If you want the full Visual Studio experience, go to https://visualstudio.microsoft.com/downloads/ and choose the Community Free Download
         * When installing, under Workloads, click "Desktop development with C++" and ".NET desktop build tools"
 
