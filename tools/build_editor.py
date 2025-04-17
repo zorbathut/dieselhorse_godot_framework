@@ -12,7 +12,7 @@ import filecmp
 util.cwdhack()
 
 def copy_git_hooks():
-    git_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text = True).strip()
+    git_root = "."  # this used to be determined at runtime but relied on the git executable
     
     hook_folder_source_path = os.path.normpath(os.path.join(git_root, "tools", "git_hooks"))
     
@@ -26,7 +26,7 @@ def copy_git_hooks():
         if os.path.isfile(src_path):  # Only process files
             # copy anything not existing or different
             if not os.path.exists(dest_path) or not filecmp.cmp(src_path, dest_path, shallow=False):
-                print(f"Copying: {os.path.relpath(src_path,git_root)} -> {os.path.relpath(dest_path,git_root)}")
+                print(f"Copying: {os.path.relpath(src_path, git_root)} -> {os.path.relpath(dest_path, git_root)}")
                 shutil.copy2(src_path, dest_path)  # Copy with metadata   
     
     print("Git hook installation complete")
