@@ -4,7 +4,9 @@
 REQUIRED_PYTHON="3.0"
 
 # Find the correct Python binary
-if command -v python3 >/dev/null 2>&1; then
+if command -v py >/dev/null 2>&1; then
+    PYTHON_CMD="py"
+elif command -v python3 >/dev/null 2>&1; then
     PYTHON_CMD="python3"
 elif command -v python >/dev/null 2>&1; then
     PYTHON_CMD="python"
