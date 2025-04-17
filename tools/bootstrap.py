@@ -44,6 +44,17 @@ def execute(token, args = [], shell = False):
 
     print(f"Poetry found at {poetry}")
     
+    # hacky-ass workaround for https://github.com/python-poetry/poetry/issues/10219
+    if util.platformswitch(windows = True, linux = False, mac = False):
+        print("Windows config workaround")
+        util.run([
+                poetry,
+                "config",
+                "virtualenvs.use-poetry-python",
+                "true",
+                "--local",
+            ], check=True, cwd="tools")
+
     util.run([
             poetry,
             "install",

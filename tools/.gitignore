@@ -1,1 +1,4 @@
 __pycache__
+
+# poetry local config file; we don't set anything ourselves
+poetry.toml
