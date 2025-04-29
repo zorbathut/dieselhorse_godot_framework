@@ -656,7 +656,9 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("text_editor/behavior/files/trim_final_newlines_on_save", true);
 	_initial_set("text_editor/behavior/files/autosave_interval_secs", 0);
 	_initial_set("text_editor/behavior/files/restore_scripts_on_load", true);
+// DH BEGIN - Disable convert_indent_on_save by defaut.
 	_initial_set("text_editor/behavior/files/convert_indent_on_save", false);
+// DH END - Disable convert_indent_on_save by defaut.
 	_initial_set("text_editor/behavior/files/auto_reload_scripts_on_external_change", false);
 
 	// Script list
