@@ -1588,9 +1588,11 @@
 			The [JavaScriptBridge] singleton.
 			[b]Note:[/b] Only implemented on the Web platform.
 		</member>
+<!-- DH BEGIN - Ready-for-release log hook system. -->
 		<member name="LogManager" type="LogManager" setter="" getter="">
 			The [LogManager] singleton.
 		</member>
+<!-- DH END - Ready-for-release log hook system. -->
 		<member name="Marshalls" type="Marshalls" setter="" getter="">
 			The [Marshalls] singleton.
 		</member>

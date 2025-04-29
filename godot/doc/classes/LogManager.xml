@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- DH BEGIN - Ready-for-release log hook system. -->
 <class name="LogManager" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
 		Exposes the internal logging systems.
@@ -56,3 +57,4 @@
 		</method>
 	</methods>
 </class>
+<!-- DH END - Ready-for-release log hook system. -->

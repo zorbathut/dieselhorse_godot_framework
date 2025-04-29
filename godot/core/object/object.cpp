@@ -2282,11 +2282,13 @@ void ObjectDB::cleanup() {
 
 	if (slot_count > 0) {
 		WARN_PRINT("ObjectDB instances leaked at exit (run with --verbose for details).");
+// DH BEGIN - hack to always print leaks	
 		//if (OS::get_singleton()->is_stdout_verbose()) {
 		if (true) {
 			// Ensure calling the native classes because if a leaked instance has a script
 			// that overrides any of those methods, it'd not be OK to call them at this point,
 			// now the scripting languages have already been terminated.
+// DH END - hack to always print leaks
 			MethodBind *node_get_name = ClassDB::get_method("Node", "get_name");
 			MethodBind *resource_get_path = ClassDB::get_method("Resource", "get_path");
 			Callable::CallError call_error;

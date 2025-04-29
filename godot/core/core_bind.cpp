@@ -2054,6 +2054,7 @@ void EngineDebugger::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("clear_breakpoints"), &EngineDebugger::clear_breakpoints);
 }
 
+// DH BEGIN - Ready-for-release log hook system.
 ////// LogManager //////
 // This is the client-facing part of the user log hooking system.
 // It's basically just a shunt that passes callbacks to the persistent UserLogManagerLogger singleton.
@@ -2110,5 +2111,7 @@ void LogManager::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("register_log_capture_buffered", "callable"), &LogManager::register_log_capture_buffered);
 	ClassDB::bind_method(D_METHOD("unregister_log_capture_buffered", "callable"), &LogManager::unregister_log_capture_buffered);
 }
+
+// DH END - Ready-for-release log hook system
 
 } // namespace core_bind

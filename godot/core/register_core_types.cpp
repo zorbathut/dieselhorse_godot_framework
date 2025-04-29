@@ -99,7 +99,9 @@ static core_bind::Engine *_engine = nullptr;
 static core_bind::special::ClassDB *_classdb = nullptr;
 static core_bind::Marshalls *_marshalls = nullptr;
 static core_bind::EngineDebugger *_engine_debugger = nullptr;
+// DH BEGIN - Ready-for-release log hook system.
 static core_bind::LogManager *_log_manager = nullptr;
+// DH END - Ready-for-release log hook system.
 
 static IP *ip = nullptr;
 static Time *_time = nullptr;
@@ -292,8 +294,9 @@ void register_core_types() {
 	_classdb = memnew(core_bind::special::ClassDB);
 	_marshalls = memnew(core_bind::Marshalls);
 	_engine_debugger = memnew(core_bind::EngineDebugger);
+// DH BEGIN - Ready-for-release log hook system.
 	_log_manager = memnew(core_bind::LogManager);
-
+// DH END - Ready-for-release log hook system.
 	GDREGISTER_NATIVE_STRUCT(ObjectID, "uint64_t id = 0");
 	GDREGISTER_NATIVE_STRUCT(AudioFrame, "float left;float right");
 	GDREGISTER_NATIVE_STRUCT(ScriptLanguageExtensionProfilingInfo, "StringName signature;uint64_t call_count;uint64_t total_time;uint64_t self_time");
@@ -331,7 +334,9 @@ void register_core_singletons() {
 	GDREGISTER_CLASS(InputMap);
 	GDREGISTER_CLASS(Expression);
 	GDREGISTER_CLASS(core_bind::EngineDebugger);
+// DH BEGIN - Ready-for-release log hook system.
 	GDREGISTER_CLASS(core_bind::LogManager);
+// DH END - Ready-for-release log hook system.
 	GDREGISTER_CLASS(Time);
 
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()));
@@ -348,7 +353,9 @@ void register_core_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputMap", InputMap::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("EngineDebugger", core_bind::EngineDebugger::get_singleton()));
+// DH BEGIN - Ready-for-release log hook system.
 	Engine::get_singleton()->add_singleton(Engine::Singleton("LogManager", core_bind::LogManager::get_singleton()));
+// DH END - Ready-for-release log hook system.
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("GDExtensionManager", GDExtensionManager::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ResourceUID", ResourceUID::get_singleton()));
@@ -387,7 +394,9 @@ void unregister_core_types() {
 
 	memdelete(worker_thread_pool);
 
+// DH BEGIN - Ready-for-release log hook system.
 	memdelete(_log_manager);
+// DH END - Ready-for-release log hook system.
 	memdelete(_engine_debugger);
 	memdelete(_marshalls);
 	memdelete(_classdb);

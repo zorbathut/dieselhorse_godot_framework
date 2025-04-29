@@ -284,6 +284,7 @@ CompositeLogger::~CompositeLogger() {
 	}
 }
 
+// DH BEGIN - Ready-for-release log hook system.
 ////// UserLogManagerLogger //////
 // This is the internal user log hooking system, which does all the hard work.
 
@@ -642,3 +643,5 @@ uint64_t UserLogManagerLogger::get_frames_drawn_safe() const {
 	}
 	return engine->get_frames_drawn();
 }
+
+// DH END - Ready-for-release log hook system.

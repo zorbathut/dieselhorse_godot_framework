@@ -602,6 +602,7 @@ public:
 	~EngineDebugger();
 };
 
+// DH BEGIN - Ready-for-release log hook system.
 class LogManager : public Object {
 	GDCLASS(LogManager, Object);
 
@@ -621,6 +622,7 @@ public:
 	void register_log_capture_buffered(const Callable &p_callable);
 	void unregister_log_capture_buffered(const Callable &p_callable);
 };
+// DH END - Ready-for-release log hook system.
 
 } // namespace core_bind
 
