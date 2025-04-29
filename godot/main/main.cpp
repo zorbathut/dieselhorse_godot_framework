@@ -909,6 +909,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	OS::get_singleton()->initialize();
 
+// DH BEGIN - Full log reporting from startup.
 	// Add our logger so we can log *everything*
 	// This must be extremely early so it can record every log so we can catch Godot startup errors
 	// At the moment the log subsystem owns this object, which prevents us from easily removing it
@@ -917,6 +918,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	// This is also likely necessary if it starts using other log attachments
 	// such as add_error_handler, add_print_handler, register_message_capture, and EditorToaster.
 	OS::get_singleton()->add_logger(memnew(UserLogManagerLogger()));
+// DH END - Full log reporting from startup.
 
 	// Benchmark tracking must be done after `OS::get_singleton()->initialize()` as on some
 	// platforms, it's used to set up the time utilities.
@@ -4127,7 +4129,7 @@ bool Main::iteration() {
 	// DH BEGIN - don't render the final frame, because we do a bunch of GPU cleanup immediately before and it won't render properly
 	if ((DisplayServer::get_singleton()->can_any_window_draw() || DisplayServer::get_singleton()->has_additional_outputs()) &&
 			RenderingServer::get_singleton()->is_render_loop_enabled() && !exit) {
-	// DH END
+	// DH END - don't render the final frame, because we do a bunch of GPU cleanup immediately before and it won't render properly
 		if ((!force_redraw_requested) && OS::get_singleton()->is_in_low_processor_usage_mode()) {
 			if (RenderingServer::get_singleton()->has_changed()) {
 				RenderingServer::get_singleton()->draw(true, scaled_step); // flush visual commands
