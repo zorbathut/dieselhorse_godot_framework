@@ -698,13 +698,14 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 			args.push_back((char *)cs[i].get_data());
 		}
 		args.push_back(0);
-
+// DH BEGIN - Enable video recording
 		Vector<const char *> envVars;
 		for (char** env = environ; *env != 0; env++) {
 			envVars.push_back(*env);
 		}
 		envVars.push_back("OBS_VKCAPTURE=1");
 		envVars.push_back(0);
+// DH END - Enable video recording
 
 		execvpe(p_path.utf8().get_data(), &args[0], (char**)&envVars[0]);
 		// The execvp() function only returns if an error occurs.
