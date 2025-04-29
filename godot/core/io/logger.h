@@ -41,10 +41,6 @@
 
 #include <stdarg.h>
 
-namespace core_bind {
-class LogManager;
-}
-
 class Logger {
 protected:
 	bool should_log(bool p_err);
