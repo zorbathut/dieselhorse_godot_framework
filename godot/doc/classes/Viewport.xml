@@ -116,6 +116,7 @@
 				Returns the visible rectangle in global screen coordinates.
 			</description>
 		</method>
+<!-- DH BEGIN - Make it possible for GDScript to access the current Control under the mouse cursor or at a specific point by adding binding for gui_find_control -->
 		<method name="gui_find_control">
 			<return type="Control" />
 			<param index="0" name="point" type="Vector2" />
@@ -123,6 +124,7 @@
 				Returns the top-level [Control] at the given point within this viewport. If no [Control] is at the point, returns null.
 			</description>
 		</method>
+	<!-- DH END - Make it possible for GDScript to access the current Control under the mouse cursor or at a specific point by adding binding for gui_find_control -->
 		<method name="gui_get_drag_data" qualifiers="const">
 			<return type="Variant" />
 			<description>

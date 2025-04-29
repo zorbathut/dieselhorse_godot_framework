@@ -1555,7 +1555,7 @@ void _broadcast_accepted_message(Control *p_control, const Ref<InputEvent> &p_ev
 		tree_cursor = tree_cursor->get_parent_control();
 	}
 }
-// DH END
+// DH END - gui_input_accepted_in_child
 
 bool Viewport::_gui_call_input(Control *p_control, const Ref<InputEvent> &p_input) {
 	bool stopped = false;
@@ -4730,8 +4730,9 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("gui_get_focus_owner"), &Viewport::gui_get_focus_owner);
 	ClassDB::bind_method(D_METHOD("gui_get_hovered_control"), &Viewport::gui_get_hovered_control);
 
+// DH BEGIN - Make it possible for GDScript to access the current Control under the mouse cursor or at a specific point by adding binding for gui_find_control
 	ClassDB::bind_method(D_METHOD("gui_find_control", "point"), &Viewport::gui_find_control);
-
+// DH END - Make it possible for GDScript to access the current Control under the mouse cursor or at a specific point by adding binding for gui_find_control
 	ClassDB::bind_method(D_METHOD("set_disable_input", "disable"), &Viewport::set_disable_input);
 	ClassDB::bind_method(D_METHOD("is_input_disabled"), &Viewport::is_input_disabled);
 
