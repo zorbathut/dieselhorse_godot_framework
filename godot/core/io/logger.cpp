@@ -31,7 +31,9 @@
 #include "logger.h"
 
 #include "core/config/project_settings.h"
+// DH BEGIN - Ready-for-release log hook system.
 #include "core/core_bind.h"
+// DH END - Ready-for-release log hook system.
 #include "core/core_globals.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"

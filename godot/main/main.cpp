@@ -4142,8 +4142,10 @@ bool Main::iteration() {
 		}
 	}
 
+	// DH BEGIN - Ready-for-release log hook system
 	// do this ASAP after incrementing frames_drawn
 	UserLogManagerLogger::get_singleton()->flush();
+	// DH END - Ready-for-release log hook system
 
 	process_ticks = OS::get_singleton()->get_ticks_usec() - process_begin;
 	process_max = MAX(process_ticks, process_max);
