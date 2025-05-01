@@ -45,14 +45,16 @@ protected:
 	// The name and pose for our HMD tracker is currently the only hardcoded bit.
 	// If we ever are able to support multiple HMDs we may need to make this settable.
 	StringName tracker_name = "head";
-	StringName pose_name = "default";
+	StringName pose_name = SceneStringName(default_);
 	Ref<XRPositionalTracker> tracker;
+	Transform3D pose_offset;
 
 	void _bind_tracker();
 	void _unbind_tracker();
 	void _changed_tracker(const StringName &p_tracker_name, int p_tracker_type);
 	void _removed_tracker(const StringName &p_tracker_name, int p_tracker_type);
 	void _pose_changed(const Ref<XRPose> &p_pose);
+	void _notification(int p_what);
 
 public:
 	PackedStringArray get_configuration_warnings() const override;
@@ -77,9 +79,10 @@ class XRNode3D : public Node3D {
 
 private:
 	StringName tracker_name;
-	StringName pose_name = "default";
+	StringName pose_name = SceneStringName(default_);
 	bool has_tracking_data = false;
 	bool show_when_tracked = false;
+	Transform3D pose_offset;
 
 protected:
 	Ref<XRPositionalTracker> tracker;
@@ -94,6 +97,9 @@ protected:
 	void _pose_changed(const Ref<XRPose> &p_pose);
 	void _pose_lost_tracking(const Ref<XRPose> &p_pose);
 	void _set_has_tracking_data(bool p_has_tracking_data);
+
+	void _update_visibility();
+	void _notification(int p_what);
 
 public:
 	void _validate_property(PropertyInfo &p_property) const;
@@ -196,6 +202,7 @@ private:
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
+	virtual void _physics_interpolated_changed() override;
 
 public:
 	PackedStringArray get_configuration_warnings() const override;

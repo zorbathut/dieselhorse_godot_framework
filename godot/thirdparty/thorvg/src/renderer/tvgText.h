@@ -26,12 +26,7 @@
 #include <cstring>
 #include "tvgShape.h"
 #include "tvgFill.h"
-
-#ifdef THORVG_TTF_LOADER_SUPPORT
-    #include "tvgTtfLoader.h"
-#else
-    #include "tvgLoader.h"
-#endif
+#include "tvgLoader.h"
 
 struct Text::Impl
 {
@@ -69,6 +64,11 @@ struct Text::Impl
         auto loader = LoaderMgr::loader(name);
         if (!loader) return Result::InsufficientCondition;
 
+        if (style && strstr(style, "italic")) italic = true;
+        else italic = false;
+
+        fontSize = size;
+
         //Same resource has been loaded.
         if (this->loader == loader) {
             this->loader->sharing--;  //make it sure the reference counting.
@@ -78,8 +78,6 @@ struct Text::Impl
         }
         this->loader = static_cast<FontLoader*>(loader);
 
-        fontSize = size;
-        if (style && strstr(style, "italic")) italic = true;
         changed = true;
         return Result::Success;
     }
@@ -91,6 +89,8 @@ struct Text::Impl
 
     bool render(RenderMethod* renderer)
     {
+        if (!loader) return true;
+        renderer->blend(PP(paint)->blendMethod);
         return PP(shape)->render(renderer);
     }
 
@@ -98,13 +98,13 @@ struct Text::Impl
     {
         if (!loader) return false;
 
+        loader->request(shape, utf8);
         //reload
         if (changed) {
-            loader->request(shape, utf8, italic);
             loader->read();
             changed = false;
         }
-        return loader->resize(shape, fontSize, fontSize);
+        return loader->transform(shape, fontSize, italic);
     }
 
     RenderData update(RenderMethod* renderer, const Matrix& transform, Array<RenderData>& clips, uint8_t opacity, RenderUpdateFlag pFlag, TVG_UNUSED bool clipper)
@@ -113,9 +113,9 @@ struct Text::Impl
 
         //transform the gradient coordinates based on the final scaled font.
         auto fill = P(shape)->rs.fill;
-        if (fill && P(shape)->flag & RenderUpdateFlag::Gradient) {
+        if (fill && P(shape)->rFlag & RenderUpdateFlag::Gradient) {
             auto scale = 1.0f / loader->scale;
-            if (fill->identifier() == TVG_CLASS_ID_LINEAR) {
+            if (fill->type() == Type::LinearGradient) {
                 P(static_cast<LinearGradient*>(fill))->x1 *= scale;
                 P(static_cast<LinearGradient*>(fill))->y1 *= scale;
                 P(static_cast<LinearGradient*>(fill))->x2 *= scale;
