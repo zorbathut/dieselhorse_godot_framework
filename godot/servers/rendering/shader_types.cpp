@@ -506,6 +506,14 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_HDSS].functions["fragment"].main_function = true;
 
 	{
+		ShaderLanguage::StageFunctionInfo func;
+		func.skip_function = "vertex";
+		func.arguments.push_back(ShaderLanguage::StageFunctionInfo::Argument("bare", ShaderLanguage::TYPE_VEC3));
+		func.return_type = ShaderLanguage::TYPE_VEC3;
+		shader_modes[RS::SHADER_HDSS].functions["fragment"].stage_functions["lightSurface"] = func;
+	}
+
+	{
 		shader_modes[RS::SHADER_HDSS].modes.push_back({ PNAME("lines") });
 	}
 	// DH END - hdss shaders
