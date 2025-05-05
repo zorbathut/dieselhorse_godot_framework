@@ -3430,6 +3430,8 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_draw_clear"), &RenderingServer::hdss_draw_clear);
 	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
 
+	ClassDB::bind_method(D_METHOD("hdss_light_append", "position", "radius"), &RenderingServer::hdss_light_append);
+
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */
