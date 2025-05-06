@@ -1098,7 +1098,7 @@ public:
 	FUNC0(hdss_draw_clear)
 	FUNC1(hdss_draw_append, RID)
 
-	FUNC2(hdss_light_append, const Vector2 &, float)
+	FUNC4(hdss_light_append, const Vector2 &, float , const Rect2i &, const Color &)
 
 	// DH END - HDSS API
 

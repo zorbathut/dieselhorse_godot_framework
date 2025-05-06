@@ -1720,7 +1720,7 @@ public:
 	virtual void hdss_draw_clear() = 0;
 	virtual void hdss_draw_append(RID p_element) = 0;
 
-	virtual void hdss_light_append(const Vector2 &p_position, float p_radius) = 0;
+	virtual void hdss_light_append(const Vector2 &p_position, float p_radius, const Rect2i &p_region, const Color &p_color) = 0;
 
 	// DH END - HDSS
 
