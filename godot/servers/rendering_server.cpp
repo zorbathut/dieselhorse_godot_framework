@@ -3424,14 +3424,19 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_element_set_indices", "element", "indices"), &RenderingServer::hdss_element_set_indices);
 	ClassDB::bind_method(D_METHOD("hdss_element_set_transform", "element", "transform"), &RenderingServer::hdss_element_set_transform);
 
+	ClassDB::bind_method(D_METHOD("hdss_shadowcaster_create"), &RenderingServer::hdss_shadowcaster_create);
+	ClassDB::bind_method(D_METHOD("hdss_shadowcaster_set_vertices", "element", "vertices"), &RenderingServer::hdss_shadowcaster_set_vertices);
+	ClassDB::bind_method(D_METHOD("hdss_shadowcaster_set_indices", "element", "vertices"), &RenderingServer::hdss_shadowcaster_set_indices);
+	ClassDB::bind_method(D_METHOD("hdss_shadowcaster_set_transform", "element", "transform"), &RenderingServer::hdss_shadowcaster_set_transform);
+
+	ClassDB::bind_method(D_METHOD("hdss_light_append", "position", "radius", "region", "color"), &RenderingServer::hdss_light_append);
+	ClassDB::bind_method(D_METHOD("hdss_light_shadowcaster_append", "element"), &RenderingServer::hdss_light_shadowcaster_append);
+
 	ClassDB::bind_method(D_METHOD("hdss_viewport_bind", "viewport"), &RenderingServer::hdss_viewport_bind);
 
 	ClassDB::bind_method(D_METHOD("hdss_set_camera", "rect", "rotate"), &RenderingServer::hdss_set_camera);
 	ClassDB::bind_method(D_METHOD("hdss_draw_clear"), &RenderingServer::hdss_draw_clear);
 	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
-
-	ClassDB::bind_method(D_METHOD("hdss_light_append", "position", "radius", "region", "color"), &RenderingServer::hdss_light_append);
-
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */

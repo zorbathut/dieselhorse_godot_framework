@@ -1714,13 +1714,21 @@ public:
 	virtual void hdss_element_set_indices(RID p_element, const PackedInt32Array &p_indices) = 0;
 	virtual void hdss_element_set_transform(RID p_element, const Transform3D &p_transform) = 0;
 
+	virtual RID hdss_shadowcaster_create() = 0;
+    
+    virtual void hdss_shadowcaster_set_vertices(RID p_element, const PackedVector3Array &p_vertices) = 0;
+    virtual void hdss_shadowcaster_set_indices(RID p_element, const PackedInt32Array &p_indices) = 0;
+	virtual void hdss_shadowcaster_set_transform(RID p_element, const Transform3D &p_transform) = 0;
+
+	virtual void hdss_light_append(const Vector2 &p_position, float p_radius, const Rect2i &p_region, const Color &p_color) = 0;
+	virtual void hdss_light_shadowcaster_append(RID p_element) = 0;
+
 	virtual void hdss_viewport_bind(RID p_viewport) = 0;
 
 	virtual void hdss_set_camera(const Rect2 &p_rect, float p_rotate) = 0;
 	virtual void hdss_draw_clear() = 0;
 	virtual void hdss_draw_append(RID p_element) = 0;
 
-	virtual void hdss_light_append(const Vector2 &p_position, float p_radius, const Rect2i &p_region, const Color &p_color) = 0;
 
 	// DH END - HDSS
 
