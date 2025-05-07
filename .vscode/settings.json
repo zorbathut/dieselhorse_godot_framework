@@ -6,6 +6,18 @@
         "string_view": "cpp",
         "initializer_list": "cpp",
         "span": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "chrono": "cpp",
+        "mutex": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "expected": "cpp",
+        "optional": "cpp",
+        "regex": "cpp"
     }
 }
