@@ -1726,7 +1726,7 @@ public:
 	virtual void hdss_viewport_bind(RID p_viewport) = 0;
 
 	virtual void hdss_set_camera(const Rect2 &p_rect, float p_rotate) = 0;
-	virtual void hdss_draw_clear() = 0;
+	virtual void hdss_draw_begin(bool p_lighting, float p_ambient) = 0;
 	virtual void hdss_draw_append(RID p_element) = 0;
 
 

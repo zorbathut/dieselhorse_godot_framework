@@ -1104,7 +1104,7 @@ public:
 	FUNC1(hdss_viewport_bind, RID)
 
 	FUNC2(hdss_set_camera, const Rect2 &, float)
-	FUNC0(hdss_draw_clear)
+	FUNC2(hdss_draw_begin, bool, float)
 	FUNC1(hdss_draw_append, RID)
 
 	// DH END - HDSS API

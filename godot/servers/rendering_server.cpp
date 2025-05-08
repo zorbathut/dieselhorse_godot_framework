@@ -3435,7 +3435,7 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_viewport_bind", "viewport"), &RenderingServer::hdss_viewport_bind);
 
 	ClassDB::bind_method(D_METHOD("hdss_set_camera", "rect", "rotate"), &RenderingServer::hdss_set_camera);
-	ClassDB::bind_method(D_METHOD("hdss_draw_clear"), &RenderingServer::hdss_draw_clear);
+	ClassDB::bind_method(D_METHOD("hdss_draw_begin", "lighting", "ambient"), &RenderingServer::hdss_draw_begin);
 	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
 	// DH END - HDSS
 
