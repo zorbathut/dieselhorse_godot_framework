@@ -112,4 +112,10 @@ if __name__ == '__main__':
     build_utils.decorate_argparse_with_dev(parser)
     args = parser.parse_args()
 
+    # on linux and mac, we *can* forcibly renice the entire process down, we just can't return to normal
+    # that's OK if we're being called directly!
+    # annoyingly this still isn't as smooth as it is on Windows
+    if util.platformswitch(linux = True, windows = False, mac = True):
+        os.nice(19)
+
     run(args.dev)
