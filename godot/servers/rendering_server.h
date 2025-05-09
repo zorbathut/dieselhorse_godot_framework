@@ -1729,7 +1729,7 @@ public:
 	virtual void hdss_draw_begin(bool p_lighting, float p_ambient) = 0;
 	virtual void hdss_draw_append(RID p_element) = 0;
 
-
+	virtual void hdss_set_light_buffer_resolution(int p_resolution) = 0;
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */

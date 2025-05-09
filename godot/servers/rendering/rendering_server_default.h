@@ -1107,6 +1107,8 @@ public:
 	FUNC2(hdss_draw_begin, bool, float)
 	FUNC1(hdss_draw_append, RID)
 
+	FUNC1(hdss_set_light_buffer_resolution, int)
+
 	// DH END - HDSS API
 
 	/* GLOBAL SHADER UNIFORMS */

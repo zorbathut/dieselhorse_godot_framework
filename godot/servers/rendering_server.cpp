@@ -3437,6 +3437,8 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_set_camera", "rect", "rotate"), &RenderingServer::hdss_set_camera);
 	ClassDB::bind_method(D_METHOD("hdss_draw_begin", "lighting", "ambient"), &RenderingServer::hdss_draw_begin);
 	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
+
+	ClassDB::bind_method(D_METHOD("hdss_set_light_buffer_resolution", "resolution"), &RenderingServer::hdss_set_light_buffer_resolution);
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */
