@@ -12,9 +12,11 @@ RUN mkdir -p $HOME
 RUN chmod a+rwx $HOME
 # DH END - permissions because we don't run in root (maybe we should? I forget why I don't)
 
+# DH BEGIN - dotnet sdk 9
 RUN dnf -y install --setopt=install_weak_deps=False \
       bash binutils bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
-      dotnet-sdk-8.0
+      dotnet-sdk-9.0
+# DH END - dotnet sdk 9
 
 # DH BEGIN
 # tsoh framework
