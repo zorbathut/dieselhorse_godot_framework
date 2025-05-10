@@ -75,6 +75,10 @@ def run():
 
     # Copy dec directory over
     shutil.copytree("project/dec", f"{deploydir}/dec")
+    
+    # Verify that a directory starting with `data` exists, because otherwise we've run into that weird bug again where it stops including the data
+    if not any(os.path.isdir(os.path.join(deploydir, d)) and d.startswith("data") for d in os.listdir(deploydir)):
+        raise RuntimeError(f"Failed to find data directory in {deploydir}")
 
     if args.target == "linux":
         # All the debug info is shoved in the executable, so let's pull that out
