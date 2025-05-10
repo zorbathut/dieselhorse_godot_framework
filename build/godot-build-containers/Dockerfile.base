@@ -28,6 +28,9 @@ RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel 
 
 # annoying permission issues with docker mean that we need to set up git to accept weird-ass stuff
 RUN git config --global --add safe.directory '*'
+
+# and yet more of those
+RUN chmod a+rx /root
 # DH END
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
