@@ -8,10 +8,15 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 ENV HOME=/tmp/HOME
 RUN mkdir -p $HOME
 
+# DH BEGIN - permissions because we don't run in root (maybe we should? I forget why I don't)
+RUN chmod a+rwx $HOME
+# DH END - permissions because we don't run in root (maybe we should? I forget why I don't)
+
 RUN dnf -y install --setopt=install_weak_deps=False \
       bash binutils bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
       dotnet-sdk-8.0
 
+# DH BEGIN
 # tsoh framework
 # python/poetry for build env
 # python3-devel and gcc for building python modules
@@ -21,6 +26,7 @@ RUN dnf -y install --setopt=install_weak_deps=False python poetry python3-devel 
 
 # annoying permission issues with docker mean that we need to set up git to accept weird-ass stuff
 RUN git config --global --add safe.directory '*'
+# DH END
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
