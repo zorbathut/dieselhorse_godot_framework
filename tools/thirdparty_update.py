@@ -86,14 +86,31 @@ util.run([
         "FETCH_HEAD",
     ], cwd=work_dir, check=True)
 
+# can't directly check out a given commit with --depth 1, so we do the default branch first - it probably shares most of the data anyway
 util.run([
         "git",
         "clone",
         "--depth", "1",
-        "--branch", args.commit,
         repo_url,
         parent_dir,
     ], check=True)
+    
+# now fetch the right commit
+util.run([
+        "git",
+        "fetch",
+        "--depth", "1",
+        "origin",
+        args.commit,
+    ], cwd=parent_dir, check=True)
+
+# and check it out
+util.run([
+        "git",
+        "checkout",
+        "-B",
+        args.commit,
+    ], cwd=parent_dir, check=True)
 
 util.run([
         "git",
