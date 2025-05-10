@@ -137,6 +137,10 @@ namespace GodotTools.Export
             catch (Exception e)
             {
                 AddExceptionMessage(GetExportPlatform(), e);
+
+                // DH BEGIN - Right now this silently fails and that's terrible. Make it loud.
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+                // DH END - Right now this silently fails and that's terrible. Make it loud.
             }
         }
 
