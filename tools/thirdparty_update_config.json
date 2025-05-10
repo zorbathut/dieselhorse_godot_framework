@@ -4,5 +4,11 @@
     "target_dir": "godot",
     "repo_url": "https://github.com/godotengine/godot.git",
     "branch_name": "thirdparty/godot"
+  },
+  "godot-build-containers": {
+    "description": "Godot Game Engine build containers",
+    "target_dir": "build/godot-build-containers",
+    "repo_url": "https://github.com/godotengine/build-containers.git",
+    "branch_name": "thirdparty/godot-build-containers"
   }
 }
