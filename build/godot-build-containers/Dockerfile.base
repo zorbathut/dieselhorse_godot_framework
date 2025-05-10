@@ -1,4 +1,4 @@
-FROM fedora:39
+FROM fedora:41
 
 WORKDIR /root
 
@@ -9,7 +9,7 @@ ENV HOME=/tmp/HOME
 RUN mkdir -p $HOME
 
 RUN dnf -y install --setopt=install_weak_deps=False \
-      bash bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
+      bash binutils bzip2 curl file findutils gettext git make nano patch pkgconfig python3-pip unzip which xz \
       dotnet-sdk-8.0
 
 # tsoh framework
@@ -24,5 +24,3 @@ RUN git config --global --add safe.directory '*'
 
 ENV POETRY_VIRTUALENVS_PATH=/tmp/poetry/venv
 ENV POETRY_CACHE_DIR=/tmp/poetry/cache
-
-CMD /bin/bash
