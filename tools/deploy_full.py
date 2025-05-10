@@ -10,9 +10,6 @@ util.cwdhack()
 BUILD_NUMBER = os.getenv('BUILD_NUMBER', 'manual')
 GBCMSB_ID = f"gbcmsb-{BUILD_NUMBER}"
 
-LINUX_IMAGE_TAR = f"godot-linux-{GBCMSB_ID}.tar"
-WINDOWS_IMAGE_TAR = f"godot-windows-{GBCMSB_ID}.tar"
-
 DOCKER_UID = ["--user", f"{os.getuid()}:{os.getgid()}"]
 
 VOLUMESPEC = ["-v", f"{os.getcwd()}:{os.getcwd()}"]
@@ -22,38 +19,41 @@ if "VOLUMES_FROM" in os.environ:
     VOLUMESPEC = ["--volumes-from", os.environ["VOLUMES_FROM"]]
 # whew! don't worry, I didn't write any code, this is all fine
 
-def build_docker_image():
+def build_docker_image(target):
     """Build Docker Image."""
     docker_image = "quay.io/podman/stable:v5.0.2-immutable"
     storage_path = "/var/lib/jenkins/podman-storage"
+    
+    image_tar = f"godot-{target}-{GBCMSB_ID}.tar"
 
     # Remove the image tar files if they exist, but it's OK if they don't
-    if os.path.exists(f"build/godot-build-containers/{LINUX_IMAGE_TAR}"):
-        os.unlink(f"build/godot-build-containers/{LINUX_IMAGE_TAR}")
-    if os.path.exists(f"build/godot-build-containers/{WINDOWS_IMAGE_TAR}"):
-        os.unlink(f"build/godot-build-containers/{WINDOWS_IMAGE_TAR}")
+    if os.path.exists(f"build/godot-build-containers/{image_tar}"):
+        os.unlink(f"build/godot-build-containers/{image_tar}")
 
     # Commands to run inside the Docker container
-    msb_command = f'./msb.sh {GBCMSB_ID}'
-    save_linux_image = f"podman save localhost/godot-linux:{GBCMSB_ID} -o {LINUX_IMAGE_TAR}"
-    save_windows_image = f"podman save localhost/godot-windows:{GBCMSB_ID} -o {WINDOWS_IMAGE_TAR}"
+    msb_command = f'./msb.sh {GBCMSB_ID} {target}'
+    save_image = f"podman save localhost/godot-{target}:{GBCMSB_ID} -o {image_tar}"
     
     docker_run_command = [
         "docker", "run", "--rm", "--privileged"] + DOCKER_UID + VOLUMESPEC + [
             "-v", f"{storage_path}:/var/lib/containers/storage",
             "-w", f"{os.getcwd()}/build/godot-build-containers",
             docker_image, "/bin/bash", "-c",
-        f"{msb_command} && {save_linux_image} && {save_windows_image}"
+        f"{msb_command} && {save_image}"
     ]
     
     util.run(docker_run_command, check = True)
 
     # Import the image into the Docker environment of the host
-    util.run(["docker", "load", "-i", f"build/godot-build-containers/{LINUX_IMAGE_TAR}"])
-    util.run(["docker", "load", "-i", f"build/godot-build-containers/{WINDOWS_IMAGE_TAR}"])
+    util.run(["docker", "load", "-i", f"build/godot-build-containers/{image_tar}"])
 
 def build_deploy(target):
     """Build and deploy for a specific target."""
+    
+    # first get the docker image
+    build_docker_image(target)
+
+    # then run the deploy script
     image_name = f"localhost/godot-{target}:{GBCMSB_ID}"
     util.run(["docker", "run", "--rm"] + DOCKER_UID + VOLUMESPEC + [
         "-w", f"{os.getcwd()}",
@@ -108,9 +108,6 @@ def run():
     try:
         # wipe deploy directory entirely
         shutil.rmtree("deploy", ignore_errors = True)
-
-        # Build Docker Image
-        build_docker_image()
 
         # Build and deploy for Linux
         build_deploy('linux')

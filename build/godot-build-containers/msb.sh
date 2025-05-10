@@ -34,5 +34,4 @@ podman_build() {
     return $status
 }
 
-podman_build linux
-podman_build windows
+podman_build $2
