@@ -1,0 +1,8 @@
+{
+  "godot": {
+    "description": "Godot Game Engine",
+    "target_dir": "godot",
+    "repo_url": "https://github.com/godotengine/godot.git",
+    "branch_name": "thirdparty_godot"
+  }
+}

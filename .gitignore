@@ -1,6 +1,5 @@
 # temp storage for the update process
-/update_godot
-/update_godot_engine
+/update_*
 
 # temp storage for releases
 /deploy
