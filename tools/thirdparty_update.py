@@ -73,8 +73,17 @@ util.run([
 
 util.run([
         "git",
+        "fetch",
+        "..",
+        "origin/" + branch_name,
+    ], cwd=work_dir, check=True)
+    
+util.run([
+        "git",
         "checkout",
+        "-B",
         branch_name,
+        "FETCH_HEAD",
     ], cwd=work_dir, check=True)
 
 util.run([
