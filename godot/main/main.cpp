@@ -1075,6 +1075,19 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 				forwardable_cli_arguments[CLI_SCOPE_PROJECT].push_back(next_arg);
 			}
 		}
+
+		// DH BEGIN - allow control over target build config
+		if (arg == "--cs-build-config-file") {
+			if (N) {
+				cs_build_config_file = N->get();
+				N = N->next();
+			} else {
+				OS::get_singleton()->print("Missing build config file argument, aborting.\n");
+				goto error;
+			}
+		}
+		// DH END - allow control over target build config
+
 #endif
 
 		if (adding_user_args) {
@@ -4411,6 +4424,10 @@ uint32_t Main::hide_print_fps_attempts = 3;
 uint32_t Main::frame = 0;
 bool Main::force_redraw_requested = false;
 int Main::iterating = 0;
+
+#ifdef TOOLS_ENABLED
+String Main::cs_build_config_file = "";
+#endif
 
 bool Main::is_iterating() {
 	return iterating > 0;

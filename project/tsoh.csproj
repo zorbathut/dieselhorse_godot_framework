@@ -46,4 +46,16 @@
     <!-- this is apparently Rider-specific -->
     <RunSettingsFilePath>$(MSBuildProjectDirectory)/tsoh.runsettings</RunSettingsFilePath>
   </PropertyGroup>
+
+  <Target Name="SaveBuildOutputPath" AfterTargets="Build">
+    <PropertyGroup>
+      <OutputPathInfoFile>$(MSBuildProjectDirectory)\.godot\mono\temp\LastBuild.txt</OutputPathInfoFile>
+    </PropertyGroup>
+
+    <WriteLinesToFile File="$(OutputPathInfoFile)"
+                      Lines="$(Configuration)"
+                      Overwrite="true" />
+
+    <Message Text="Build configuration `$(Configuration)` saved to: $(OutputPathInfoFile)" Importance="high" />
+  </Target>
 </Project>

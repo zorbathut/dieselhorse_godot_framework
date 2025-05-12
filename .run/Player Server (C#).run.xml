@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Player Server (C#)" type="RunExe" factoryName=".NET Executable">
     <option name="EXE_PATH" value="$PROJECT_DIR$/godot/bin/godot.universal.editor.exe" />
-    <option name="PROGRAM_PARAMETERS" value="-- --serve=11235" />
+    <option name="PROGRAM_PARAMETERS" value="-- --serve=11235 --cs-build-config-file .godot/mono/temp/LastBuild.txt" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/project" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>

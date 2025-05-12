@@ -86,6 +86,12 @@ public:
 	static bool is_iterating();
 
 	static void cleanup(bool p_force = false);
+
+	// DH BEGIN - allow control over target build config
+	#ifdef TOOLS_ENABLED
+	static String cs_build_config_file;
+	#endif
+	// DH END - allow control over target build config
 };
 
 // Test main override is for the testing behavior.

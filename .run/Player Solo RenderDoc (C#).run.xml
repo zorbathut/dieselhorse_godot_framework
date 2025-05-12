@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Player Solo RenderDoc (C#)" type="RunExe" factoryName=".NET Executable" singleton="false">
     <option name="EXE_PATH" value="/usr/bin/renderdoccmd" />
-    <option name="PROGRAM_PARAMETERS" value="capture -d $PROJECT_DIR$/project $PROJECT_DIR$/godot/bin/godot.universal.editor.exe --generate-spirv-debug-info" />
+    <option name="PROGRAM_PARAMETERS" value="capture -d $PROJECT_DIR$/project $PROJECT_DIR$/godot/bin/godot.universal.editor.exe --generate-spirv-debug-info --cs-build-config-file .godot/mono/temp/LastBuild.txt" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/project" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="USE_EXTERNAL_CONSOLE" value="0" />

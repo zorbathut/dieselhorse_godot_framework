@@ -42,10 +42,25 @@
 #include "editor/editor_paths.h"
 #endif
 
+// DH BEGIN - commandline-controlled dll loading
+#include "main/main.h"
+// DH END - commandline-controlled dll loading
+
 namespace GodotSharpDirs {
 
 String _get_expected_build_config() {
 #ifdef TOOLS_ENABLED
+	// DH BEGIN - commandline-controlled dll loading
+	if (Main::cs_build_config_file != "") {
+		// open file, read first line and return it
+		Ref<FileAccess> file = FileAccess::open(Main::cs_build_config_file, FileAccess::READ);
+		if (file.is_valid()) {
+			String line = file->get_line();
+			file->close();
+			return line;
+		}
+	}
+	// DH END - commandline-controlled dll loading
 	return "Debug";
 #else
 

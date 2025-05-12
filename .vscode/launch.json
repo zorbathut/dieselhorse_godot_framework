@@ -9,6 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "args": ["--cs-build-config-file", ".godot/mono/temp/LastBuild.txt"],
             "args": ["project.godot"],
             "cwd": "${workspaceFolder}/project",
             "stopAtEntry": false
@@ -22,6 +23,7 @@
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "args": ["--cs-build-config-file", ".godot/mono/temp/LastBuild.txt"],
             "cwd": "${workspaceFolder}/project",
             "env": {
                 "OBS_VKCAPTURE": "1"
@@ -38,6 +40,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "args": ["--cs-build-config-file", ".godot/mono/temp/LastBuild.txt"],
             "cwd": "${workspaceFolder}/project",
             "stopAtEntry": false
         },
@@ -48,7 +51,7 @@
 
             "type": "node-terminal",
             "request": "launch",
-            "command": "renderdoccmd capture -d ${workspaceFolder}/project ${workspaceFolder}/godot/bin/godot.universal.editor.exe",
+            "command": "renderdoccmd capture -d ${workspaceFolder}/project ${workspaceFolder}/godot/bin/godot.universal.editor.exe --cs-build-config-file .godot/mono/temp/LastBuild.txt",
             "cwd": "${workspaceFolder}/project",
         },
 
@@ -61,7 +64,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
             "cwd": "${workspaceFolder}/project",
-            "args": ["--", "--serve=11235"],
+            "args": ["--cs-build-config-file", ".godot/mono/temp/LastBuild.txt", ,"--", "--serve=11235"],
             "env": {
                 "OBS_VKCAPTURE": "1"
             },
@@ -78,7 +81,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/godot/bin/godot.universal.editor.exe",
             "cwd": "${workspaceFolder}/project",
-            "args": ["--", "--connect=localhost:11235"],
+            "args": ["--cs-build-config-file", ".godot/mono/temp/LastBuild.txt", ,"--", "--connect=localhost:11235"],
             "env": {
                 "OBS_VKCAPTURE": "1"
             },
