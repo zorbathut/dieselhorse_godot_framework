@@ -92,6 +92,12 @@ def run(dev):
         # This can be made faster by using a shortcut or mklink, but that's tough
         windows = lambda: shutil.copyfile(godot_src_path, universal_editor_path),
     )()
+    
+    # Restore the .net code
+    util.run([
+            "dotnet",
+            "restore",
+        ], check=True, cwd="project", env=build_utils.get_env())
 
     # import with headless
     util.run([
