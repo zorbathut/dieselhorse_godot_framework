@@ -76,6 +76,12 @@ def run():
     # Copy dec directory over
     shutil.copytree("project/dec", f"{deploydir}/dec")
     
+    # And remove in COPYRIGHT_INFRINGEMENT directories
+    for root, dirs, files in os.walk(deploydir):
+        for name in dirs:
+            if name == "COPYRIGHT_INFRINGEMENT":
+                shutil.rmtree(os.path.join(root, name))
+    
     # Verify that a directory starting with `data` exists, because otherwise we've run into that weird bug again where it stops including the data
     if not any(os.path.isdir(os.path.join(deploydir, d)) and d.startswith("data") for d in os.listdir(deploydir)):
         raise RuntimeError(f"Failed to find data directory in {deploydir}")

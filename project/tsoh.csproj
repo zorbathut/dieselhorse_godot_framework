@@ -9,6 +9,8 @@
 
     <!-- "member" hides "other member" -->
     <WarningsAsErrors>CS0108</WarningsAsErrors>
+    <Configurations>Debug;Release;StrippedDebug;StrippedRelease;ExportDebug;ExportRelease</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +29,14 @@
     <Compile Remove="thirdparty/gdunit4/**/*" />
     <ProjectReference Include="thirdparty\gdunit4\testadapter\gdUnit4TestAdapter.csproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="$(Configuration.Contains('Stripped')) Or $(Configuration.Contains('Export'))">
+    <Compile Remove="**/COPYRIGHT_INFRINGEMENT/**/*" />
+  </ItemGroup>
+  <PropertyGroup Condition="$(Configuration.Contains('Stripped'))">
+    <!-- this doesn't need to be included in Export because Export also doesn't package the files themselves -->
+    <DefineConstants>$(DefineConstants);STRIPPED</DefineConstants>  
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Clipper2" Version="1.4.0" />
