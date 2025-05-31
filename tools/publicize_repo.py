@@ -552,13 +552,11 @@ Filter commits file:
         """
     )
     
-    parser.add_argument('source', help='Path to source repository')
-    parser.add_argument('target', help='Path where filtered repository will be created')
-    parser.add_argument('ignore_file', help='Path to gitignore-style file with patterns')
-    parser.add_argument('-f', '--filter-commits', 
-                      help='Path to file containing commit references to filter out')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                      help='Enable verbose output')
+    parser.add_argument('-source', help='Path to source repository', default=".")
+    parser.add_argument('-target', help='Path where filtered repository will be created', default="publicize")
+    parser.add_argument('-ignore_file', help='Path to gitignore-style file with patterns', default="tools/publicize_repo.gitignore")
+    parser.add_argument('-f', '--filter-commits', help='Path to file containing commit references to filter out', default="tools/publicize_repo.blacklist")
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
     
     args = parser.parse_args()
     
