@@ -12,6 +12,7 @@ psutil = "*"
 scons = "*"
 requests = "^2.31.0"
 gitpython = "^3.1.44"
+pathspec = "^0.12.1"
 
 [build-system]
 requires = ["poetry-core"]

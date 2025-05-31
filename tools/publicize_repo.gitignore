@@ -1,0 +1,12 @@
+
+# remove most of the project, but allow important stuff like the .csproj
+/project/*/
+
+# concept art
+/art
+
+# company documentation
+/docs
+
+# custom renderer core
+/godot/servers/rendering/renderer_hdss
