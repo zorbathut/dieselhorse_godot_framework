@@ -33,7 +33,8 @@ except ImportError:
 
 class GitRepoFilter:
     def __init__(self, source_repo_path: str, target_repo_path: str, 
-                 ignore_file_path: str, verbose: bool = False):
+                 ignore_file_path: str, filter_commits_file: Optional[str] = None, 
+                 verbose: bool = False):
         """
         Initialize the Git repository filter.
         
@@ -41,11 +42,13 @@ class GitRepoFilter:
             source_repo_path: Path to source repository
             target_repo_path: Path where filtered repository will be created
             ignore_file_path: Path to gitignore-style file with patterns
+            filter_commits_file: Optional path to file containing commit SHAs to filter
             verbose: Enable verbose logging
         """
         self.source_repo = Repo(source_repo_path)
         self.target_repo_path = Path(target_repo_path)
         self.ignore_file_path = Path(ignore_file_path)
+        self.filter_commits_file = filter_commits_file
         self.verbose = verbose
         
         # Setup logging
@@ -56,6 +59,9 @@ class GitRepoFilter:
         # Load ignore patterns
         self.pathspec = self._load_pathspec()
         
+        # Load filtered commits if provided
+        self.filtered_commits = self._load_filtered_commits()
+        
         # Mapping from old commit SHA to new commit SHA
         self.commit_map: Dict[str, Optional[str]] = {}
         
@@ -65,7 +71,8 @@ class GitRepoFilter:
             'filtered_commits': 0,
             'kept_commits': 0,
             'total_files': 0,
-            'filtered_files': 0
+            'filtered_files': 0,
+            'explicitly_filtered_commits': 0
         }
         
         # Persistent working directory
@@ -88,11 +95,60 @@ class GitRepoFilter:
         self.logger.info(f"Loaded {len(patterns)} ignore patterns")
         return pathspec.PathSpec.from_lines('gitwildmatch', patterns)
     
+    def _resolve_commit_ref(self, commit_ref: str) -> Optional[str]:
+        """
+        Resolve a commit reference (which might be a prefix) to a full SHA.
+        
+        Args:
+            commit_ref: A commit reference (full SHA, prefix, tag, branch, etc.)
+            
+        Returns:
+            Full SHA if found, None otherwise
+        """
+        try:
+            # This will work with full SHAs, prefixes, tags, branches, etc.
+            commit = self.source_repo.commit(commit_ref)
+            return commit.hexsha
+        except (ValueError, git.exc.BadName, git.exc.BadObject):
+            return None
+    
+    def _load_filtered_commits(self) -> Set[str]:
+        """Load list of commits to filter from file."""
+        filtered_commits = set()
+        
+        if self.filter_commits_file:
+            try:
+                with open(self.filter_commits_file, 'r') as f:
+                    for line in f:
+                        # Strip and clean the line
+                        commit_ref = line.strip()
+                        
+                        # Skip empty lines and comments
+                        if not commit_ref or commit_ref.startswith('#'):
+                            continue
+                        
+                        # Resolve the commit reference to a full SHA
+                        commit_sha = self._resolve_commit_ref(commit_ref)
+                        if commit_sha:
+                            filtered_commits.add(commit_sha)
+                        else:
+                            self.logger.warning(f"Commit reference '{commit_ref}' not found in repository, skipping")
+                
+                self.logger.info(f"Loaded {len(filtered_commits)} commits to explicitly filter")
+            except Exception as e:
+                self.logger.error(f"Error loading filtered commits file: {e}")
+        
+        return filtered_commits
+    
     def _should_ignore(self, file_path: str) -> bool:
         """Check if a file path should be ignored based on patterns."""
         # Normalize path separators for consistent matching
         file_path = file_path.replace(os.sep, '/')
         return self.pathspec.match_file(file_path)
+    
+    def _should_filter_commit(self, commit: git.Commit) -> bool:
+        """Check if a commit should be explicitly filtered."""
+        return commit.hexsha in self.filtered_commits
     
     def _get_changed_files(self, commit: git.Commit) -> List[str]:
         """Get files that changed in this commit."""
@@ -249,6 +305,13 @@ class GitRepoFilter:
         Returns:
             New commit object if any files were kept, None otherwise
         """
+        # Check if this commit should be explicitly filtered
+        if self._should_filter_commit(source_commit):
+            self.logger.info(f"Explicitly filtering commit {source_commit.hexsha[:8]} - {source_commit.message.splitlines()[0]}")
+            self.stats['explicitly_filtered_commits'] += 1
+            self.stats['filtered_commits'] += 1
+            return None
+        
         # Get non-ignored files that changed in this commit
         kept_changes = self._get_filtered_changes(source_commit)
         
@@ -455,6 +518,8 @@ class GitRepoFilter:
         print(f"Total commits processed: {self.stats['total_commits']}")
         print(f"Commits kept: {self.stats['kept_commits']}")
         print(f"Commits filtered out: {self.stats['filtered_commits']}")
+        if self.stats['explicitly_filtered_commits'] > 0:
+            print(f"  - Explicitly filtered commits: {self.stats['explicitly_filtered_commits']}")
         print(f"Files examined: {self.stats['total_files']}")
         print(f"Files filtered out: {self.stats['filtered_files']}")
         
@@ -477,12 +542,21 @@ Ignore file format (same as .gitignore):
     secret/         # Ignore secret directory
     !important.log  # But keep important.log
     docs/**/*.pdf   # Ignore all PDFs in docs
+
+Filter commits file:
+    # One commit reference per line (prefixes, full SHAs, tags, branches, etc.)
+    # Comments start with #
+    abc123          # Filter commit with SHA starting with abc123
+    HEAD~3          # Filter the commit 3 before HEAD
+    v1.0^           # Filter the parent of the v1.0 tag
         """
     )
     
     parser.add_argument('source', help='Path to source repository')
     parser.add_argument('target', help='Path where filtered repository will be created')
     parser.add_argument('ignore_file', help='Path to gitignore-style file with patterns')
+    parser.add_argument('-f', '--filter-commits', 
+                      help='Path to file containing commit references to filter out')
     parser.add_argument('-v', '--verbose', action='store_true', 
                       help='Enable verbose output')
     
@@ -497,6 +571,10 @@ Ignore file format (same as .gitignore):
         print(f"Error: Ignore file not found: {args.ignore_file}")
         sys.exit(1)
     
+    if args.filter_commits and not Path(args.filter_commits).exists():
+        print(f"Error: Filter commits file not found: {args.filter_commits}")
+        sys.exit(1)
+    
     # Check if git is available
     try:
         subprocess.run(['git', '--version'], check=True, capture_output=True)
@@ -509,6 +587,7 @@ Ignore file format (same as .gitignore):
         source_repo_path=args.source,
         target_repo_path=args.target,
         ignore_file_path=args.ignore_file,
+        filter_commits_file=args.filter_commits,
         verbose=args.verbose
     )
     
