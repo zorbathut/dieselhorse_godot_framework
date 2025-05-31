@@ -1,15 +1,16 @@
 {
 	"DH BEGIN - Build profiles" : "comment_because_json_doesnt_support_them",
-	
+
 	"it_is_not_clear_why_those_are_called_disabled_they_really_arent" : "wtf",
 	"who_wrote_this_thing": "seriously",
 	"also_json_could_you_please_add_comments": "thx in advance",
 
 	"the second set really is disabled btw": "sigh",
-	
+
 	"disabled_build_options": {
 		"debug_symbols": true,
 		"module_mono_enabled": true,
+		"module_hdss_enabled": true,
 
 		"disable_2d_physics": true,
 		"disable_3d_physics": true,
@@ -17,13 +18,14 @@
 		"openxr": false,
 		"opengl3": false
 	},
-	
+
 	"options_to_be_introduced": {
 		"deprecated": "no",
-		
+
 		"module_enet_enabled": "no",
 		"module_gdscript_enabled": "no",
 		"module_gltf_enabled": "no",
+		"module_hdss_enabled": "yes",
 		"module_multiplayer_enabled": "no",
 		"module_navigation_enabled": "no",
 		"module_openxr_enabled": "no",

@@ -61,8 +61,10 @@ protected:
 	RendererSceneRenderRD *scene = nullptr;
 
 	// DH BEGIN - HDSS renderer
+#ifdef MODULE_HDSS_ENABLED
 	HDSSStorage *hdss_storage = nullptr;
 	RendererHDSS *hdss = nullptr;
+#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS renderer
 
 	enum BlitMode {
@@ -125,8 +127,10 @@ public:
 	RendererSceneRender *get_scene() { return scene; }
 
 	// DH BEGIN - HDSS renderer
+#ifdef MODULE_HDSS_ENABLED
 	HDSSStorage *get_hdss_storage() { return hdss_storage; }
 	RendererHDSS *get_hdss() { return hdss; }
+#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS renderer
 
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter);

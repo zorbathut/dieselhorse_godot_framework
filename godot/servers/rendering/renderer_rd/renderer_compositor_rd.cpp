@@ -37,7 +37,9 @@
 #include "servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h"
 
 // DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 #include "servers/rendering/renderer_hdss/hdss_storage.h"
+#endif // MODULE_HDSS_ENABLED
 // DH END - HDSS rendering
 
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount) {
@@ -163,8 +165,10 @@ void RendererCompositorRD::initialize() {
 	}
 
 	// DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 	hdss_storage->init();
 	hdss->init();
+#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 }
 
@@ -172,8 +176,10 @@ uint64_t RendererCompositorRD::frame = 1;
 
 void RendererCompositorRD::finalize() {
 	// DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 	memdelete(hdss);
 	memdelete(hdss_storage);
+#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 
 	memdelete(scene);
@@ -349,8 +355,10 @@ RendererCompositorRD::RendererCompositorRD() {
 	}
 
 	// DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 	hdss_storage = memnew(HDSSStorage);
 	hdss = memnew(RendererHDSS);
+#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 
 	scene->init();

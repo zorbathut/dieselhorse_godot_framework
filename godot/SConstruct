@@ -1051,6 +1051,11 @@ if env["ninja"]:
 if env["threads"]:
     env.Append(CPPDEFINES=["THREADS_ENABLED"])
 
+# DH BEGIN - HDSS
+if env.get("module_hdss_enabled"):
+    env.Append(CPPDEFINES=["MODULE_HDSS_ENABLED"])
+# DH END - HDSS
+
 # Build subdirs, the build order is dependent on link order.
 Export("env")
 
