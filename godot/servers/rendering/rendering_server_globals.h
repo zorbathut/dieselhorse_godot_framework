@@ -76,10 +76,10 @@ public:
 	static RenderingMethod *scene;
 
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	static HDSSStorage *hdss_storage;
 	static RendererHDSS *hdss;
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 };
 

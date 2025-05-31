@@ -3409,6 +3409,7 @@ void RenderingServer::_bind_methods() {
 
 	// DH BEGIN - HDSS
 	/* HDSS */
+	#ifdef MODULE_HDSS_ENABLED
 
 	ClassDB::bind_method(D_METHOD("hdss_element_create"), &RenderingServer::hdss_element_create);
 
@@ -3439,6 +3440,8 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("hdss_draw_append", "element"), &RenderingServer::hdss_draw_append);
 
 	ClassDB::bind_method(D_METHOD("hdss_set_light_buffer_resolution", "resolution"), &RenderingServer::hdss_set_light_buffer_resolution);
+
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */

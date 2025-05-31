@@ -1699,6 +1699,7 @@ public:
 
 	// DH BEGIN - HDSS
 	/* HDSS */
+	#ifdef MODULE_HDSS_ENABLED
 
 	virtual RID hdss_element_create() = 0;
 
@@ -1715,7 +1716,7 @@ public:
 	virtual void hdss_element_set_transform(RID p_element, const Transform3D &p_transform) = 0;
 
 	virtual RID hdss_shadowcaster_create() = 0;
-    
+
     virtual void hdss_shadowcaster_set_vertices(RID p_element, const PackedVector3Array &p_vertices) = 0;
     virtual void hdss_shadowcaster_set_indices(RID p_element, const PackedInt32Array &p_indices) = 0;
 	virtual void hdss_shadowcaster_set_transform(RID p_element, const Transform3D &p_transform) = 0;
@@ -1730,6 +1731,8 @@ public:
 	virtual void hdss_draw_append(RID p_element) = 0;
 
 	virtual void hdss_set_light_buffer_resolution(int p_resolution) = 0;
+
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS
 
 	/* GLOBAL SHADER UNIFORMS */

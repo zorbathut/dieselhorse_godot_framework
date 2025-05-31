@@ -78,8 +78,10 @@ public:
 	RendererSceneRender *get_scene() override { return &scene; }
 
 	// DH BEGIN - HDSS renderer
+	#ifdef MODULE_HDSS_ENABLED
 	RendererHDSS *get_hdss() override { return nullptr; }
 	HDSSStorage *get_hdss_storage() override { return nullptr; }
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS renderer
 
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) override {}

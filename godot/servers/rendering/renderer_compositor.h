@@ -94,8 +94,10 @@ public:
 	virtual RendererSceneRender *get_scene() = 0;
 
 	// DH BEGIN - HDSS renderer
+	#ifdef MODULE_HDSS_ENABLED
 	virtual RendererHDSS *get_hdss() = 0;
 	virtual HDSSStorage *get_hdss_storage() = 0;
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS renderer
 
 	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) = 0;

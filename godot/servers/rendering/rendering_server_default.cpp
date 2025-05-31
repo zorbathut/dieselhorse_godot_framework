@@ -59,11 +59,11 @@ void RenderingServerDefault::_free(RID p_rid) {
 	}
 
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	if (RSG::hdss && RSG::hdss->free(p_rid)) {
 		return;
 	}
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 
 	// DH BEGIN - error reporting >:(
@@ -239,10 +239,10 @@ void RenderingServerDefault::_init() {
 	sr->set_scene_render(RSG::rasterizer->get_scene());
 
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	RSG::hdss_storage = RSG::rasterizer->get_hdss_storage();
 	RSG::hdss = RSG::rasterizer->get_hdss();
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 }
 

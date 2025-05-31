@@ -165,10 +165,10 @@ void RendererCompositorRD::initialize() {
 	}
 
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	hdss_storage->init();
 	hdss->init();
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 }
 
@@ -176,10 +176,10 @@ uint64_t RendererCompositorRD::frame = 1;
 
 void RendererCompositorRD::finalize() {
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	memdelete(hdss);
 	memdelete(hdss_storage);
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 
 	memdelete(scene);
@@ -355,10 +355,10 @@ RendererCompositorRD::RendererCompositorRD() {
 	}
 
 	// DH BEGIN - HDSS rendering
-#ifdef MODULE_HDSS_ENABLED
+	#ifdef MODULE_HDSS_ENABLED
 	hdss_storage = memnew(HDSSStorage);
 	hdss = memnew(RendererHDSS);
-#endif // MODULE_HDSS_ENABLED
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS rendering
 
 	scene->init();

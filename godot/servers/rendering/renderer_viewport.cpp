@@ -645,6 +645,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 		}
 
 		// DH BEGIN - HDSS rendering
+		#ifdef MODULE_HDSS_ENABLED
 		{
 			// There may be an outstanding clear request if a clear was requested, but no 2D elements were drawn.
 			// Clear now otherwise we copy over garbage from the render target.
@@ -652,6 +653,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 
 			RSG::hdss->render_hdss(p_viewport->self, p_viewport->render_target, &p_viewport->render_info);
 		}
+		#endif // MODULE_HDSS_ENABLED
 		// DH END - HDSS rendering
 
 		for (const KeyValue<Viewport::CanvasKey, Viewport::CanvasData *> &E : canvas_map) {

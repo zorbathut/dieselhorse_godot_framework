@@ -1071,6 +1071,7 @@ public:
 
 	// DH BEGIN - HDSS API
 	/* HDSS API */
+	#ifdef MODULE_HDSS_ENABLED
 
 #undef ServerName
 #undef server_name
@@ -1109,6 +1110,7 @@ public:
 
 	FUNC1(hdss_set_light_buffer_resolution, int)
 
+	#endif // MODULE_HDSS_ENABLED
 	// DH END - HDSS API
 
 	/* GLOBAL SHADER UNIFORMS */
