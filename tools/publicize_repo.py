@@ -8,7 +8,7 @@ import sys
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Set, Optional, List, Tuple
+from typing import Dict, Set, Optional, List, Tuple, DefaultDict
 from collections import defaultdict
 import subprocess
 import tempfile
@@ -65,6 +65,12 @@ class GitRepoFilter:
         # Mapping from old commit SHA to new commit SHA
         self.commit_map: Dict[str, Optional[str]] = {}
         
+        # Mapping to track tags that point to filtered commits
+        self.filtered_commit_tags: DefaultDict[str, List[git.TagReference]] = defaultdict(list)
+        
+        # Cache for mapping filtered commits to their next valid descendants
+        self.next_valid_commit_cache: Dict[str, Optional[str]] = {}
+        
         # Statistics
         self.stats = {
             'total_commits': 0,
@@ -72,7 +78,8 @@ class GitRepoFilter:
             'kept_commits': 0,
             'total_files': 0,
             'filtered_files': 0,
-            'explicitly_filtered_commits': 0
+            'explicitly_filtered_commits': 0,
+            'propagated_tags': 0
         }
         
         # Persistent working directory
@@ -298,6 +305,27 @@ class GitRepoFilter:
             # Add to cache
             self.file_cache[cache_key] = True
     
+    def _collect_tags_for_commit(self, commit: git.Commit):
+        """
+        Collect tags that point to this commit for later propagation.
+        Only called when a commit will be filtered out.
+        """
+        # Find all tags that point to this commit
+        collected = 0
+        for tag in self.source_repo.tags:
+            if tag.commit.hexsha == commit.hexsha:
+                # Store the tag with its commit SHA for later propagation
+                self.filtered_commit_tags[commit.hexsha].append(tag)
+                collected += 1
+                self.logger.debug(f"Tag {tag.name} points to filtered commit {commit.hexsha[:8]}, will be propagated")
+        
+        if collected > 0:
+            # Log a summary if multiple tags were collected
+            if collected > 1:
+                self.logger.info(f"Collected {collected} tags from filtered commit {commit.hexsha[:8]}")
+            else:
+                self.logger.debug(f"Collected 1 tag from filtered commit {commit.hexsha[:8]}")
+    
     def _create_filtered_commit(self, source_commit: git.Commit, target_repo: Repo) -> Optional[git.Commit]:
         """
         Create a filtered version of a commit using the persistent working directory.
@@ -310,6 +338,7 @@ class GitRepoFilter:
             self.logger.info(f"Explicitly filtering commit {source_commit.hexsha[:8]} - {source_commit.message.splitlines()[0]}")
             self.stats['explicitly_filtered_commits'] += 1
             self.stats['filtered_commits'] += 1
+            self._collect_tags_for_commit(source_commit)
             return None
         
         # Get non-ignored files that changed in this commit
@@ -319,6 +348,7 @@ class GitRepoFilter:
         if not kept_changes:
             self.logger.debug(f"Skipping commit {source_commit.hexsha[:8]} - no kept files or no kept changes")
             self.stats['filtered_commits'] += 1
+            self._collect_tags_for_commit(source_commit)
             return None
         
         self.logger.debug(f"Processing commit {source_commit.hexsha[:8]} with {len(kept_changes)} changed files")
@@ -410,6 +440,148 @@ class GitRepoFilter:
         
         return new_commit
     
+    def _find_next_valid_commit(self, filtered_commit_sha: str) -> Optional[str]:
+        """
+        Find the next valid (non-filtered) commit in the chain.
+        This is used to propagate tags from filtered commits to their descendants.
+        
+        Args:
+            filtered_commit_sha: SHA of a filtered commit
+            
+        Returns:
+            SHA of the next valid commit, or None if not found
+        """
+        # Check cache first
+        if filtered_commit_sha in self.next_valid_commit_cache:
+            return self.next_valid_commit_cache[filtered_commit_sha]
+            
+        # Find all children of the filtered commit using git rev-list
+        # This is much faster than iterating through all commits
+        try:
+            result = subprocess.run(
+                ['git', 'rev-list', '--all', '--children'],
+                cwd=self.source_repo.working_dir,
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            # Parse the output: each line is "commit child1 child2 ..."
+            children = []
+            for line in result.stdout.strip().split('\n'):
+                parts = line.split()
+                if parts and parts[0] == filtered_commit_sha and len(parts) > 1:
+                    # Found children of our filtered commit
+                    for child_sha in parts[1:]:
+                        try:
+                            child = self.source_repo.commit(child_sha)
+                            children.append(child)
+                        except (git.exc.BadName, ValueError):
+                            continue
+                    break
+        
+            # If no children, we can't propagate
+            if not children:
+                self.next_valid_commit_cache[filtered_commit_sha] = None
+                return None
+            
+            # Sort children by commit date to find the "next" one
+            children.sort(key=lambda c: c.committed_date)
+            
+            # Look for a valid child
+            for child in children:
+                if child.hexsha in self.commit_map and self.commit_map[child.hexsha]:
+                    # Found a direct child that's kept
+                    self.next_valid_commit_cache[filtered_commit_sha] = self.commit_map[child.hexsha]
+                    return self.commit_map[child.hexsha]
+                elif child.hexsha in self.commit_map:
+                    # Child is filtered, try to find its next valid descendant
+                    next_valid = self._find_next_valid_commit(child.hexsha)
+                    if next_valid:
+                        self.next_valid_commit_cache[filtered_commit_sha] = next_valid
+                        return next_valid
+            
+            # No valid descendant found
+            self.next_valid_commit_cache[filtered_commit_sha] = None
+            return None
+            
+        except Exception as e:
+            self.logger.warning(f"Error finding children for commit {filtered_commit_sha[:8]}: {e}")
+            self.next_valid_commit_cache[filtered_commit_sha] = None
+            return None
+    
+    def _propagate_tags(self, target_repo: Repo):
+        """
+        Propagate tags from filtered commits to their next valid (non-filtered) commit.
+        This is called after all commits have been processed.
+        """
+        propagated = 0
+        skipped = 0
+        failed = 0
+        
+        # Gather existing tag names in target repo to avoid conflicts
+        existing_tag_names = set(tag.name for tag in target_repo.tags)
+        
+        self.logger.info(f"Propagating tags from {len(self.filtered_commit_tags)} filtered commits...")
+        
+        for commit_sha, tags in self.filtered_commit_tags.items():
+            # Skip if no tags to propagate
+            if not tags:
+                continue
+                
+            self.logger.debug(f"Finding next valid commit for filtered commit {commit_sha[:8]} with {len(tags)} tags")
+            next_valid_commit_sha = self._find_next_valid_commit(commit_sha)
+            
+            if not next_valid_commit_sha:
+                skipped += len(tags)
+                self.logger.debug(f"No valid descendant found for filtered commit {commit_sha[:8]}, skipping {len(tags)} tags")
+                continue
+            
+            for tag in tags:
+                # Skip if tag already exists in target repo
+                if tag.name in existing_tag_names:
+                    self.logger.debug(f"Tag {tag.name} already exists in target repo, skipping propagation")
+                    skipped += 1
+                    continue
+                    
+                try:
+                    # Get original commit message for reference
+                    source_commit = self.source_repo.commit(commit_sha)
+                    commit_msg = source_commit.message.splitlines()[0] if source_commit.message else "Unknown"
+                    
+                    # Create tag pointing to the next valid commit
+                    if hasattr(tag, 'tag') and tag.tag:
+                        # Annotated tag
+                        tag_msg = tag.tag.message if tag.tag.message else ""
+                        propagation_note = (
+                            f"\n\nNote: This tag was originally on filtered commit {commit_sha[:8]}"
+                            f"\nOriginal commit message: {commit_msg}"
+                        )
+                        target_repo.create_tag(
+                            tag.name, 
+                            ref=next_valid_commit_sha,
+                            message=f"{tag_msg}{propagation_note}"
+                        )
+                    else:
+                        # Lightweight tag
+                        target_repo.create_tag(tag.name, ref=next_valid_commit_sha)
+                    
+                    # Add to existing tags set to avoid duplicates
+                    existing_tag_names.add(tag.name)
+                    
+                    self.logger.info(f"Propagated tag {tag.name} from filtered commit {commit_sha[:8]} to {next_valid_commit_sha[:8]}")
+                    propagated += 1
+                except Exception as e:
+                    self.logger.warning(f"Could not propagate tag {tag.name}: {e}")
+                    failed += 1
+        
+        self.stats['propagated_tags'] = propagated
+        
+        if propagated > 0 or skipped > 0 or failed > 0:
+            self.logger.info(f"Tag propagation summary: {propagated} propagated, {skipped} skipped, {failed} failed")
+        else:
+            self.logger.info("No tags needed propagation")
+    
     def filter_repository(self):
         """Main method to filter the repository."""
         # Create target repository
@@ -460,8 +632,11 @@ class GitRepoFilter:
             # Update branches
             self._update_branches(target_repo)
             
-            # Update tags
+            # First create tags for non-filtered commits
             self._update_tags(target_repo)
+            
+            # Then propagate tags from filtered commits to their next valid commit
+            self._propagate_tags(target_repo)
             
             # Print statistics
             self._print_statistics()
@@ -488,9 +663,13 @@ class GitRepoFilter:
                         target_repo.head.reference = target_repo.heads[branch.name]
     
     def _update_tags(self, target_repo: Repo):
-        """Update tags in target repository."""
+        """Update tags in target repository for non-filtered commits."""
         for tag in self.source_repo.tags:
             source_commit_sha = tag.commit.hexsha
+            
+            # Skip tags on filtered commits - they will be handled by _propagate_tags
+            if source_commit_sha in self.filtered_commit_tags:
+                continue
             
             if source_commit_sha in self.commit_map:
                 new_commit_sha = self.commit_map[source_commit_sha]
@@ -523,14 +702,30 @@ class GitRepoFilter:
         print(f"Files examined: {self.stats['total_files']}")
         print(f"Files filtered out: {self.stats['filtered_files']}")
         
+        # Tag statistics
+        if hasattr(self, 'filtered_commit_tags'):
+            filtered_tags_count = sum(len(tags) for tags in self.filtered_commit_tags.values())
+            if filtered_tags_count > 0:
+                print(f"\n=== Tag Statistics ===")
+                print(f"Tags on filtered commits: {filtered_tags_count}")
+                print(f"Tags successfully propagated: {self.stats['propagated_tags']}")
+                if filtered_tags_count > self.stats['propagated_tags']:
+                    print(f"Tags not propagated: {filtered_tags_count - self.stats['propagated_tags']}")
+                    print("  (Tags may not be propagated if no valid descendant commit was found)")
+        
+        # Overall filter rates
         if self.stats['total_commits'] > 0:
             filter_rate = (self.stats['filtered_commits'] / self.stats['total_commits']) * 100
-            print(f"Commit filter rate: {filter_rate:.1f}%")
+            print(f"\nCommit filter rate: {filter_rate:.1f}%")
+        
+        if self.stats['total_files'] > 0:
+            file_filter_rate = (self.stats['filtered_files'] / self.stats['total_files']) * 100
+            print(f"File filter rate: {file_filter_rate:.1f}%")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Filter a Git repository based on gitignore-style patterns",
+        description="Filter a Git repository based on gitignore patterns",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Example:
@@ -549,6 +744,15 @@ Filter commits file:
     abc123          # Filter commit with SHA starting with abc123
     HEAD~3          # Filter the commit 3 before HEAD
     v1.0^           # Filter the parent of the v1.0 tag
+
+Tag Propagation:
+    When a commit is filtered out (either because it contains only ignored files 
+    or is explicitly filtered), any tags pointing to that commit will be
+    propagated to the next valid descendant commit. This ensures that tags are
+    not lost when filtering out commits.
+    
+    For annotated tags, the tag message will be preserved and a note will be
+    added to indicate the original commit that was tagged.
         """
     )
     
