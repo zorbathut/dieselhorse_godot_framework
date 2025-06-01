@@ -1,6 +1,4 @@
 {
-	"DH BEGIN - Build profiles" : "comment_because_json_doesnt_support_them",
-
 	"it_is_not_clear_why_those_are_called_disabled_they_really_arent" : "wtf",
 	"who_wrote_this_thing": "seriously",
 	"also_json_could_you_please_add_comments": "thx in advance",
@@ -33,6 +31,4 @@
 		"module_webrtc_enabled": "no",
 		"module_webxr_enabled": "no"
 	},
-
-	"DH END - Build profiles" : "comment_because_json_doesnt_support_them"
 }
