@@ -139,70 +139,61 @@ def extract_spdx_license_text(soup):
 
 def html_to_text(html_content):
     """Convert HTML content to plain text while preserving structure."""
-    try:
-        # Parse the HTML
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        # Remove script and style elements
-        for script in soup(["script", "style"]):
-            script.decompose()
-        
-        # Handle SPDX content specially
-        if is_spdx_content(soup):
-            print(f"  Detected SPDX content, extracting license text only")
-            soup = extract_spdx_license_text(soup)
-        
-        # Convert block elements to text with appropriate spacing
-        # Handle paragraphs
-        for p in soup.find_all('p'):
-            p.insert_after('\n\n')
-        
-        # Handle line breaks
-        for br in soup.find_all('br'):
-            br.replace_with('\n')
-        
-        # Handle other block elements (divs, headers, etc.)
-        for tag in soup.find_all(['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article']):
-            tag.insert_after('\n\n')
-        
-        # Handle list items
-        for li in soup.find_all('li'):
-            li.insert_before('• ')
-            li.insert_after('\n')
-        
-        # Handle lists (add extra spacing)
-        for ul_ol in soup.find_all(['ul', 'ol']):
-            ul_ol.insert_after('\n')
-        
-        # Get text content
-        text = soup.get_text()
-        
-        # Clean up excessive whitespace while preserving paragraph structure
-        # Replace multiple consecutive newlines with double newlines
-        text = re.sub(r'\n{3,}', '\n\n', text)
-        
-        # Clean up lines but preserve paragraph breaks
-        lines = text.split('\n')
-        cleaned_lines = []
-        for line in lines:
-            cleaned_line = line.strip()
-            if cleaned_line or (cleaned_lines and cleaned_lines[-1]):  # Keep empty lines that separate paragraphs
-                cleaned_lines.append(cleaned_line)
-        
-        # Join lines and clean up final spacing
-        text = '\n'.join(cleaned_lines)
-        text = re.sub(r'\n\n\n+', '\n\n', text)  # Max 2 consecutive newlines
-        text = text.strip()
-        
-        return text
-    except Exception as e:
-        print(f"  Warning: Failed to parse HTML content: {e}")
-        # Fallback to simple tag removal with basic paragraph preservation
-        text = re.sub(r'<p[^>]*>', '\n\n', html_content)
-        text = re.sub(r'</p>', '', text)
-        text = re.sub(r'<br[^>]*/?>', '\n', text)
-        text = re.sub(r'<[^>]+>', '', text)
-        return re.sub(r'\n{3,}', '\n\n', text).strip()
+    # Parse the HTML
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove script and style elements
+    for script in soup(["script", "style"]):
+        script.decompose()
+    
+    # Handle SPDX content specially
+    if is_spdx_content(soup):
+        print(f"  Detected SPDX content, extracting license text only")
+        soup = extract_spdx_license_text(soup)
+    
+    # Convert block elements to text with appropriate spacing
+    # Handle paragraphs
+    for p in soup.find_all('p'):
+        p.insert_after('\n\n')
+    
+    # Handle line breaks
+    for br in soup.find_all('br'):
+        br.replace_with('\n')
+    
+    # Handle other block elements (divs, headers, etc.)
+    for tag in soup.find_all(['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article']):
+        tag.insert_after('\n\n')
+    
+    # Handle list items
+    for li in soup.find_all('li'):
+        li.insert_before('• ')
+        li.insert_after('\n')
+    
+    # Handle lists (add extra spacing)
+    for ul_ol in soup.find_all(['ul', 'ol']):
+        ul_ol.insert_after('\n')
+    
+    # Get text content
+    text = soup.get_text()
+    
+    # Clean up excessive whitespace while preserving paragraph structure
+    # Replace multiple consecutive newlines with double newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    # Clean up lines but preserve paragraph breaks
+    lines = text.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        cleaned_line = line.strip()
+        if cleaned_line or (cleaned_lines and cleaned_lines[-1]):  # Keep empty lines that separate paragraphs
+            cleaned_lines.append(cleaned_line)
+    
+    # Join lines and clean up final spacing
+    text = '\n'.join(cleaned_lines)
+    text = re.sub(r'\n\n\n+', '\n\n', text)  # Max 2 consecutive newlines
+    text = text.strip()
+    
+    return text
 
 def run_dotnet_command(csproj_path):
     """Run dotnet list package command to get all packages."""
