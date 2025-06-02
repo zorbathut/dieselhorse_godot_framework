@@ -468,10 +468,10 @@ def collect_licenses(csproj_path, whitelisted_packages, whitelisted_license_hash
     
     return license_data, license_contents, licenses_by_type, approval_results, non_approved_packages
 
-def generate_consolidated_license_file(license_data, license_contents, approval_results, output_file):
+def generate_consolidated_license_file(license_data, license_contents, approval_results, f, metainfo):
     """Generate a consolidated file with all license texts."""
     
-    with open(output_file, 'w', encoding='utf-8') as f:
+    if metainfo:
         f.write("=" * 80 + "\n")
         f.write("CONSOLIDATED LICENSE FILE\n")
         f.write("=" * 80 + "\n\n")
@@ -491,16 +491,17 @@ def generate_consolidated_license_file(license_data, license_contents, approval_
             approval_status = "✅" if approval_results.get(package_key, {}).get('approved') else "❌"
             f.write(f"{i:3d}. {approval_status} {package_key}\n")
         f.write("\n\n")
+    
+    # Write individual licenses
+    for i, (package_key, license_content) in enumerate(sorted(license_contents.items()), 1):
+        approval_info = approval_results.get(package_key, {})
+        approval_status = "✅ APPROVED" if approval_info.get('approved') else "❌ NOT APPROVED"
         
-        # Write individual licenses
-        for i, (package_key, license_content) in enumerate(sorted(license_contents.items()), 1):
-            approval_info = approval_results.get(package_key, {})
-            approval_status = "✅ APPROVED" if approval_info.get('approved') else "❌ NOT APPROVED"
-            
+        if metainfo:
             f.write("=" * 80 + "\n")
             f.write(f"{i}. {package_key} - {approval_status}\n")
             f.write("=" * 80 + "\n\n")
-            
+        
             # Add approval information
             f.write(f"Approval Status: {approval_status}\n")
             f.write(f"Approval Reason: {approval_info.get('reason', 'unknown')}\n")
@@ -520,13 +521,17 @@ def generate_consolidated_license_file(license_data, license_contents, approval_
                 if 'licenseUrl' in info:
                     f.write(f"License URL: {info['licenseUrl']}\n")
                 f.write("\n")
-            
-            f.write("LICENSE TEXT:\n")
-            f.write("-" * 40 + "\n")
-            f.write(license_content)
-            f.write("\n\n")
-            
-        # Add packages without license content
+        else:
+            f.write("=" * 80 + "\n")
+            f.write(f"{package_key}\n")
+        
+        f.write("\n")
+        f.write("-" * 40 + "\n")
+        f.write(license_content)
+        f.write("\n\n")
+        
+    # Add packages without license content
+    if metainfo:
         packages_without_content = set(license_data.keys()) - set(license_contents.keys())
         if packages_without_content:
             f.write("=" * 80 + "\n")
@@ -605,9 +610,13 @@ def main():
         
         # Generate consolidated license file
         license_file = f"{args.output_prefix}_licenses.txt"
-        generate_consolidated_license_file(license_data, license_contents, approval_results, license_file)
+        with open(license_file, 'w', encoding='utf-8') as f:
+            generate_consolidated_license_file(license_data, license_contents, approval_results, f, False)
         print(f"✓ Consolidated license file written to {license_file}")
         print(f"  Found license content for {len(license_contents)} out of {len(license_data)} packages")
+
+        # write to stdout
+        generate_consolidated_license_file(license_data, license_contents, approval_results, sys.stdout, True)
         
         # Report final approval status
         approved_count = sum(1 for result in approval_results.values() if result['approved'])
