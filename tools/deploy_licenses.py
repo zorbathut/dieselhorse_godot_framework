@@ -1,20 +1,23 @@
-import subprocess
+
+import argparse
+import hashlib
 import json
-import requests
-import sys
 import os
-from pathlib import Path
-from collections import defaultdict
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import time
 import zipfile
-import tempfile
-import shutil
+from collections import defaultdict
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
-import re
-import util
+
 from bs4 import BeautifulSoup
-import hashlib
-import argparse
+import requests
+
+import util
 
 util.cwdhack()
 
