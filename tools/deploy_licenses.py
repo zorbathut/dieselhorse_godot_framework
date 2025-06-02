@@ -14,6 +14,7 @@ import re
 import util
 from bs4 import BeautifulSoup
 import hashlib
+import argparse
 
 util.cwdhack()
 
@@ -541,113 +542,69 @@ def generate_consolidated_license_file(license_data, license_contents, approval_
                     f.write(f"License: {info['license']}\n")
                 f.write("\n")
 
-def generate_report(license_data, licenses_by_type, approval_results, non_approved_packages, output_file=None):
-    """Generate a human-readable license summary report."""
-    report = []
-    report.append("=" * 80)
-    report.append("LICENSE SUMMARY REPORT")
-    report.append("=" * 80)
-    report.append("")
+def find_single_csproj():
+    """Find the only .csproj file in the project directory or error out."""
+    csproj_files = list(Path('project').glob('*.csproj'))
     
-    # Approval summary
-    approved_count = sum(1 for result in approval_results.values() if result['approved'])
-    total_count = len(approval_results)
-    report.append("APPROVAL SUMMARY")
-    report.append("-" * 40)
-    report.append(f"Total packages: {total_count}")
-    report.append(f"Approved packages: {approved_count}")
-    report.append(f"Non-approved packages: {total_count - approved_count}")
-    report.append("")
-    
-    # Non-approved packages details
-    if non_approved_packages:
-        report.append("NON-APPROVED PACKAGES")
-        report.append("-" * 40)
-        for pkg_info in non_approved_packages:
-            report.append(f"❌ {pkg_info['package']}")
-            report.append(f"   Reason: {pkg_info['reason']}")
-            if pkg_info['license_hash']:
-                report.append(f"   License Hash: {pkg_info['license_hash']}")
-            report.append("")
-    
-    # Summary by license type
-    report.append("LICENSES SUMMARY")
-    report.append("-" * 40)
-    for license_type, packages in licenses_by_type.items():
-        report.append(f"{license_type}: {len(packages)} packages")
-    report.append("")
-    
-    # Detailed breakdown
-    report.append("DETAILED BREAKDOWN")
-    report.append("-" * 40)
-    for license_type, packages in licenses_by_type.items():
-        report.append(f"\n{license_type.upper()}:")
-        for package in sorted(packages):
-            approval_info = approval_results.get(package, {})
-            approval_status = "✅" if approval_info.get('approved') else "❌"
-            report.append(f"  {approval_status} {package}")
-    
-    report_text = "\n".join(report)
-    
-    if output_file:
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(report_text)
-        print(f"Summary report written to {output_file}")
-    else:
-        print(report_text)
-
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python license_collector.py <path_to_csproj> [output_prefix] [config_file]")
-        print("Example: python license_collector.py MyProject.csproj my_project whitelist_config.json")
-        print("This will generate:")
-        print("  - {output_prefix}_licenses.txt (consolidated license file)")
-        print("  - {output_prefix}_summary.txt (summary report)")
-        print("  - {output_prefix}_data.json (raw metadata)")
-        print("If config_file is provided, packages will be checked against whitelist.")
+    if not csproj_files:
+        print("Error: No .csproj files found in the project directory.")
         sys.exit(1)
     
-    csproj_path = sys.argv[1]
-    output_prefix = sys.argv[2] if len(sys.argv) > 2 else "licenses"
-    config_file = sys.argv[3] if len(sys.argv) > 3 else None
+    if len(csproj_files) > 1:
+        print(f"Error: Multiple .csproj files found in the project directory:")
+        for csproj in csproj_files:
+            print(f"  - {csproj}")
+        sys.exit(1)
     
-    if not os.path.exists(csproj_path):
-        print(f"Error: {csproj_path} does not exist")
+    return str(csproj_files[0])
+    
+def main():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Analyze NuGet package licenses in a .NET project and generate license reports.",
+        epilog="Example: python deploy_licenses.py --csproj MyProject.csproj --output-prefix my_project --config whitelist_config.json"
+    )
+
+    # All arguments with flags and default values
+    parser.add_argument("--csproj", 
+                        dest = "csproj_path",
+                        default = find_single_csproj(),
+                        help = "Path to the .csproj file to analyze (default: 'Project.csproj')")
+
+    parser.add_argument("--output-prefix", 
+                        default = "output_prefix",
+                        help = "Prefix for output files (default: 'licenses')")
+
+    parser.add_argument("--config", 
+                        dest = "config_file",
+                        default = "tools/deploy_licenses.json",
+                        help = "Path to whitelist configuration file")
+    
+    args = parser.parse_args()
+    
+    if not os.path.exists(args.csproj_path):
+        print(f"Error: {args.csproj_path} does not exist")
         sys.exit(1)
     
     # Load whitelist configuration
     whitelisted_packages = set()
     whitelisted_license_hashes = set()
     
-    if config_file:
-        whitelisted_packages, whitelisted_license_hashes = load_whitelist_config(config_file)
+    if args.config_file:
+        whitelisted_packages, whitelisted_license_hashes = load_whitelist_config(args.config_file)
     else:
         print("No config file provided. All packages will be flagged as non-approved.")
     
     try:
         license_data, license_contents, licenses_by_type, approval_results, non_approved_packages = collect_licenses(
-            csproj_path, whitelisted_packages, whitelisted_license_hashes
+            args.csproj_path, whitelisted_packages, whitelisted_license_hashes
         )
         
         # Generate consolidated license file
-        license_file = f"{output_prefix}_licenses.txt"
+        license_file = f"{args.output_prefix}_licenses.txt"
         generate_consolidated_license_file(license_data, license_contents, approval_results, license_file)
         print(f"✓ Consolidated license file written to {license_file}")
         print(f"  Found license content for {len(license_contents)} out of {len(license_data)} packages")
-        
-        # Generate summary report
-        summary_file = f"{output_prefix}_summary.txt"
-        generate_report(license_data, licenses_by_type, approval_results, non_approved_packages, summary_file)
-        
-        # Save raw JSON data
-        json_file = f"{output_prefix}_data.json"
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump({
-                'metadata': license_data,
-                'license_contents': license_contents,
-                'approval_results': approval_results
-            }, f, indent=2, ensure_ascii=False)
-        print(f"✓ Raw license data saved to {json_file}")
         
         # Report final approval status
         approved_count = sum(1 for result in approval_results.values() if result['approved'])
