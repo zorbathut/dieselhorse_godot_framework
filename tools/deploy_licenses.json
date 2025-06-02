@@ -1,0 +1,27 @@
+{
+  "whitelisted_packages": [
+    "GodotSharp",
+    "GodotSharpEditor",
+    "Godot.SourceGenerators"
+  ],
+
+  "whitelisted_license_hashes": [
+    "boost-1.0",
+    "1038fefb4162c5e42b425e328f9ef076b1246ea7c15b8eafea6ffe507f7be3f0",
+
+    "commandlineparser mit",
+    "823896e790c6f1b60466530279aeb322e4826d1501506cf02b31e330ec1bc072",
+
+    "mit",
+    "cc448b7dfc30a297007bcc1587b2a74ab772a4faabe91c3aab6428bdc925f46e",
+
+    "ms mit",
+    "9c853122f506c0a0f9c6d592ea64df3201be8974050d91b50ce6bc66822d374b",
+
+    "castlecore apache-1.0",
+    "66cb65042a16b7d1c410e27910a1ff178be974d60f2575aba6e63a5bfc8f02f4",
+
+    "moq bsd 3-clause",
+    "dbd890e3e81ea1c2b950a21f36ce83f18338db8be1f9546c2f77df6b1ddb770a"
+  ]
+}
