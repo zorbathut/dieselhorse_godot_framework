@@ -12,8 +12,157 @@ import shutil
 from urllib.parse import urljoin, urlparse
 import re
 import util
+from bs4 import BeautifulSoup
 
 util.cwdhack()
+
+def is_html_content(content):
+    """Check if content appears to be HTML."""
+    if not content:
+        return False
+    
+    # Look for common HTML indicators
+    html_indicators = [
+        '<html', '<HTML', '<!DOCTYPE', '<!doctype',
+        '<head>', '<HEAD>', '<body>', '<BODY>',
+        '<div', '<DIV', '<p>', '<P>', '<span', '<SPAN'
+    ]
+    
+    content_lower = content.lower().strip()
+    return any(indicator.lower() in content_lower for indicator in html_indicators)
+
+def is_spdx_content(soup):
+    """Check if the HTML content is from SPDX."""
+    # Look for SPDX-specific indicators
+    spdx_indicators = [
+        soup.find('h2', string='SPDX identifier'),
+        soup.find('h2', string='SPDX web page'),
+        soup.find(string=re.compile(r'licenses\.nuget\.org')),
+        soup.find(string=re.compile(r'SPDX project')),
+        soup.find('div', class_='optional-license-text'),
+        soup.find('div', class_='replaceable-license-text')
+    ]
+    
+    return any(indicator for indicator in spdx_indicators)
+
+def extract_spdx_license_text(soup):
+    """Extract just the license text from SPDX HTML, removing boilerplate."""
+    try:
+        # Start with the license title
+        license_parts = []
+        
+        # Get the main license title (h1)
+        title = soup.find('h1')
+        if title:
+            license_parts.append(title.get_text().strip())
+        
+        # Find the "License text" section and extract content after it
+        license_text_header = soup.find('h2', string='License text')
+        if license_text_header:
+            # Get all siblings after the "License text" header until we hit "SPDX web page"
+            current = license_text_header.next_sibling
+            while current:
+                # Stop if we hit the SPDX web page section or Notice section
+                if (current.name == 'h2' and 
+                    (current.get_text().strip() in ['SPDX web page', 'Notice'])):
+                    break
+                
+                if current.name:  # It's a tag, not just text
+                    # Include divs with license text classes and regular paragraphs
+                    if (current.name in ['div', 'p'] and 
+                        (not current.get('class') or 
+                         any(cls in current.get('class', []) for cls in ['optional-license-text', 'replaceable-license-text']))):
+                        license_parts.append(str(current))
+                
+                current = current.next_sibling
+        else:
+            # Fallback: if no "License text" header, look for the license content divs and paragraphs
+            for element in soup.find_all(['div', 'p']):
+                if (element.get('class') and 
+                    any(cls in element.get('class') for cls in ['optional-license-text', 'replaceable-license-text'])):
+                    license_parts.append(str(element))
+                elif (element.name == 'p' and 
+                      not element.find_parent(['h2']) and  # Not inside a header section
+                      'SPDX' not in element.get_text() and
+                      'licenses.nuget.org' not in element.get_text()):
+                    license_parts.append(str(element))
+        
+        # Create new HTML with just the license content
+        if license_parts:
+            clean_html = '<html><body>' + ''.join(license_parts) + '</body></html>'
+            return BeautifulSoup(clean_html, 'html.parser')
+        
+    except Exception as e:
+        print(f"  Warning: Failed to extract SPDX license text: {e}")
+    
+    return soup  # Return original if extraction fails
+
+def html_to_text(html_content):
+    """Convert HTML content to plain text while preserving structure."""
+    try:
+        # Parse the HTML
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+        
+        # Handle SPDX content specially
+        if is_spdx_content(soup):
+            print(f"  Detected SPDX content, extracting license text only")
+            soup = extract_spdx_license_text(soup)
+        
+        # Convert block elements to text with appropriate spacing
+        # Handle paragraphs
+        for p in soup.find_all('p'):
+            p.insert_after('\n\n')
+        
+        # Handle line breaks
+        for br in soup.find_all('br'):
+            br.replace_with('\n')
+        
+        # Handle other block elements (divs, headers, etc.)
+        for tag in soup.find_all(['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article']):
+            tag.insert_after('\n\n')
+        
+        # Handle list items
+        for li in soup.find_all('li'):
+            li.insert_before('• ')
+            li.insert_after('\n')
+        
+        # Handle lists (add extra spacing)
+        for ul_ol in soup.find_all(['ul', 'ol']):
+            ul_ol.insert_after('\n')
+        
+        # Get text content
+        text = soup.get_text()
+        
+        # Clean up excessive whitespace while preserving paragraph structure
+        # Replace multiple consecutive newlines with double newlines
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        
+        # Clean up lines but preserve paragraph breaks
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            cleaned_line = line.strip()
+            if cleaned_line or (cleaned_lines and cleaned_lines[-1]):  # Keep empty lines that separate paragraphs
+                cleaned_lines.append(cleaned_line)
+        
+        # Join lines and clean up final spacing
+        text = '\n'.join(cleaned_lines)
+        text = re.sub(r'\n\n\n+', '\n\n', text)  # Max 2 consecutive newlines
+        text = text.strip()
+        
+        return text
+    except Exception as e:
+        print(f"  Warning: Failed to parse HTML content: {e}")
+        # Fallback to simple tag removal with basic paragraph preservation
+        text = re.sub(r'<p[^>]*>', '\n\n', html_content)
+        text = re.sub(r'</p>', '', text)
+        text = re.sub(r'<br[^>]*/?>', '\n', text)
+        text = re.sub(r'<[^>]+>', '', text)
+        return re.sub(r'\n{3,}', '\n\n', text).strip()
 
 def run_dotnet_command(csproj_path):
     """Run dotnet list package command to get all packages."""
@@ -62,6 +211,12 @@ def download_license_from_package(package_name, package_version, license_file_pa
                                     license_content = license_content.decode('utf-8')
                                 except UnicodeDecodeError:
                                     license_content = license_content.decode('latin-1', errors='replace')
+                                
+                                # Check if content is HTML and convert if needed
+                                if is_html_content(license_content):
+                                    print(f"  Converting HTML license content to text")
+                                    license_content = html_to_text(license_content)
+                                
                                 break
                     
                     return license_content
@@ -86,7 +241,14 @@ def download_license_from_url(license_url):
         
         response = requests.get(license_url, timeout=30)
         if response.status_code == 200:
-            return response.text
+            content = response.text
+            
+            # Check if content is HTML and convert if needed
+            if is_html_content(content):
+                print(f"  Converting HTML license content to text")
+                content = html_to_text(content)
+            
+            return content
         else:
             print(f"  Failed to download license: HTTP {response.status_code}")
             
