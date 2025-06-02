@@ -30,5 +30,5 @@
 		"module_raycast_enabled": "no",
 		"module_webrtc_enabled": "no",
 		"module_webxr_enabled": "no"
-	},
+	}
 }
