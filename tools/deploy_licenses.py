@@ -1,4 +1,3 @@
-
 import argparse
 import hashlib
 import json
@@ -565,9 +564,97 @@ def find_single_csproj():
         sys.exit(1)
     
     return str(csproj_files[0])
+
+def run_license_analysis(csproj_path=None, output_prefix="licenses", config_file=None):
+    """
+    Core function to perform license analysis on a .NET project.
     
+    Args:
+        csproj_path (str, optional): Path to the .csproj file to analyze (default: auto-detect single .csproj)
+        output_prefix (str): Prefix for output files
+        config_file (str, optional): Path to whitelist configuration file (default: "tools/deploy_licenses.json")
+    
+    Returns:
+        dict: Analysis results containing:
+            - approved_count: Number of approved packages
+            - total_count: Total number of packages
+            - non_approved_packages: List of non-approved package info
+            - license_data: Package license metadata
+            - license_contents: Package license content
+            - approval_results: Package approval status
+            - success: Whether all packages were approved
+    """
+    # Handle default values
+    if csproj_path is None:
+        csproj_path = find_single_csproj()
+    
+    if config_file is None:
+        config_file = "tools/deploy_licenses.json"
+    
+    if not os.path.exists(csproj_path):
+        raise FileNotFoundError(f"{csproj_path} does not exist")
+    
+    # Load whitelist configuration
+    whitelisted_packages, whitelisted_license_hashes = set(), set()
+    if os.path.exists(config_file):
+        whitelisted_packages, whitelisted_license_hashes = load_whitelist_config(config_file)
+    else:
+        print(f"Warning: Config file '{config_file}' not found. All packages will be flagged as non-approved.")
+    
+    # Perform license analysis
+    result = collect_licenses(csproj_path, whitelisted_packages, whitelisted_license_hashes)
+    if not result:
+        raise RuntimeError("Failed to collect license information")
+    
+    license_data, license_contents, licenses_by_type, approval_results, non_approved_packages = result
+    
+    # Generate consolidated license file
+    license_file = f"{output_prefix}_licenses.txt"
+    with open(license_file, 'w', encoding='utf-8') as f:
+        generate_consolidated_license_file(license_data, license_contents, approval_results, f, False)
+    print(f"✓ Consolidated license file written to {license_file}")
+    print(f"  Found license content for {len(license_contents)} out of {len(license_data)} packages")
+
+    # Write to stdout
+    generate_consolidated_license_file(license_data, license_contents, approval_results, sys.stdout, True)
+    
+    # Calculate final approval status
+    approved_count = sum(1 for result in approval_results.values() if result['approved'])
+    total_count = len(approval_results)
+    
+    # Print summary
+    print(f"\n{'='*60}")
+    print(f"FINAL APPROVAL STATUS: {approved_count}/{total_count} packages approved")
+    
+    if non_approved_packages:
+        print(f"\n❌ NON-APPROVED PACKAGES ({len(non_approved_packages)}):")
+        for pkg_info in non_approved_packages:
+            print(f"  - {pkg_info['package']} ({pkg_info['reason']})")
+            if pkg_info['license_hash']:
+                print(f"    License Hash: {pkg_info['license_hash']}")
+        
+        print(f"\n💡 To approve these packages, add them to your whitelist config:")
+        print("   - Add package names to 'whitelisted_packages' array")
+        print("   - Add license hashes to 'whitelisted_license_hashes' array")
+        
+        print(f"\n❌ APPROVAL CHECK FAILED: {len(non_approved_packages)} non-approved packages found")
+    else:
+        print(f"\n✅ APPROVAL CHECK PASSED: All packages are approved")
+    
+    # Return analysis results
+    return {
+        'approved_count': approved_count,
+        'total_count': total_count,
+        'non_approved_packages': non_approved_packages,
+        'license_data': license_data,
+        'license_contents': license_contents,
+        'approval_results': approval_results,
+        'licenses_by_type': licenses_by_type,
+        'success': len(non_approved_packages) == 0
+    }
+
 def main():
-    """Parse command line arguments."""
+    """Parse command line arguments and run license analysis."""
     parser = argparse.ArgumentParser(
         description="Analyze NuGet package licenses in a .NET project and generate license reports.",
         epilog="Example: python deploy_licenses.py --csproj MyProject.csproj --output-prefix my_project --config whitelist_config.json"
@@ -575,72 +662,33 @@ def main():
 
     # All arguments with flags and default values
     parser.add_argument("--csproj", 
-                        dest = "csproj_path",
-                        default = find_single_csproj(),
-                        help = "Path to the .csproj file to analyze (default: 'Project.csproj')")
+                        dest="csproj_path",
+                        default=None,
+                        help="Path to the .csproj file to analyze (default: auto-detect)")
 
     parser.add_argument("--output-prefix", 
-                        default = "output_prefix",
-                        help = "Prefix for output files (default: 'licenses')")
+                        default="output_prefix",
+                        help="Prefix for output files (default: 'output_prefix')")
 
     parser.add_argument("--config", 
-                        dest = "config_file",
-                        default = "tools/deploy_licenses.json",
-                        help = "Path to whitelist configuration file")
+                        dest="config_file",
+                        default=None,
+                        help="Path to whitelist configuration file (default: 'tools/deploy_licenses.json')")
     
     args = parser.parse_args()
     
-    if not os.path.exists(args.csproj_path):
-        print(f"Error: {args.csproj_path} does not exist")
-        sys.exit(1)
-    
-    # Load whitelist configuration
-    whitelisted_packages = set()
-    whitelisted_license_hashes = set()
-    
-    if args.config_file:
-        whitelisted_packages, whitelisted_license_hashes = load_whitelist_config(args.config_file)
-    else:
-        print("No config file provided. All packages will be flagged as non-approved.")
-    
     try:
-        license_data, license_contents, licenses_by_type, approval_results, non_approved_packages = collect_licenses(
-            args.csproj_path, whitelisted_packages, whitelisted_license_hashes
+        results = run_license_analysis(
+            csproj_path=args.csproj_path,
+            output_prefix=args.output_prefix,
+            config_file=args.config_file
         )
         
-        # Generate consolidated license file
-        license_file = f"{args.output_prefix}_licenses.txt"
-        with open(license_file, 'w', encoding='utf-8') as f:
-            generate_consolidated_license_file(license_data, license_contents, approval_results, f, False)
-        print(f"✓ Consolidated license file written to {license_file}")
-        print(f"  Found license content for {len(license_contents)} out of {len(license_data)} packages")
-
-        # write to stdout
-        generate_consolidated_license_file(license_data, license_contents, approval_results, sys.stdout, True)
-        
-        # Report final approval status
-        approved_count = sum(1 for result in approval_results.values() if result['approved'])
-        total_count = len(approval_results)
-        
-        print(f"\n{'='*60}")
-        print(f"FINAL APPROVAL STATUS: {approved_count}/{total_count} packages approved")
-        
-        if non_approved_packages:
-            print(f"\n❌ NON-APPROVED PACKAGES ({len(non_approved_packages)}):")
-            for pkg_info in non_approved_packages:
-                print(f"  - {pkg_info['package']} ({pkg_info['reason']})")
-                if pkg_info['license_hash']:
-                    print(f"    License Hash: {pkg_info['license_hash']}")
-            
-            print(f"\n💡 To approve these packages, add them to your whitelist config:")
-            print("   - Add package names to 'whitelisted_packages' array")
-            print("   - Add license hashes to 'whitelisted_license_hashes' array")
-            
-            print(f"\n❌ APPROVAL CHECK FAILED: {len(non_approved_packages)} non-approved packages found")
-            sys.exit(1)
-        else:
-            print(f"\n✅ APPROVAL CHECK PASSED: All packages are approved")
+        # Exit with appropriate code
+        if results['success']:
             sys.exit(0)
+        else:
+            sys.exit(1)
         
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
