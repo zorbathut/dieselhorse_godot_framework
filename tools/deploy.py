@@ -71,6 +71,10 @@ def generate_license_file(output_file, separator="-"*80):
         with open(godot_copyright_path, 'r', encoding='utf-8') as f:
             content = f.read()
         output_content.append(content)
+    
+    # Step 4: Accumulate C# license information
+    from deploy_licenses import run_license_analysis
+    output_content.append(run_license_analysis()["output_text"])
 
     # Write the combined license file
     with open(output_file, 'w', encoding='utf-8') as f:

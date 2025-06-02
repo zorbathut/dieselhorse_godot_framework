@@ -12,6 +12,7 @@ import zipfile
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+from io import StringIO
 
 from bs4 import BeautifulSoup
 import requests
@@ -512,6 +513,7 @@ def generate_consolidated_license_file(license_data, license_contents, approval_
                     f.write(f"License URL: {info['licenseUrl']}\n")
                 f.write("\n")
         else:
+            f.write("\n\n")
             f.write("=" * 80 + "\n")
             f.write(f"{package_key}\n")
         
@@ -556,13 +558,13 @@ def find_single_csproj():
     
     return str(csproj_files[0])
 
-def run_license_analysis(csproj_path=None, output_prefix="licenses", config_file=None):
+def run_license_analysis(csproj_path=None, output_file=None, config_file=None):
     """
     Core function to perform license analysis on a .NET project.
     
     Args:
         csproj_path (str, optional): Path to the .csproj file to analyze (default: auto-detect single .csproj)
-        output_prefix (str): Prefix for output files
+        output_file (str): Output filename
         config_file (str, optional): Path to whitelist configuration file (default: "tools/deploy_licenses.json")
     
     Returns:
@@ -574,6 +576,7 @@ def run_license_analysis(csproj_path=None, output_prefix="licenses", config_file
             - license_contents: Package license content
             - approval_results: Package approval status
             - success: Whether all packages were approved
+            - output_text: Full detailed output text
     """
     # Handle default values
     if csproj_path is None:
@@ -599,16 +602,20 @@ def run_license_analysis(csproj_path=None, output_prefix="licenses", config_file
     
     license_data, license_contents, licenses_by_type, approval_results, non_approved_packages = result
     
-    # Generate consolidated license file
-    license_file = f"{output_prefix}_licenses.txt"
-    with open(license_file, 'w', encoding='utf-8') as f:
-        generate_consolidated_license_file(license_data, license_contents, approval_results, f, False)
-    print(f"✓ Consolidated license file written to {license_file}")
-    print(f"  Found license content for {len(license_contents)} out of {len(license_data)} packages")
-
+    # Capture detailed output to string
+    output_buffer = StringIO()
+    generate_consolidated_license_file(license_data, license_contents, approval_results, output_buffer, False)
+    output_text = output_buffer.getvalue()
+    
+    # Optionally write consolidated license file to disk
+    if output_file != None:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            generate_consolidated_license_file(license_data, license_contents, approval_results, f, False)
+        print(f"✓ Consolidated license file written to {output_file}")
+    
     # Write to stdout
     generate_consolidated_license_file(license_data, license_contents, approval_results, sys.stdout, True)
-    
+
     # Calculate final approval status
     approved_count = sum(1 for result in approval_results.values() if result['approved'])
     total_count = len(approval_results)
@@ -641,14 +648,14 @@ def run_license_analysis(csproj_path=None, output_prefix="licenses", config_file
         'license_contents': license_contents,
         'approval_results': approval_results,
         'licenses_by_type': licenses_by_type,
-        'success': len(non_approved_packages) == 0
+        'success': len(non_approved_packages) == 0,
+        'output_text': output_text
     }
 
 def main():
     """Parse command line arguments and run license analysis."""
     parser = argparse.ArgumentParser(
         description="Analyze NuGet package licenses in a .NET project and generate license reports.",
-        epilog="Example: python deploy_licenses.py --csproj MyProject.csproj --output-prefix my_project --config whitelist_config.json"
     )
 
     # All arguments with flags and default values
@@ -657,9 +664,10 @@ def main():
                         default=None,
                         help="Path to the .csproj file to analyze (default: auto-detect)")
 
-    parser.add_argument("--output-prefix", 
-                        default="output_prefix",
-                        help="Prefix for output files (default: 'output_prefix')")
+    parser.add_argument("--output-file", 
+                        dest="output_file",
+                        default="licenses.txt",
+                        help="Output file (default: 'licenses.txt')")
 
     parser.add_argument("--config", 
                         dest="config_file",
@@ -671,8 +679,8 @@ def main():
     try:
         results = run_license_analysis(
             csproj_path=args.csproj_path,
-            output_prefix=args.output_prefix,
-            config_file=args.config_file
+            output_file=args.output_file,
+            config_file=args.config_file,
         )
         
         # Exit with appropriate code
