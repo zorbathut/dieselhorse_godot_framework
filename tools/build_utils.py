@@ -21,7 +21,7 @@ def get_build_profile():
     return f"build_profile=../project/godot.build_profile.json"
 
 def get_project_name():
-    return "tsoh"
+    return "planefarer"
 
 def get_project_version():
     # make sure to convert to an actual string
