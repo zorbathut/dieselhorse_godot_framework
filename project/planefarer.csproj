@@ -9,7 +9,7 @@
 
     <!-- "member" hides "other member" -->
     <WarningsAsErrors>CS0108</WarningsAsErrors>
-    <Configurations>Debug;Optimize;StrippedDebug;StrippedOptimize;Export</Configurations>
+    <Configurations>Debug;Optimize;StrippedDebug;StrippedOptimize;Export;StrippedExport</Configurations>
     <Platforms>AnyCPU</Platforms>
 
     <!-- even in release, we'll want these for crashlogs -->
