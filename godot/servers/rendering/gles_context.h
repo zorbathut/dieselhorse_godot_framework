@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rendering_context_driver_vulkan_ios.h                                 */
+/*  gles_context.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,31 +28,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
-#define RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
+#ifndef GLES_CONTEXT_H
+#define GLES_CONTEXT_H
 
-#ifdef VULKAN_ENABLED
+#include "core/object/class_db.h"
+#include "core/object/ref_counted.h"
+#include "servers/display_server.h"
+#include "servers/rendering/rendering_native_surface.h"
 
-#include "drivers/vulkan/rendering_context_driver_vulkan.h"
-
-#import <QuartzCore/CAMetalLayer.h>
-
-class RenderingContextDriverVulkanIOS : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
-
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-
+class GLESContext {
 public:
-	struct WindowPlatformData {
-		CAMetalLayer *const *layer_ptr;
-	};
+	virtual void initialize() = 0;
+	virtual bool create_framebuffer(DisplayServer::WindowID p_id, Ref<RenderingNativeSurface> p_native_surface) = 0;
+	virtual void resized(DisplayServer::WindowID p_id) = 0;
+	virtual void begin_rendering(DisplayServer::WindowID p_id) = 0;
+	virtual void end_rendering(DisplayServer::WindowID p_id) = 0;
+	virtual bool destroy_framebuffer(DisplayServer::WindowID p_id) = 0;
+	virtual void deinitialize() = 0;
+	virtual uint64_t get_fbo(DisplayServer::WindowID p_id) const = 0;
 
-	RenderingContextDriverVulkanIOS();
-	~RenderingContextDriverVulkanIOS();
+	virtual ~GLESContext() {}
 };
 
-#endif // VULKAN_ENABLED
-
-#endif // RENDERING_CONTEXT_DRIVER_VULKAN_IOS_H
+#endif // GLES_CONTEXT_H

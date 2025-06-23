@@ -246,6 +246,7 @@ public:
 	static ControlEditorToolbar *get_singleton() { return singleton; }
 
 	ControlEditorToolbar();
+	~ControlEditorToolbar();
 };
 
 // Editor plugin.

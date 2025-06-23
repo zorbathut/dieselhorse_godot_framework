@@ -107,6 +107,7 @@ public:
 	void remove_host_window(Window *p_window);
 
 	ProgressDialog();
+	~ProgressDialog();
 };
 
 #endif // PROGRESS_DIALOG_H

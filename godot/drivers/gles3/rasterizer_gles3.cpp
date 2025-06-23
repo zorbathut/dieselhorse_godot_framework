@@ -38,6 +38,7 @@
 #include "core/io/image.h"
 #include "core/os/os.h"
 #include "storage/texture_storage.h"
+#include "storage/utilities.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
 #define _EXT_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB 0x8243
@@ -380,6 +381,9 @@ RasterizerGLES3::RasterizerGLES3() {
 }
 
 RasterizerGLES3::~RasterizerGLES3() {
+	if (singleton == this) {
+		singleton = nullptr;
+	}
 }
 
 void RasterizerGLES3::_blit_render_target_to_screen(RID p_render_target, DisplayServer::WindowID p_screen, const Rect2 &p_screen_rect, uint32_t p_layer, bool p_first) {
@@ -404,7 +408,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(RID p_render_target, Display
 
 	GLuint read_fbo = 0;
 	glGenFramebuffers(1, &read_fbo);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, read_fbo);
+	FramebufferBinding binding(GL_READ_FRAMEBUFFER, read_fbo);
 
 	if (rt->view_count > 1) {
 		glFramebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rt->color, 0, p_layer);
@@ -413,7 +417,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(RID p_render_target, Display
 	}
 
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DisplayServer::get_singleton()->window_get_native_handle(DisplayServer::OPENGL_FBO, p_screen));
 
 	if (p_first) {
 		if (p_screen_rect.position != Vector2() || p_screen_rect.size != rt->size) {
@@ -443,7 +447,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(RID p_render_target, Display
 			GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	if (read_fbo != 0) {
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+		binding.reset();
 		glDeleteFramebuffers(1, &read_fbo);
 	}
 }
@@ -467,7 +471,12 @@ void RasterizerGLES3::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 
 	Size2i win_size = DisplayServer::get_singleton()->window_get_size();
 
-	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
+		// This is currently needed for GLES to keep the current window being rendered to up to date
+		DisplayServer::get_singleton()->gl_window_make_current(DisplayServer::MAIN_WINDOW_ID);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, DisplayServer::get_singleton()->window_get_native_handle(DisplayServer::OPENGL_FBO));
 	glViewport(0, 0, win_size.width, win_size.height);
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);

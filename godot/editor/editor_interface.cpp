@@ -860,6 +860,7 @@ void EditorInterface::create() {
 void EditorInterface::free() {
 	ERR_FAIL_NULL(singleton);
 	memdelete(singleton);
+	singleton = nullptr;
 }
 
 EditorInterface::EditorInterface() {

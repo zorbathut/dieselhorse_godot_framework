@@ -652,3 +652,8 @@ EditorRunBar::EditorRunBar() {
 	write_movie_button->set_tooltip_text(TTR("Enable Movie Maker mode.\nThe project will run at stable FPS and the visual and audio output will be recorded to a video file."));
 	write_movie_button->connect(SceneStringName(toggled), callable_mp(this, &EditorRunBar::_write_movie_toggled));
 }
+
+EditorRunBar::~EditorRunBar() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}

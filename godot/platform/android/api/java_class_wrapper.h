@@ -295,6 +295,7 @@ public:
 	Ref<JavaClass> wrap_jclass(jclass p_class, bool p_allow_private_methods_access = false);
 #endif
 	JavaClassWrapper();
+	~JavaClassWrapper();
 };
 
 #endif // JAVA_CLASS_WRAPPER_H

@@ -39,7 +39,6 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "rendering_context_driver_vulkan_ios.h"
 
 #include "drivers/vulkan/godot_vulkan.h"
 #endif // VULKAN_ENABLED
@@ -64,6 +63,9 @@ class DisplayServerIOS : public DisplayServer {
 #if defined(RD_ENABLED)
 	RenderingContextDriver *rendering_context = nullptr;
 	RenderingDevice *rendering_device = nullptr;
+#endif
+#if defined(GLES3_ENABLED)
+	GLESContext *gles_context = nullptr;
 #endif
 	NativeMenu *native_menu = nullptr;
 

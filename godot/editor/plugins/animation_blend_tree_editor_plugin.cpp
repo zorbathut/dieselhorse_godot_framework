@@ -1272,6 +1272,8 @@ AnimationNodeBlendTreeEditor::AnimationNodeBlendTreeEditor() {
 }
 
 AnimationNodeBlendTreeEditor::~AnimationNodeBlendTreeEditor() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
 }
 
 // EditorPluginAnimationNodeAnimation

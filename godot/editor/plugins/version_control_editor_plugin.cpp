@@ -1515,4 +1515,6 @@ VersionControlEditorPlugin::~VersionControlEditorPlugin() {
 	memdelete(version_commit_dock);
 	memdelete(version_control_dock);
 	memdelete(version_control_actions);
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
 }

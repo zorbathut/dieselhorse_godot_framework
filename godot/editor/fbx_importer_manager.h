@@ -64,6 +64,7 @@ public:
 	void show_dialog(bool p_exclusive = false);
 
 	FBXImporterManager();
+	~FBXImporterManager();
 };
 
 #endif // FBX_IMPORTER_MANAGER_H

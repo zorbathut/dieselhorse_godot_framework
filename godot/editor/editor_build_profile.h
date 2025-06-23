@@ -184,6 +184,7 @@ public:
 
 	static EditorBuildProfileManager *get_singleton() { return singleton; }
 	EditorBuildProfileManager();
+	~EditorBuildProfileManager();
 };
 
 #endif // EDITOR_BUILD_PROFILE_H

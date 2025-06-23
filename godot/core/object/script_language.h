@@ -202,7 +202,7 @@ public:
 
 	ScriptCodeCompletionCache();
 
-	virtual ~ScriptCodeCompletionCache() {}
+	virtual ~ScriptCodeCompletionCache();
 };
 
 class ScriptLanguage : public Object {

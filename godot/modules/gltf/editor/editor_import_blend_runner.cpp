@@ -393,4 +393,9 @@ EditorImportBlendRunner::EditorImportBlendRunner() {
 	EditorFileSystem::get_singleton()->connect("resources_reimported", callable_mp(this, &EditorImportBlendRunner::_resources_reimported));
 }
 
+EditorImportBlendRunner::~EditorImportBlendRunner() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}
+
 #endif // TOOLS_ENABLED

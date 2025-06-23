@@ -171,6 +171,7 @@ public:
 	static DynamicFontImportSettingsDialog *get_singleton();
 
 	DynamicFontImportSettingsDialog();
+	~DynamicFontImportSettingsDialog();
 };
 
 #endif // DYNAMIC_FONT_IMPORT_SETTINGS_H

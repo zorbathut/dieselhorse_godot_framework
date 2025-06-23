@@ -455,4 +455,6 @@ EditorExport::EditorExport() {
 }
 
 EditorExport::~EditorExport() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
 }

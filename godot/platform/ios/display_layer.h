@@ -29,7 +29,10 @@
 /**************************************************************************/
 
 #import <OpenGLES/EAGLDrawable.h>
+#import <OpenGLES/ES1/gl.h>
 #import <QuartzCore/QuartzCore.h>
+
+#include "servers/rendering/gles_context.h"
 
 @protocol DisplayLayer <NSObject>
 
@@ -37,6 +40,7 @@
 - (void)stopRenderDisplayLayer;
 - (void)initializeDisplayLayer;
 - (void)layoutDisplayLayer;
+- (void)setupContext:(GLESContext *)context withSurface:(Ref<RenderingNativeSurface> *)surface;
 
 @end
 
@@ -55,5 +59,4 @@ API_AVAILABLE(ios(13.0))
 
 API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 @interface GodotOpenGLLayer : CAEAGLLayer <DisplayLayer>
-
 @end

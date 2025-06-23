@@ -1970,6 +1970,11 @@ AnimationNodeStateMachineEditor::AnimationNodeStateMachineEditor() {
 	delete_all->connect(SceneStringName(pressed), callable_mp(this, &AnimationNodeStateMachineEditor::_delete_all));
 }
 
+AnimationNodeStateMachineEditor::~AnimationNodeStateMachineEditor() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}
+
 void EditorAnimationMultiTransitionEdit::add_transition(const StringName &p_from, const StringName &p_to, Ref<AnimationNodeStateMachineTransition> p_transition) {
 	Transition tr;
 	tr.from = p_from;

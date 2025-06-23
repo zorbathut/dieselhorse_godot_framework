@@ -103,6 +103,7 @@ public:
 
 	static RunInstancesDialog *get_singleton() { return singleton; }
 	RunInstancesDialog();
+	~RunInstancesDialog();
 };
 
 #endif // RUN_INSTANCES_DIALOG_H

@@ -181,3 +181,8 @@ FBXImporterManager::FBXImporterManager() {
 
 	add_child(browse_dialog);
 }
+
+FBXImporterManager::~FBXImporterManager() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}

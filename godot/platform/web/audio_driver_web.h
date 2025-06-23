@@ -167,6 +167,7 @@ public:
 	static AudioDriverWorklet *get_singleton() { return singleton; }
 
 	AudioDriverWorklet() { singleton = this; }
+	~AudioDriverWorklet() { singleton = nullptr; }
 };
 
 #endif // THREADS_ENABLED
@@ -190,6 +191,7 @@ public:
 	static AudioDriverScriptProcessor *get_singleton() { return singleton; }
 
 	AudioDriverScriptProcessor() { singleton = this; }
+	~AudioDriverScriptProcessor() { singleton = nullptr; }
 };
 
 #endif // AUDIO_DRIVER_WEB_H

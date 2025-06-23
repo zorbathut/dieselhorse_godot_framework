@@ -37,10 +37,16 @@ class CoreStringNames {
 	inline static CoreStringNames *singleton = nullptr;
 
 public:
-	static void create() { singleton = memnew(CoreStringNames); }
+	static void create() {
+		if (singleton == nullptr) {
+			singleton = memnew(CoreStringNames);
+		}
+	}
 	static void free() {
+#ifndef LIBGODOT_ENABLED
 		memdelete(singleton);
 		singleton = nullptr;
+#endif
 	}
 
 	_FORCE_INLINE_ static CoreStringNames *get_singleton() { return singleton; }

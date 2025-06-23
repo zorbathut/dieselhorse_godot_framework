@@ -538,6 +538,12 @@ ResourceFormatImporter::ResourceFormatImporter() {
 	singleton = this;
 }
 
+ResourceFormatImporter::~ResourceFormatImporter() {
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}
+
 //////////////
 
 void ResourceImporter::_bind_methods() {

@@ -5010,4 +5010,7 @@ RenderForwardClustered::~RenderForwardClustered() {
 		RD::get_singleton()->free(sdfgi_framebuffer_size_cache.begin()->value);
 		sdfgi_framebuffer_size_cache.remove(sdfgi_framebuffer_size_cache.begin());
 	}
+
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
 }

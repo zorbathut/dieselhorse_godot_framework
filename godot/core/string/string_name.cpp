@@ -68,14 +68,16 @@ StringName _scs_create(const char *p_chr, bool p_static) {
 }
 
 void StringName::setup() {
-	ERR_FAIL_COND(configured);
-	for (int i = 0; i < STRING_TABLE_LEN; i++) {
-		_table[i] = nullptr;
+	if (!configured) {
+		for (int i = 0; i < STRING_TABLE_LEN; i++) {
+			_table[i] = nullptr;
+		}
+		configured = true;
 	}
-	configured = true;
 }
 
 void StringName::cleanup() {
+#ifndef LIBGODOT_ENABLED
 	MutexLock lock(mutex);
 
 #ifdef DEBUG_ENABLED
@@ -129,6 +131,7 @@ void StringName::cleanup() {
 		print_verbose(vformat("StringName: %d unclaimed string names at exit.", lost_strings));
 	}
 	configured = false;
+#endif
 }
 
 void StringName::unref() {

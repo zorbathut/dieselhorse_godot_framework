@@ -657,3 +657,9 @@ TranslationServer::TranslationServer() {
 	doc_domain = get_or_add_domain("godot.documentation");
 	init_locale_info();
 }
+
+TranslationServer::~TranslationServer() {
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}

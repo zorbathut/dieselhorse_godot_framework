@@ -131,6 +131,7 @@ public:
 	HBoxContainer *get_buttons_container();
 
 	EditorRunBar();
+	~EditorRunBar();
 };
 
 #endif // EDITOR_RUN_BAR_H

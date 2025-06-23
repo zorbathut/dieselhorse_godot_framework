@@ -32,6 +32,7 @@
 
 #import "app_delegate.h"
 #import "device_metrics.h"
+#import "display_layer.h"
 #import "godot_view.h"
 #import "ios.h"
 #import "key_mapping_ios.h"
@@ -42,6 +43,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access_pack.h"
+#include "drivers/apple/rendering_native_surface_apple.h"
 
 #import <sys/utsname.h>
 
@@ -71,18 +73,7 @@ DisplayServerIOS::DisplayServerIOS(const String &p_rendering_driver, WindowMode 
 
 	CALayer *layer = nullptr;
 
-	union {
-#ifdef VULKAN_ENABLED
-		RenderingContextDriverVulkanIOS::WindowPlatformData vulkan;
-#endif
-#ifdef METAL_ENABLED
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability"
-		// Eliminate "RenderingContextDriverMetal is only available on iOS 14.0 or newer".
-		RenderingContextDriverMetal::WindowPlatformData metal;
-#pragma clang diagnostic pop
-#endif
-	} wpd;
+	Ref<RenderingNativeSurfaceApple> apple_surface;
 
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {
@@ -90,16 +81,16 @@ DisplayServerIOS::DisplayServerIOS(const String &p_rendering_driver, WindowMode 
 		if (!layer) {
 			ERR_FAIL_MSG("Failed to create iOS Vulkan rendering layer.");
 		}
-		wpd.vulkan.layer_ptr = (CAMetalLayer *const *)&layer;
-		rendering_context = memnew(RenderingContextDriverVulkanIOS);
+		apple_surface = RenderingNativeSurfaceApple::create((__bridge void *)layer);
+		rendering_context = apple_surface->create_rendering_context(rendering_driver);
 	}
 #endif
 #ifdef METAL_ENABLED
 	if (rendering_driver == "metal") {
 		if (@available(iOS 14.0, *)) {
 			layer = [AppDelegate.viewController.godotView initializeRenderingForDriver:@"metal"];
-			wpd.metal.layer = (CAMetalLayer *)layer;
-			rendering_context = memnew(RenderingContextDriverMetal);
+			apple_surface = RenderingNativeSurfaceApple::create((__bridge void *)layer);
+			rendering_context = apple_surface->create_rendering_context(rendering_driver);
 		} else {
 			OS::get_singleton()->alert("Metal is only supported on iOS 14.0 and later.");
 			r_error = ERR_UNAVAILABLE;
@@ -129,7 +120,7 @@ DisplayServerIOS::DisplayServerIOS(const String &p_rendering_driver, WindowMode 
 	}
 
 	if (rendering_context) {
-		if (rendering_context->window_create(MAIN_WINDOW_ID, &wpd) != OK) {
+		if (rendering_context->window_create(MAIN_WINDOW_ID, apple_surface) != OK) {
 			ERR_PRINT(vformat("Failed to create %s window.", rendering_driver));
 			memdelete(rendering_context);
 			rendering_context = nullptr;
@@ -157,11 +148,16 @@ DisplayServerIOS::DisplayServerIOS(const String &p_rendering_driver, WindowMode 
 
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3") {
-		CALayer *layer = [AppDelegate.viewController.godotView initializeRenderingForDriver:@"opengl3"];
+		CALayer<DisplayLayer> *layer = [AppDelegate.viewController.godotView initializeRenderingForDriver:@"opengl3"];
 
 		if (!layer) {
 			ERR_FAIL_MSG("Failed to create iOS OpenGLES rendering layer.");
 		}
+
+		apple_surface = RenderingNativeSurfaceApple::create((__bridge void *)layer);
+		gles_context = apple_surface->create_gles_context();
+		Ref<RenderingNativeSurface> native_surface = Ref<RenderingNativeSurface>(Object::cast_to<RenderingNativeSurface>(apple_surface.ptr()));
+		[layer setupContext:gles_context withSurface:&native_surface];
 
 		RasterizerGLES3::make_current(false);
 	}
@@ -565,6 +561,14 @@ int64_t DisplayServerIOS::window_get_native_handle(HandleType p_handle_type, Win
 		case WINDOW_VIEW: {
 			return (int64_t)AppDelegate.viewController.godotView;
 		}
+#if defined(GLES3_ENABLED)
+		case OPENGL_FBO: {
+			if (rendering_driver == "opengl3") {
+				return (int64_t)gles_context->get_fbo(DisplayServer::MAIN_WINDOW_ID);
+			}
+			return 0;
+		}
+#endif
 		default: {
 			return 0;
 		}

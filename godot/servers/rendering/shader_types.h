@@ -56,6 +56,7 @@ public:
 	const List<String> &get_types_list() const;
 
 	ShaderTypes();
+	~ShaderTypes();
 };
 
 #endif // SHADER_TYPES_H

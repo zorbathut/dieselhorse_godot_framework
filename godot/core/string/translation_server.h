@@ -159,6 +159,7 @@ public:
 #endif // TOOLS_ENABLED
 
 	TranslationServer();
+	~TranslationServer();
 };
 
 #endif // TRANSLATION_SERVER_H

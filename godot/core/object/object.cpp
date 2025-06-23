@@ -118,6 +118,8 @@ TypedArray<Dictionary> convert_property_list(const List<PropertyInfo> *p_list) {
 MethodInfo::operator Dictionary() const {
 	Dictionary d;
 	d["name"] = name;
+	d["is_static"] = is_static;
+	d["hash"] = hash;
 	d["args"] = convert_property_list(&arguments);
 	Array da;
 	for (int i = 0; i < default_arguments.size(); i++) {
@@ -168,32 +170,32 @@ MethodInfo MethodInfo::from_dict(const Dictionary &p_dict) {
 uint32_t MethodInfo::get_compatibility_hash() const {
 	bool has_return = (return_val.type != Variant::NIL) || (return_val.usage & PROPERTY_USAGE_NIL_IS_VARIANT);
 
-	uint32_t hash = hash_murmur3_one_32(has_return);
-	hash = hash_murmur3_one_32(arguments.size(), hash);
+	uint32_t compat_hash = hash_murmur3_one_32(has_return);
+	compat_hash = hash_murmur3_one_32(arguments.size(), compat_hash);
 
 	if (has_return) {
-		hash = hash_murmur3_one_32(return_val.type, hash);
+		compat_hash = hash_murmur3_one_32(return_val.type, compat_hash);
 		if (return_val.class_name != StringName()) {
-			hash = hash_murmur3_one_32(return_val.class_name.hash(), hash);
+			compat_hash = hash_murmur3_one_32(return_val.class_name.hash(), compat_hash);
 		}
 	}
 
 	for (const PropertyInfo &arg : arguments) {
-		hash = hash_murmur3_one_32(arg.type, hash);
+		compat_hash = hash_murmur3_one_32(arg.type, compat_hash);
 		if (arg.class_name != StringName()) {
-			hash = hash_murmur3_one_32(arg.class_name.hash(), hash);
+			compat_hash = hash_murmur3_one_32(arg.class_name.hash(), compat_hash);
 		}
 	}
 
-	hash = hash_murmur3_one_32(default_arguments.size(), hash);
+	compat_hash = hash_murmur3_one_32(default_arguments.size(), compat_hash);
 	for (const Variant &v : default_arguments) {
-		hash = hash_murmur3_one_32(v.hash(), hash);
+		compat_hash = hash_murmur3_one_32(v.hash(), compat_hash);
 	}
 
-	hash = hash_murmur3_one_32(flags & METHOD_FLAG_CONST ? 1 : 0, hash);
-	hash = hash_murmur3_one_32(flags & METHOD_FLAG_VARARG ? 1 : 0, hash);
+	compat_hash = hash_murmur3_one_32(flags & METHOD_FLAG_CONST ? 1 : 0, compat_hash);
+	compat_hash = hash_murmur3_one_32(flags & METHOD_FLAG_VARARG ? 1 : 0, compat_hash);
 
-	return hash_fmix32(hash);
+	return hash_fmix32(compat_hash);
 }
 
 Object::Connection::operator Variant() const {
@@ -1570,8 +1572,12 @@ Variant Object::_get_indexed_bind(const NodePath &p_name) const {
 	return get_indexed(p_name.get_as_property_path().get_subnames());
 }
 
-void Object::initialize_class() {
+void Object::initialize_class(bool deinit) {
 	static bool initialized = false;
+	if (deinit) {
+		initialized = false;
+		return;
+	}
 	if (initialized) {
 		return;
 	}
@@ -2368,7 +2374,12 @@ void ObjectDB::remove_instance(Object *p_object) {
 }
 
 void ObjectDB::setup() {
-	//nothing to do now
+	spin_lock.lock();
+	slot_count = 0;
+	slot_max = 0;
+	object_slots = nullptr;
+	validator_counter = 0;
+	spin_lock.unlock();
 }
 
 void ObjectDB::cleanup() {
@@ -2413,7 +2424,10 @@ void ObjectDB::cleanup() {
 
 	if (object_slots) {
 		memfree(object_slots);
+		object_slots = nullptr;
 	}
-
+	slot_count = 0;
+	slot_max = 0;
+	validator_counter = 0;
 	spin_lock.unlock();
 }

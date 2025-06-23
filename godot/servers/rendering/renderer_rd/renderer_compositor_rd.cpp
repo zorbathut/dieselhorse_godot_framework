@@ -203,7 +203,7 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 		return;
 	}
 
-	Error err = RD::get_singleton()->screen_prepare_for_drawing(DisplayServer::MAIN_WINDOW_ID);
+	Error err = RD::get_singleton()->screen_prepare_for_drawing();
 	if (err != OK) {
 		// Window is minimized and does not have valid swapchain, skip drawing without printing errors.
 		return;

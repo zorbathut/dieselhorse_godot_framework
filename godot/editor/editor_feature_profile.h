@@ -184,6 +184,7 @@ public:
 
 	static EditorFeatureProfileManager *get_singleton() { return singleton; }
 	EditorFeatureProfileManager();
+	~EditorFeatureProfileManager();
 };
 
 #endif // EDITOR_FEATURE_PROFILE_H

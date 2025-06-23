@@ -1231,6 +1231,8 @@ RuntimeNodeSelect::~RuntimeNodeSelect() {
 		RS::get_singleton()->free(sbox_3d_instance_xray_ofs);
 	}
 #endif // _3D_DISABLED
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
 }
 
 void RuntimeNodeSelect::_setup(const Dictionary &p_settings) {

@@ -124,6 +124,7 @@ public:
 	void register_split(SplitContainer *p_split);
 
 	TileSetEditor();
+	~TileSetEditor();
 };
 
 class TileSourceInspectorPlugin : public EditorInspectorPlugin {

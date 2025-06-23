@@ -851,6 +851,11 @@ EditorDockManager::EditorDockManager() {
 	EditorNode::get_singleton()->get_gui_base()->connect(SceneStringName(theme_changed), callable_mp(this, &EditorDockManager::_update_docks_menu));
 }
 
+EditorDockManager::~EditorDockManager() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}
+
 void DockContextPopup::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {

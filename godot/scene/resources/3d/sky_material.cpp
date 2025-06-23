@@ -266,6 +266,8 @@ void ProceduralSkyMaterial::cleanup_shader() {
 		RS::get_singleton()->free(shader_cache[0]);
 		RS::get_singleton()->free(shader_cache[1]);
 	}
+	shader_cache[0] = RID();
+	shader_cache[1] = RID();
 }
 
 void ProceduralSkyMaterial::_update_shader() {
@@ -460,6 +462,8 @@ void PanoramaSkyMaterial::cleanup_shader() {
 		RS::get_singleton()->free(shader_cache[0]);
 		RS::get_singleton()->free(shader_cache[1]);
 	}
+	shader_cache[0] = RID();
+	shader_cache[1] = RID();
 }
 
 void PanoramaSkyMaterial::_update_shader() {
@@ -688,6 +692,8 @@ void PhysicalSkyMaterial::cleanup_shader() {
 		RS::get_singleton()->free(shader_cache[0]);
 		RS::get_singleton()->free(shader_cache[1]);
 	}
+	shader_cache[0] = RID();
+	shader_cache[1] = RID();
 }
 
 void PhysicalSkyMaterial::_update_shader() {

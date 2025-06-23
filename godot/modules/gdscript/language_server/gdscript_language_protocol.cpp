@@ -346,3 +346,8 @@ GDScriptLanguageProtocol::GDScriptLanguageProtocol() {
 	set_scope("workspace", workspace.ptr());
 	workspace->root = ProjectSettings::get_singleton()->get_resource_path();
 }
+
+GDScriptLanguageProtocol::~GDScriptLanguageProtocol() {
+	ERR_FAIL_COND(singleton != this);
+	singleton = nullptr;
+}

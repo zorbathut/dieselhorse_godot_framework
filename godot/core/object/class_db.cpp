@@ -836,7 +836,7 @@ use_script:
 	return scr.is_valid() && scr->is_valid() && scr->is_abstract();
 }
 
-void ClassDB::_add_class2(const StringName &p_class, const StringName &p_inherits) {
+void ClassDB::_add_class2(const StringName &p_class, const StringName &p_inherits, void (*p_deinit_func)(bool deinit)) {
 	OBJTYPE_WLOCK;
 
 	const StringName &name = p_class;
@@ -846,6 +846,7 @@ void ClassDB::_add_class2(const StringName &p_class, const StringName &p_inherit
 	classes[name] = ClassInfo();
 	ClassInfo &ti = classes[name];
 	ti.name = name;
+	ti.deinit_func = p_deinit_func;
 	ti.inherits = p_inherits;
 	ti.api = current_api;
 
@@ -862,6 +863,8 @@ static MethodInfo info_from_bind(MethodBind *p_method) {
 	MethodInfo minfo;
 	minfo.name = p_method->get_name();
 	minfo.id = p_method->get_method_id();
+	minfo.is_static = p_method->is_static();
+	minfo.hash = p_method->get_hash();
 
 	for (int i = 0; i < p_method->get_argument_count(); i++) {
 		minfo.arguments.push_back(p_method->get_argument_info(i));
@@ -2362,6 +2365,9 @@ void ClassDB::cleanup() {
 			for (uint32_t i = 0; i < F.value.size(); i++) {
 				memdelete(F.value[i]);
 			}
+		}
+		if (ti.deinit_func) {
+			ti.deinit_func(true);
 		}
 	}
 
