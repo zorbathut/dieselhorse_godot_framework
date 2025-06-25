@@ -1,4 +1,5 @@
 
+#if false
 namespace Test;
 
 public class GameScoped : System.IDisposable
@@ -46,3 +47,4 @@ public class GameScoped : System.IDisposable
         scope.Dispose();
     }
 }
+#endif

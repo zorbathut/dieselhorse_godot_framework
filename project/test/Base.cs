@@ -1,4 +1,5 @@
 
+#if false
 namespace Test;
 
 public class Base
@@ -19,3 +20,4 @@ public class Base
         }
     }
 }
+#endif

@@ -14,7 +14,4 @@
 # coverage results
 /TestResults
 
-# weird build spam; this shows up when building on visual studio and I don't understand why
-/gdUnit4Net
-
 **/.claude/settings.local.json

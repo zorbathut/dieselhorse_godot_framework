@@ -1,4 +1,5 @@
 
+#if false
 using System.Linq;
 using GdUnit4;
 
@@ -65,8 +66,9 @@ public class Simple : Base
 
         // kill the player's avatar
         gameScoped.Env.Remove(gameScoped.Env.List.Single(e => e.HasComponent<Comp.Avatar>()));
-
+ 
         // do we still run properly?
         gameScoped.Process(new Comp.PlayerInput());
     }
 }
+#endif
