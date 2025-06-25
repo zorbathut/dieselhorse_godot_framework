@@ -57,12 +57,14 @@ def run(dev):
             "target=editor"]
             + (["dev_build=yes"] if dev else []) +
             [f"precision={build_utils.get_float_precision()}",
-            build_utils.get_build_profile()
+            build_utils.get_build_profile(),
+            "extra_suffix=dev" if dev else "extra_suffix=release",
+            "output_suffix=.universal.editor.exe",
         ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Generate Mono glue files.
     util.run([
-            util.godot_bin(dev),
+            os.path.join("bin", "godot.universal.editor.exe"),
             "--headless",
             "--generate-mono-glue", "./modules/mono/glue",
         ], check=True, cwd="godot", env=build_utils.get_env())
@@ -77,21 +79,6 @@ def run(dev):
            "--godot-output-dir", "./bin",
            f"--precision={build_utils.get_float_precision()}",
         ], check=True, cwd="godot", env=build_utils.get_env())
-
-    # Set up our fake universal link
-    # We append .exe to it because Windows wants it and nothing else minds.
-    universal_editor_path = "godot/bin/godot.universal.editor.exe"
-    if os.path.exists(universal_editor_path):
-        os.remove(universal_editor_path)
-    
-    godot_src_path = os.path.join("godot", util.godot_bin(dev))
-    util.platformswitch(
-        linux = lambda: os.symlink(os.path.abspath(godot_src_path), universal_editor_path),
-        mac = lambda: os.symlink(os.path.abspath(godot_src_path), universal_editor_path),
-        
-        # This can be made faster by using a shortcut or mklink, but that's tough
-        windows = lambda: shutil.copyfile(godot_src_path, universal_editor_path),
-    )()
     
     # Restore the .net code
     util.run([
@@ -101,7 +88,7 @@ def run(dev):
 
     # import with headless
     util.run([
-            os.path.abspath(godot_src_path),
+            os.path.join("..", "godot", "bin", "godot.universal.editor.exe"),
             "--headless",
             "--import",
         ], check=True, cwd="project", env=build_utils.get_env())

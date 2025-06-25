@@ -8,7 +8,7 @@ util.cwdhack()
 
 def run(dev):
     util.run([
-        os.path.join("godot", util.godot_bin(dev)),
+        os.path.join("godot", "bin", "godot.universal.editor.exe"),
         "project/project.godot"
     ])
 

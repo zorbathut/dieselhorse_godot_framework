@@ -97,7 +97,8 @@ def run():
             "arch=x86_64",
             "production=yes",
             f"precision={build_utils.get_float_precision()}", 
-            build_utils.get_build_profile()
+            build_utils.get_build_profile(),
+            # no extra suffix because it conflicts with the export process
         ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Mono glue files already exist from us building the editor
@@ -127,7 +128,7 @@ def run():
 
     # Run headless export
     util.run([
-            "godot/" + util.godot_bin(False),
+            "godot/bin/godot.universal.editor.exe",
             "--headless",
             "--path", "project",
             "--export-release", args.target,

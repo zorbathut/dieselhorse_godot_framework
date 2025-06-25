@@ -44,15 +44,3 @@ def run(command, **kwargs):
         command = " ".join(command)
 
     return subprocess.run(command, **kwargs)
-
-def godot_bin(dev):
-    if dev:
-        return platformswitch(
-            linux = "bin/godot.linuxbsd.editor.dev.double.x86_64.mono",
-            windows = "bin\\godot.windows.editor.dev.double.x86_64.mono.exe",
-            mac = "bin/godot.macos.editor.dev.double.x86_64.mono")
-    else:
-        return platformswitch(
-            linux = "bin/godot.linuxbsd.editor.double.x86_64.mono",
-            windows = "bin\\godot.windows.editor.double.x86_64.mono.exe",
-            mac = "bin/godot.macos.editor.double.x86_64.mono")
