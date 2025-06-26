@@ -236,7 +236,9 @@ opts.Add(BoolVariable("engine_update_check", "Enable engine update checks in the
 opts.Add(BoolVariable("steamapi", "Enable minimal SteamAPI integration for usage time tracking (editor only)", False))
 opts.Add("cache_path", "Path to a directory where SCons cache files will be stored. No value disables the cache.", "")
 opts.Add("cache_limit", "Max size (in GiB) for the SCons cache. 0 means no limit.", "0")
+# DH BEGIN - custom filename stuff
 opts.Add("output_suffix", "Override final output suffix", "")
+# DH END - custom filename stuff
 
 # Thirdparty libraries
 opts.Add(BoolVariable("builtin_brotli", "Use the built-in Brotli library", True))
@@ -990,8 +992,10 @@ env["SHLIBSUFFIX"] = suffix + env["SHLIBSUFFIX"]
 env["OBJPREFIX"] = env["object_prefix"]
 env["SHOBJPREFIX"] = env["object_prefix"]
 
+# DH BEGIN - custom filename stuff
 if env["output_suffix"]:
     env["PROGSUFFIX"] = env["output_suffix"]
+# DH END - custom filename stuff
 
 if env["disable_3d"]:
     if env.editor_build:
