@@ -179,6 +179,12 @@ private:
 		}
 #endif
 		api_assemblies_dir = api_assemblies_base_dir.path_join(GDMono::get_expected_api_build_config());
+
+		// DH BEGIN - non-isolation-context'ed DLLs
+		if (Main::api_assemblies_dir != "") {
+			api_assemblies_dir = Main::api_assemblies_dir;
+		}
+		// DH BEGIN - non-isolation-context'ed DLLs
 #else // TOOLS_ENABLED
 		String platform = _get_platform_name();
 		String arch = Engine::get_singleton()->get_architecture_name();

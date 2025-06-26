@@ -56,6 +56,10 @@ GDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], 
 		return nullptr;
 	}
 
+	// DH BEGIN - can't figure out how to start this from C#, but I never don't want it started, so let's just do it
+	instance->start();
+	// DH END - can't figure out how to start this from C#, but I never don't want it started, so let's just do it
+
 	return (GDExtensionObjectPtr)instance;
 }
 

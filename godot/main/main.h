@@ -90,6 +90,7 @@ public:
 	// DH BEGIN - allow control over target build config
 	#ifdef TOOLS_ENABLED
 	static String cs_build_config_file;
+	static String api_assemblies_dir;
 	#endif
 	// DH END - allow control over target build config
 };

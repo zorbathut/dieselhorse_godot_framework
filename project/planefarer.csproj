@@ -28,6 +28,8 @@
 
     <Compile Remove="thirdparty/greact/greact-generator/**/*" />
     <ProjectReference Include="thirdparty\greact\greact-generator\greact-generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+
+    <Compile Remove="test/**/*" />
   </ItemGroup>
 
   <ItemGroup Condition="$(Configuration.Contains('Stripped')) Or $(Configuration.Contains('Export'))">

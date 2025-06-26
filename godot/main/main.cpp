@@ -1093,6 +1093,18 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		}
 		// DH END - allow control over target build config
 
+		// DH BEGIN - non-isolation-context'ed DLLs
+		if (arg == "--api_assemblies_dir") {
+			if (N) {
+				api_assemblies_dir = N->get();
+				N = N->next();
+			} else {
+				OS::get_singleton()->print("Missing api assemblies dir argument, aborting.\n");
+				goto error;
+			}
+		}
+		// DH END - non-isolation-context'ed DLLs
+
 #endif
 
 		if (adding_user_args) {
@@ -4434,9 +4446,12 @@ uint32_t Main::frame = 0;
 bool Main::force_redraw_requested = false;
 int Main::iterating = 0;
 
+// DH BEGIN - non-isolation-context'ed DLLs and, uh, something else?
 #ifdef TOOLS_ENABLED
 String Main::cs_build_config_file = "";
+String Main::api_assemblies_dir = "";
 #endif
+// DH END - non-isolation-context'ed DLLs and, uh, something else?
 
 bool Main::is_iterating() {
 	return iterating > 0;

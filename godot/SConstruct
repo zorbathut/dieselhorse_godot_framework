@@ -932,6 +932,15 @@ suffix += "." + env["arch"]
 if not env["threads"]:
     suffix += ".nothreads"
 
+# DH BEGIN - libgodot suffix
+if env["library_type"] != "executable":
+    # If we are building a library, append the library type.
+    if env["library_type"] == "static_library":
+        suffix += ".static"
+    elif env["library_type"] == "shared_library":
+        suffix += ".shared"
+# DH END - libgodot suffix
+
 suffix += env.extra_suffix
 
 sys.path.remove(tmppath)
@@ -1010,6 +1019,7 @@ env["SHOBJPREFIX"] = env["object_prefix"]
 
 # DH BEGIN - custom filename stuff
 if env["output_suffix"]:
+    env["SHLIBSUFFIX"] = env["output_suffix"]
     env["PROGSUFFIX"] = env["output_suffix"]
 # DH END - custom filename stuff
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -93,6 +94,8 @@ namespace GodotPlugins
         {
             try
             {
+
+
                 _editorHint = editorHint.ToBool();
 
                 _dllImportResolver = new GodotDllImportResolver(godotDllHandle).OnResolveDllImport;
@@ -144,12 +147,33 @@ namespace GodotPlugins
                 if (_projectLoadContext != null)
                     return godot_bool.True; // Already loaded
 
+                // DH BEGIN - avoid double-loading C# DLLs in case we're in libgodot mode
                 string assemblyPath = new(nAssemblyPath);
+                string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 
-                (var projectAssembly, _projectLoadContext) = LoadPlugin(assemblyPath, isCollectible: _editorHint);
+                // Check if an assembly with this name is already loaded
+                Assembly? existingAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName, StringComparison.OrdinalIgnoreCase));
 
-                string loadedAssemblyPath = _projectLoadContext.AssemblyLoadedPath ?? assemblyPath;
-                *outLoadedAssemblyPath = Marshaling.ConvertStringToNative(loadedAssemblyPath);
+                Assembly projectAssembly;
+
+                if (existingAssembly != null)
+                {
+                    // Use the existing assembly instead of loading it again
+                    Godot.GD.Print($"Using already loaded assembly: {assemblyName} from {(existingAssembly.IsDynamic ? "[Dynamic]" : existingAssembly.Location)}");
+                    projectAssembly = existingAssembly;
+
+                    *outLoadedAssemblyPath = Marshaling.ConvertStringToNative(existingAssembly.Location ?? assemblyPath);
+                }
+                else
+                {
+                    // Normal path - load the assembly
+                    (projectAssembly, _projectLoadContext) = LoadPlugin(assemblyPath, isCollectible: _editorHint);
+
+                    string loadedAssemblyPath = _projectLoadContext.AssemblyLoadedPath ?? assemblyPath;
+                    *outLoadedAssemblyPath = Marshaling.ConvertStringToNative(loadedAssemblyPath);
+                }
+                // DH END - avoid double-loading C# DLLs in case we're in libgodot mode
 
                 ScriptManagerBridge.LookupScriptsInAssembly(projectAssembly);
 

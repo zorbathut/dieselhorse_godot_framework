@@ -282,26 +282,46 @@ bool load_coreclr(void *&r_coreclr_dll_handle) {
 #endif
 
 #ifdef TOOLS_ENABLED
-load_assembly_and_get_function_pointer_fn initialize_hostfxr_for_config(const char_t *p_config_path) {
+// DH BEGIN - non-isolation-context'ed DLLs
+std::pair<load_assembly_fn, get_function_pointer_fn> initialize_hostfxr_for_config(const char_t *p_config_path) {
+	// result codes copied from https://github.com/dotnet/runtime/blob/main/docs/design/features/host-error-codes.md
+	const int hostfxr_Success = 0;
+	const int hostfxr_Success_HostAlreadyInitialized = 1;
+
+	// DH BEGIN - better error diagnosis
+	if (!FileAccess::exists(p_config_path)) {
+		ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "missing config file that should be at " + String(p_config_path));
+	}
+	// DH END - better error diagnosis
+
 	hostfxr_handle cxt = nullptr;
 	int rc = hostfxr_initialize_for_runtime_config(p_config_path, nullptr, &cxt);
-	if (rc != 0 || cxt == nullptr) {
+	if ((rc != hostfxr_Success && rc != hostfxr_Success_HostAlreadyInitialized) || cxt == nullptr) {
 		hostfxr_close(cxt);
-		ERR_FAIL_V_MSG(nullptr, "hostfxr_initialize_for_runtime_config failed with code: " + itos(rc));
+		ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "hostfxr_initialize_for_runtime_config failed with code: " + itos(rc));
 	}
 
-	void *load_assembly_and_get_function_pointer = nullptr;
+	void *load_assembly = nullptr;
 
 	rc = hostfxr_get_runtime_delegate(cxt,
-			hdt_load_assembly_and_get_function_pointer, &load_assembly_and_get_function_pointer);
-	if (rc != 0 || load_assembly_and_get_function_pointer == nullptr) {
-		ERR_FAIL_V_MSG(nullptr, "hostfxr_get_runtime_delegate failed with code: " + itos(rc));
+			hdt_load_assembly, &load_assembly);
+	if (rc != 0 || load_assembly == nullptr) {
+		ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "hostfxr_get_runtime_delegate hdt_load_assembly failed with code: " + itos(rc));
+	}
+
+	void *get_function_pointer = nullptr;
+
+	rc = hostfxr_get_runtime_delegate(cxt,
+			hdt_get_function_pointer, &get_function_pointer);
+	if (rc != 0 || get_function_pointer == nullptr) {
+		ERR_FAIL_V_MSG(std::make_pair(nullptr, nullptr), "hostfxr_get_runtime_delegate hdt_get_function_pointer failed with code: " + itos(rc));
 	}
 
 	hostfxr_close(cxt);
 
-	return (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+	return std::make_pair((load_assembly_fn)load_assembly, (get_function_pointer_fn)get_function_pointer);
 }
+// DH END - non-isolation-context'ed DLLs
 #else
 load_assembly_and_get_function_pointer_fn initialize_hostfxr_self_contained(
 		const char_t *p_main_assembly_path) {
@@ -358,10 +378,11 @@ godot_plugins_initialize_fn initialize_hostfxr_and_godot_plugins(bool &r_runtime
 	HostFxrCharString config_path = str_to_hostfxr(
 			GodotSharpDirs::get_api_assemblies_dir().path_join("GodotPlugins.runtimeconfig.json"));
 
-	load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer =
+	// DH BEGIN - non-isolation-context'ed DLLs
+	std::pair<load_assembly_fn, get_function_pointer_fn> function_pointers =
 			initialize_hostfxr_for_config(get_data(config_path));
 
-	if (load_assembly_and_get_function_pointer == nullptr) {
+	if (function_pointers.first == nullptr) {
 		// Show a message box to the user to make the problem explicit (and explain a potential crash).
 		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, no compatible version was found.\nAttempting to create/edit a project will lead to a crash.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Godot."), TTR("Failed to load .NET runtime"));
 		ERR_FAIL_V_MSG(nullptr, ".NET: Failed to load compatible .NET runtime");
@@ -371,13 +392,20 @@ godot_plugins_initialize_fn initialize_hostfxr_and_godot_plugins(bool &r_runtime
 
 	print_verbose(".NET: hostfxr initialized");
 
-	int rc = load_assembly_and_get_function_pointer(get_data(godot_plugins_path),
+	int rc = function_pointers.first(get_data(godot_plugins_path),
+			nullptr,
+			nullptr);
+	ERR_FAIL_COND_V_MSG(rc != 0, nullptr, ".NET: Failed to load GodotPlugins assembly");
+
+	rc = function_pointers.second(
 			HOSTFXR_STR("GodotPlugins.Main, GodotPlugins"),
 			HOSTFXR_STR("InitializeFromEngine"),
 			UNMANAGEDCALLERSONLY_METHOD,
 			nullptr,
+			nullptr,
 			(void **)&godot_plugins_initialize);
 	ERR_FAIL_COND_V_MSG(rc != 0, nullptr, ".NET: Failed to get GodotPlugins initialization function pointer");
+	// DH END - non-isolation-context'ed DLLs
 
 	return godot_plugins_initialize;
 }

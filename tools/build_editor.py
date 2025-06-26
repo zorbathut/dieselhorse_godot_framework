@@ -49,7 +49,7 @@ def run(dev):
     # Clear out old generated binaries
     shutil.rmtree("godot/bin", ignore_errors=True)
 
-    # Build the binary itself (yay this is no longer two-pass)
+    # Build the executable binary
     util.run([
             "scons",
             "-j", f"{cores}",
@@ -60,6 +60,20 @@ def run(dev):
             build_utils.get_build_profile(),
             "extra_suffix=dev" if dev else "extra_suffix=release",
             "output_suffix=.universal.editor.exe",
+        ], check=True, cwd="godot", env=build_utils.get_env())
+    
+    # Build the lib binary
+    util.run([
+            "scons",
+            "-j", f"{cores}",
+            f"p={platform}",
+            "target=editor"]
+            + (["dev_build=yes"] if dev else []) +
+            [f"precision={build_utils.get_float_precision()}",
+            "library_type=shared_library",
+            build_utils.get_build_profile(),
+            "extra_suffix=lib_dev" if dev else "extra_suffix=lib_release",
+            "output_suffix=.universal.editor.dll",
         ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Generate Mono glue files.
