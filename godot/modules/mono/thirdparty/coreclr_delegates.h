@@ -1,10 +1,16 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-#ifndef __CORECLR_DELEGATES_H__
-#define __CORECLR_DELEGATES_H__
+#ifndef HAVE_CORECLR_DELEGATES_H
+#define HAVE_CORECLR_DELEGATES_H
 
+#include <stddef.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #if defined(_WIN32)
     #define CORECLR_DELEGATE_CALLTYPE __stdcall
@@ -44,4 +50,21 @@ typedef int (CORECLR_DELEGATE_CALLTYPE *get_function_pointer_fn)(
     void         *reserved           /* Extensibility parameter (currently unused and must be 0) */,
     /*out*/ void **delegate          /* Pointer where to store the function pointer result */);
 
-#endif // __CORECLR_DELEGATES_H__
+typedef int (CORECLR_DELEGATE_CALLTYPE *load_assembly_fn)(
+    const char_t *assembly_path     /* Fully qualified path to assembly */,
+    void         *load_context      /* Extensibility parameter (currently unused and must be 0) */,
+    void         *reserved          /* Extensibility parameter (currently unused and must be 0) */);
+
+typedef int (CORECLR_DELEGATE_CALLTYPE *load_assembly_bytes_fn)(
+    const void *assembly_bytes      /* Bytes of the assembly to load */,
+    size_t     assembly_bytes_len   /* Byte length of the assembly to load */,
+    const void *symbols_bytes       /* Optional. Bytes of the symbols for the assembly */,
+    size_t     symbols_bytes_len    /* Optional. Byte length of the symbols for the assembly */,
+    void       *load_context        /* Extensibility parameter (currently unused and must be 0) */,
+    void       *reserved            /* Extensibility parameter (currently unused and must be 0) */);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // HAVE_CORECLR_DELEGATES_H
