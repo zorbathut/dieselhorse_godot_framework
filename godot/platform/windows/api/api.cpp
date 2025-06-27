@@ -37,7 +37,9 @@
 
 void register_core_windows_api() {
 #ifdef WINDOWS_ENABLED
-	GDREGISTER_ABSTRACT_CLASS(RenderingNativeSurfaceWindows);
+	// DH BEGIN - I never actually use this and it causes linkage errors on GCC
+	//GDREGISTER_ABSTRACT_CLASS(RenderingNativeSurfaceWindows);
+	// DH END - I never actually use this and it causes linkage errors on GCC
 #endif
 }
 
