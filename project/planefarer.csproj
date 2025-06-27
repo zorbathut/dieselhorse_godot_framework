@@ -54,20 +54,9 @@
     <PackageReference Include="ConcurrentHashSet" Version="1.3.0" />
     <PackageReference Include="Sentry" Version="5.1.0" />
     <PackageReference Include="ZstdSharp.Port" Version="0.7.4" />
-
-    <!-- tests don't show up without this (why not?) -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="src\monster\ai\" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <!-- this is apparently Rider-specific -->
-    <RunSettingsFilePath>$(MSBuildProjectDirectory)/planefarer.runsettings</RunSettingsFilePath>
-  </PropertyGroup>
-
+  <!-- this bit of harness is required to make the debug/optimized/release stuff work -->
   <Target Name="SaveBuildOutputPath" AfterTargets="Build">
     <PropertyGroup>
       <OutputPathInfoFile>$(MSBuildProjectDirectory)\.godot\mono\temp\LastBuild.txt</OutputPathInfoFile>
