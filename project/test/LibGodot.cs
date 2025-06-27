@@ -32,7 +32,7 @@ public delegate void InvokeCallbackFunction(InvokeCallback p_callback, IntPtr p_
 
 public class LibGodot
 {
-    const string LIBGODOT_LIBRARY_NAME = "/home/zorba/werk/moonskrive/godot/bin/libgodot.universal.editor.dll";
+    const string LIBGODOT_LIBRARY_NAME = "../../../../../godot/bin/libgodot.universal.editor.dll";
 
     [DllImport(LIBGODOT_LIBRARY_NAME, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr libgodot_create_godot_instance(
