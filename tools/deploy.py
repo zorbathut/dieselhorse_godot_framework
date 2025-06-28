@@ -163,6 +163,16 @@ def run():
     elif args.target == "windows":
         # Needs an .exe suffix
         os.rename(f"{deploydir}/{build_utils.get_project_name()}", f"{deploydir}/{build_utils.get_project_name()}.exe")
+        
+    # Generate artifact
+    os.makedirs("artifact", exist_ok=True)
+    util.run([
+        "zip",
+        "-9",
+        "-r",
+        f"{deploydir}.zip",
+        f"{deploydir}",
+    ], check=True)
 
 if __name__ == '__main__':
     run()

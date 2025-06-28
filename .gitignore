@@ -3,7 +3,6 @@
 
 # temp storage for releases
 /deploy
-/artifact
 /publicize
 
 # IDE stuff
