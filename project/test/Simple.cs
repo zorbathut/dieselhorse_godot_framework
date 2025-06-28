@@ -1,52 +1,49 @@
 
-#if false
-using System.Linq;
-using GdUnit4;
-
 namespace Test;
 
-[TestSuite]
+[TestFixture]
 public class Simple : Base
 {
-    [TestCase]
+    [Test]
     public void AbsolutelyNothing()
     {
         // okay seriously this should always pass
     }
 
-    [TestCase]
+    [Test]
+    public void GodotApi()
+    {
+        var container = new Godot.Container();
+        container.GetParent();
+    }
+
+    [Test]
     public void JustInit()
     {
-        Init();
-
         Assert.IsTrue(Dec.Database.Count > 0);
     }
 
-    [TestCase]
+    /*
+    [Test]
     public void ContextCreation()
     {
-        Init();
-
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
         var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
     }
 
-    [TestCase]
+    [Test]
     public void NullFrame()
     {
-        Init();
-
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
         var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
 
         context.Process();
-    }
+    }*/
 
-    [TestCase]
+    /*
+    [Test]
     public void SpawnAndRun()
     {
-        Init();
-
         using var gameScoped = new GameScoped();
 
         Assert.AreEqual(0, gameScoped.Env.List.Count(e => e.HasComponent<Comp.Player>()));
@@ -56,19 +53,17 @@ public class Simple : Base
         Assert.AreEqual(1, gameScoped.Env.List.Count(e => e.HasComponent<Comp.Player>()));
     }
 
-    [TestCase]
+    [Test]
     public void DeadPlayer()
     {
-        Init();
-
         using var gameScoped = new GameScoped();
         gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn());
 
         // kill the player's avatar
         gameScoped.Env.Remove(gameScoped.Env.List.Single(e => e.HasComponent<Comp.Avatar>()));
- 
+
         // do we still run properly?
         gameScoped.Process(new Comp.PlayerInput());
     }
+    */
 }
-#endif

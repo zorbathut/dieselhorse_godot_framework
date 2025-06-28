@@ -1,17 +1,12 @@
 
-#if false
-using GdUnit4;
-
 namespace Test;
 
-[TestSuite]
+[TestFixture]
 public class Color : Base
 {
-    [TestCase]
+    [Test]
     public void OKLCH()
     {
-        base.Init();
-
         var cc = new Converter.ColorConverter();
 
         {
@@ -29,4 +24,3 @@ public class Color : Base
         }
     }
 }
-#endif

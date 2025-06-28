@@ -79,7 +79,9 @@ public class LibGodot
     public static void StartIfNecessary()
     {
         if (running)
+        {
             return;
+        }
 
         string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         string buildDirectory = System.IO.Path.GetDirectoryName(assemblyLocation);
@@ -101,5 +103,10 @@ public class LibGodot
             Environment.Exit(1);
         }
 
+        Console.Error.WriteLine("dunzo");
+
+        Console.Error.WriteLine($"DDC Count: {Dec.Database.Count}");
+
+        running = true;
     }
 }
