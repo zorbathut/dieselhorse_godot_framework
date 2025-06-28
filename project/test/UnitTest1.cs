@@ -60,7 +60,7 @@ public class Tests
         string buildDirectory = System.IO.Path.GetDirectoryName(assemblyLocation);
         string projectDirectory = System.IO.Path.GetFullPath(System.IO.Path.Combine(buildDirectory, @"../../../../"));
 
-        List<string> arguments = new List<string> { program, "--path", projectDirectory, "--api_assemblies_dir", buildDirectory };
+        List<string> arguments = new List<string> { program, "--path", projectDirectory, "--api_assemblies_dir", buildDirectory, "--headless" };
 
         Console.Error.WriteLine("argl");
 
