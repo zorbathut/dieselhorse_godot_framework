@@ -83,6 +83,10 @@ public class LibGodot
             return;
         }
 
+        // we need to touch *something* in the Planefarer DLL to ensure it gets loaded into the default load context before Godot tries to shove it into the plugin context, soon followed by nunit making a second copy of it and everything going all fucky
+        // yes this is pretty gnarly
+        var _ = Find.Game;
+
         string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         string buildDirectory = System.IO.Path.GetDirectoryName(assemblyLocation);
         string projectDirectory = System.IO.Path.GetFullPath(System.IO.Path.Combine(buildDirectory, @"../../../../"));
@@ -102,10 +106,6 @@ public class LibGodot
             Console.Error.WriteLine("Error creating Godot instance");
             Environment.Exit(1);
         }
-
-        Console.Error.WriteLine("dunzo");
-
-        Console.Error.WriteLine($"DDC Count: {Dec.Database.Count}");
 
         running = true;
     }
