@@ -36,7 +36,9 @@
 #include "core/version.h"
 #include "main/main.h"
 
-#ifndef DEBUG_ENABLED
+// DH BEGIN - linux crash handler incompatible with libgodot thanks to clobbering signals that .net sets
+#if defined(DEBUG_ENABLED) || defined(LIBGODOT_ENABLED)
+// DH END - linux crash handler incompatible with libgodot thanks to clobbering signals that .net sets
 #undef CRASH_HANDLER_ENABLED
 #endif
 

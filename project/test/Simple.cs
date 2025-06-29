@@ -23,6 +23,21 @@ public class Simple : Base
         Assert.IsTrue(Dec.Database.Count > 0);
     }
 
+    [Test]
+    public void NullException()
+    {
+        // this is here because there was a libgodot error that caused naturally-generated null exceptions to result in a process hardcrash
+        try
+        {
+            List<int> list = null;
+            list.Add(0);
+        }
+        catch (Exception e)
+        {
+
+        }
+    }
+
     /*
     [Test]
     public void ContextCreation()
