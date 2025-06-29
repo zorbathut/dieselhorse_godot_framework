@@ -48,27 +48,15 @@ public class LibGodot
     public static extern void libgodot_destroy_godot_instance(IntPtr p_godot_instance);
 
     // setup process
+    private static void InitializeCallback(IntPtr userdata, GDExtensionInitializationLevel level) { }
+    private static void DeinitializeCallback(IntPtr userdata, GDExtensionInitializationLevel level) { }
 
-    // Create your callback methods
-    private static void InitializeCallback(IntPtr userdata, GDExtensionInitializationLevel level)
-    {
-        Console.WriteLine($"Initialize called with level: {level}");
-    }
-
-    private static void DeinitializeCallback(IntPtr userdata, GDExtensionInitializationLevel level)
-    {
-        Console.WriteLine($"Deinitialize called with level: {level}");
-    }
-
-    // Create delegates
-    // note: these must never change! they must be kept in memory!
+    // note: these must never change! they must be kept in memory or things crash!
     private static GDExtensionInitializationCallback initDelegate = new GDExtensionInitializationCallback(InitializeCallback);
     private static GDExtensionInitializationCallback deinitDelegate = new GDExtensionInitializationCallback(DeinitializeCallback);
 
     private static bool InitCallback(IntPtr p_get_proc_address, IntPtr p_library, ref GDExtensionInitialization r_initialization)
     {
-        Console.Error.WriteLine("yep yep");
-
         r_initialization.initialize = System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(initDelegate);
         r_initialization.deinitialize = System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(deinitDelegate);
 
@@ -92,8 +80,6 @@ public class LibGodot
         string projectDirectory = System.IO.Path.GetFullPath(System.IO.Path.Combine(buildDirectory, @"../../../../"));
 
         List<string> arguments = new List<string> { ".", "--path", projectDirectory, "--api_assemblies_dir", buildDirectory, "--headless" };
-
-        Console.Error.WriteLine("argl");
 
         IntPtr instance = LibGodot.libgodot_create_godot_instance(arguments.Count, arguments.ToArray(),
             InitCallback,
