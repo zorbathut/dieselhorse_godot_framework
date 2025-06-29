@@ -11,7 +11,10 @@ public class Base
         LibGodot.StartIfNecessary();
 
         // This is safe because this is all intrinsically single-threaded; we currently very much do not support multithreaded testing (maybe someday?)
-        Godot.GodotThread.SetThreadSafetyChecksEnabled(false);
+        if (!Godot.GodotThread.IsMainThread())
+        {
+            Godot.GodotThread.SetThreadSafetyChecksEnabled(false);
+        }
 
         // find the only Bootstrap node and finish our init
         var sceneTree = Godot.Engine.GetMainLoop() as SceneTree;

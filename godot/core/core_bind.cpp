@@ -1413,6 +1413,9 @@ void Thread::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("wait_to_finish"), &Thread::wait_to_finish);
 
 	ClassDB::bind_static_method("Thread", D_METHOD("set_thread_safety_checks_enabled", "enabled"), &Thread::set_thread_safety_checks_enabled);
+	// DH BEGIN - expose so we can avoid calling set_thread_safety_checks_enabled() in the test system when we're on the main thread
+	ClassDB::bind_static_method("Thread", D_METHOD("is_main_thread"), &::Thread::is_main_thread);
+	// DH END - expose so we can avoid calling set_thread_safety_checks_enabled() in the test system when we're on the main thread
 
 	BIND_ENUM_CONSTANT(PRIORITY_LOW);
 	BIND_ENUM_CONSTANT(PRIORITY_NORMAL);
