@@ -42,14 +42,14 @@ public class Simple : Base
     public void ContextCreation()
     {
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
+        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame(GameScoped.Decs.Test) } };
     }
 
     [Test]
     public void NullFrame()
     {
         var playerInputShunt = new ReadWriteLockedResource<Foundation.SharedPlayerInput>(new Foundation.SharedPlayerInput());
-        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
+        var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame(GameScoped.Decs.Test) } };
 
         context.Process();
     }
