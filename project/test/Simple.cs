@@ -54,7 +54,6 @@ public class Simple : Base
         context.Process();
     }
 
-    /*
     [Test]
     public void SpawnAndRun()
     {
@@ -79,5 +78,4 @@ public class Simple : Base
         // do we still run properly?
         gameScoped.Process(new Comp.PlayerInput());
     }
-    */
 }
