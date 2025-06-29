@@ -1,10 +1,5 @@
 
-#if false
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Dec;
-using GdUnit4;
 using Godot;
 using Map;
 using Map.Utils;
@@ -12,7 +7,7 @@ using Chunk = Map.Utils.ChunkSerializer.Chunk;
 
 namespace Test;
 
-[TestSuite]
+[TestFixture]
 public class ChunkSerialization : Base
 {
     [Dec.StaticReferences]
@@ -26,10 +21,9 @@ public class ChunkSerialization : Base
         public static ThingDec PROTOTYPE_Berserker;
     }
 
-    [TestCase]
+    [Test]
     public void TestSerialization()
     {
-        base.Init();
         Chunk c = CreateChunk();
 
         var serializedResult = Recorder.Write(c);
@@ -148,4 +142,4 @@ public class ChunkSerialization : Base
         }
     }
 }
-#endif
+
