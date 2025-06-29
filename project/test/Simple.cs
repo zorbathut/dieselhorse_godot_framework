@@ -38,7 +38,6 @@ public class Simple : Base
         }
     }
 
-    /*
     [Test]
     public void ContextCreation()
     {
@@ -53,7 +52,7 @@ public class Simple : Base
         var context = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
 
         context.Process();
-    }*/
+    }
 
     /*
     [Test]
