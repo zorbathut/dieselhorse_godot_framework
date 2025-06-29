@@ -3,6 +3,14 @@ namespace Test;
 
 public class GameScoped : System.IDisposable
 {
+    [Dec.StaticReferences]
+    public static class Decs
+    {
+        static Decs() { Dec.StaticReferencesAttribute.Initialized(); }
+
+        public static MapDec Test;
+    }
+
     public Foundation.Executor executor;
 
     public Ghi.Environment Env => executor.context.env;
@@ -11,9 +19,9 @@ public class GameScoped : System.IDisposable
 
     private Ghi.Environment.Scope scope;
 
-    public GameScoped()
+    public GameScoped(MapDec startingMap = null)
     {
-        executor = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame() } };
+        executor = new Foundation.Executor(playerInputShunt) { context = new Foundation.Context() { env = Genesis.CreateNewGame(startingMap ?? Decs.Test) } };
 
         scope = new Ghi.Environment.Scope(Env);
     }
