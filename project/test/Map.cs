@@ -15,7 +15,7 @@ public class Map : Base
          gameScoped.Process(new Comp.PlayerInput());
 
          // one frame with spawn
-         gameScoped.Process(new Comp.PlayerInput(), new Foundation.GlobalEventSpawn());
+         gameScoped.Process(new Comp.PlayerInput(), Foundation.GlobalEventSpawn.Create());
 
          // one frame with player
          gameScoped.Process(new Comp.PlayerInput());
