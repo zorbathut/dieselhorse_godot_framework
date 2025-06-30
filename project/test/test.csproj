@@ -4,7 +4,12 @@
         <TargetFramework>net9.0</TargetFramework>
         <LangVersion>13</LangVersion>
         <IsPackable>false</IsPackable>
+        <GodotSourceGenerators>disabled</GodotSourceGenerators>
     </PropertyGroup>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="GodotSourceGenerators" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.2"/>
