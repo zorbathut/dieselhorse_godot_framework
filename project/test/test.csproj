@@ -2,10 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <RootNamespace>test</RootNamespace>
-        <LangVersion>latest</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <LangVersion>13</LangVersion>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -30,6 +27,7 @@
         <HintPath>..\..\godot\bin\GodotSharp\Api\$(Configuration)\GodotPlugins.dll</HintPath>
       </Reference>
 
+      <!-- needed for the Godot runtime to be happy -->
       <None Include="..\..\godot\bin\GodotSharp\Api\$(Configuration)\GodotPlugins.runtimeconfig.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

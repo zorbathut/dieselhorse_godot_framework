@@ -1,3 +1,6 @@
+
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 public enum GDExtensionInitializationLevel
