@@ -8,8 +8,8 @@ public class Base
 {
     public bool dispatchingNunit = false;
 
-    [SetUp]
-    public void SetUp()
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
         // Reset flags
         dispatchingNunit = false;
