@@ -1,24 +1,49 @@
 
 using Godot;
 using System;
+using System.Threading;
 
 namespace Test;
 
-public class Base
+[SetUpFixture]
+public class Fixture
 {
-    public bool dispatchingNunit = false;
+    internal static ThreadLocal<bool> dispatchingNunit;
+
+    internal static ThreadLocal<bool> handlingWarnings;
+    internal static ThreadLocal<bool> handledWarning;
+
+    internal static ThreadLocal<bool> handlingErrors;
+    internal static ThreadLocal<bool> handledError;
+    internal static ThreadLocal<Func<string, bool>> errorValidator;
+    internal static ThreadLocal<Func<string, bool>> warningValidator;
+
+    internal static ThreadLocal<bool> withinExpect;
 
     [OneTimeSetUp]
     public void OneTimeSetUp()
     {
+        // Initialize ThreadLocal variables
+        dispatchingNunit = new ThreadLocal<bool>(() => false);
+
+        handlingWarnings = new ThreadLocal<bool>(() => false);
+        handledWarning = new ThreadLocal<bool>(() => false);
+
+        handlingErrors = new ThreadLocal<bool>(() => false);
+        handledError = new ThreadLocal<bool>(() => false);
+        errorValidator = new ThreadLocal<Func<string, bool>>(() => null);
+        warningValidator = new ThreadLocal<Func<string, bool>>(() => null);
+
+        withinExpect = new ThreadLocal<bool>(() => false);
+
         // Reset flags
-        dispatchingNunit = false;
+        dispatchingNunit.Value = false;
 
         // Set up our hooks right now, just in case we get errors in LibGodot
         Foundation.Bootstrap.LogWarningSecondaryHook = (type, msg) =>
         {
             // avoid infinite recursion on errors
-            if (dispatchingNunit)
+            if (dispatchingNunit.Value)
             {
                 return;
             }
@@ -27,15 +52,15 @@ public class Base
 
             if (type == UI.DebugConsole.InfoLine.Type.Warning)
             {
-                if (handlingWarnings)
+                if (handlingWarnings.Value)
                 {
-                    if (warningValidator == null)
+                    if (warningValidator.Value == null)
                     {
-                        handledWarning = true;
+                        handledWarning.Value = true;
                     }
-                    else if (warningValidator(msg))
+                    else if (warningValidator.Value(msg))
                     {
-                        handledWarning = true;
+                        handledWarning.Value = true;
                     }
                     else
                     {
@@ -49,15 +74,15 @@ public class Base
             }
             else if (type == UI.DebugConsole.InfoLine.Type.Error)
             {
-                if (handlingErrors)
+                if (handlingErrors.Value)
                 {
-                    if (errorValidator == null)
+                    if (errorValidator.Value == null)
                     {
-                        handledError = true;
+                        handledError.Value = true;
                     }
-                    else if (errorValidator(msg))
+                    else if (errorValidator.Value(msg))
                     {
-                        handledError = true;
+                        handledError.Value = true;
                     }
                     else
                     {
@@ -73,9 +98,9 @@ public class Base
             // if we just fail, we end up in infinite recursion, so let's not do that
             if (nunitError != null)
             {
-                dispatchingNunit = true;
+                dispatchingNunit.Value = true;
                 NUnit.Framework.Assert.Fail(nunitError);
-                dispatchingNunit = false;
+                dispatchingNunit.Value = false;
             }
         };
 
@@ -93,41 +118,52 @@ public class Base
         bootstrap.InitCoreProviders();
     }
 
-    private bool handlingWarnings = false;
-    private bool handledWarning = false;
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
+    {
+        dispatchingNunit?.Dispose();
 
-    private bool handlingErrors = false;
-    private bool handledError = false;
-    private Func<string, bool> errorValidator = null;
-    private Func<string, bool> warningValidator = null;
+        handlingWarnings?.Dispose();
+        handledWarning?.Dispose();
 
+        handlingErrors?.Dispose();
+        handledError?.Dispose();
+        errorValidator?.Dispose();
+        warningValidator?.Dispose();
+
+        withinExpect?.Dispose();
+    }
+}
+
+[Parallelizable]
+public class Base
+{
     protected enum ExpectationType
     {
         Disallow,
         Tolerate,
         Expect,
     }
-    private bool withinExpect = false;
-    protected void ExpectGeneral(Action action, string context = "unlabeled context", ExpectationType warning = ExpectationType.Disallow, Func<string, bool> warningValidator = null, ExpectationType error = ExpectationType.Disallow, Func<string, bool> errorValidator = null)
+    protected static void ExpectGeneral(Action action, string context = "unlabeled context", ExpectationType warning = ExpectationType.Disallow, Func<string, bool> warningValidator = null, ExpectationType error = ExpectationType.Disallow, Func<string, bool> errorValidator = null)
     {
-        Assert.IsFalse(withinExpect);
-        withinExpect = true;
+        Assert.IsFalse(Fixture.withinExpect.Value);
+        Fixture.withinExpect.Value = true;
 
         // Check initial states based on expectations
         if (warning != ExpectationType.Disallow)
         {
-            Assert.IsFalse(handlingWarnings, "Already handling warnings");
-            handlingWarnings = true;
-            handledWarning = false;
-            this.warningValidator = warningValidator;
+            Assert.IsFalse(Fixture.handlingWarnings.Value, "Already handling warnings");
+            Fixture.handlingWarnings.Value = true;
+            Fixture.handledWarning.Value = false;
+            Fixture.warningValidator.Value = warningValidator;
         }
 
         if (error != ExpectationType.Disallow)
         {
-            Assert.IsFalse(handlingErrors, "Already handling errors");
-            handlingErrors = true;
-            handledError = false;
-            this.errorValidator = errorValidator;
+            Assert.IsFalse(Fixture.handlingErrors.Value, "Already handling errors");
+            Fixture.handlingErrors.Value = true;
+            Fixture.handledError.Value = false;
+            Fixture.errorValidator.Value = errorValidator;
         }
 
         // Execute the action
@@ -136,41 +172,41 @@ public class Base
         // Check for expected errors
         if (error == ExpectationType.Expect)
         {
-            Assert.IsTrue(handlingErrors);
-            handlingErrors = false; // do this first so our assert doesn't get eaten :V
-            Assert.IsTrue(handledError, $"Expected error in {context} but did not generate one");
+            Assert.IsTrue(Fixture.handlingErrors.Value);
+            Fixture.handlingErrors.Value = false; // do this first so our assert doesn't get eaten :V
+            Assert.IsTrue(Fixture.handledError.Value, $"Expected error in {context} but did not generate one");
         }
 
         // Check for expected warnings
         if (warning == ExpectationType.Expect)
         {
-            Assert.IsTrue(handlingWarnings);
-            Assert.IsTrue(handledWarning, $"Expected warning in {context} but did not generate one");
+            Assert.IsTrue(Fixture.handlingWarnings.Value);
+            Assert.IsTrue(Fixture.handledWarning.Value, $"Expected warning in {context} but did not generate one");
         }
 
         // Reset state
-        handlingWarnings = false;
-        handledWarning = false;
-        this.warningValidator = null;
-        handlingErrors = false;
-        handledError = false;
-        this.errorValidator = null;
+        Fixture.handlingWarnings.Value = false;
+        Fixture.handledWarning.Value = false;
+        Fixture.warningValidator.Value = null;
+        Fixture.handlingErrors.Value = false;
+        Fixture.handledError.Value = false;
+        Fixture.errorValidator.Value = null;
 
-        withinExpect = false;
+        Fixture.withinExpect.Value = false;
     }
 
-    protected void ExpectWarnings(Action action, string context = "unlabeled context", Func<string, bool> warningValidator = null)
+    protected static void ExpectWarnings(Action action, string context = "unlabeled context", Func<string, bool> warningValidator = null)
     {
         ExpectGeneral(action, context, ExpectationType.Expect, warningValidator, ExpectationType.Disallow, null);
     }
 
     // Return "true" if this is the expected error, "false" if this is a bad error
-    protected void ExpectErrors(Action action, string context = "unlabeled context", Func<string, bool> errorValidator = null)
+    protected static void ExpectErrors(Action action, string context = "unlabeled context", Func<string, bool> errorValidator = null)
     {
         ExpectGeneral(action, context, ExpectationType.Disallow, null, ExpectationType.Expect, errorValidator);
     }
 
-    protected void ExpectWarningsAndErrors(Action action, string context = "unlabeled context",
+    protected static void ExpectWarningsAndErrors(Action action, string context = "unlabeled context",
         Func<string, bool> warningValidator = null, Func<string, bool> errorValidator = null)
     {
         ExpectGeneral(action, context, ExpectationType.Expect, warningValidator, ExpectationType.Expect, errorValidator);
