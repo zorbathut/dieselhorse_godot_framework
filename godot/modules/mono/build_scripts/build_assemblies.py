@@ -358,7 +358,7 @@ def build_all(
     sln = os.path.join(module_dir, "editor/GodotTools/GodotTools.sln")
     args = ["/restore", "/t:Build", "/p:Configuration=" + ("Debug" if dev_debug else "Release")] + (
         ["/p:GodotPlatform=" + godot_platform] if godot_platform else []
-    ) +  ["/nodeReuse:false"]
+    ) +  ["/nodeReuse:false", "/maxCpuCount:1"]
     # DH END - disable node reuse because it might be causing problems on Jenkins
     if push_nupkgs_local:
         args += ["/p:ClearNuGetLocalCache=true", "/p:PushNuGetToLocalSource=" + push_nupkgs_local]
