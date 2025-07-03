@@ -1,6 +1,7 @@
 
 using Godot;
 using System;
+using System.Globalization;
 using System.Threading;
 
 namespace Test;
@@ -38,6 +39,10 @@ public class Fixture
 
         // Reset flags
         dispatchingNunit.Value = false;
+
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
 
         // Set up our hooks right now, just in case we get errors in LibGodot
         Foundation.Bootstrap.LogWarningSecondaryHook = (type, msg) =>
