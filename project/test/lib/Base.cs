@@ -200,6 +200,24 @@ public class Base
         Fixture.withinExpect.Value = false;
     }
 
+
+    [SetUp]
+    public void SetUp()
+    {
+        // Reset flags for each test
+        Fixture.dispatchingNunit.Value = false;
+
+        Fixture.handlingWarnings.Value = false;
+        Fixture.handledWarning.Value = false;
+
+        Fixture.handlingErrors.Value = false;
+        Fixture.handledError.Value = false;
+        Fixture.errorValidator.Value = null;
+        Fixture.warningValidator.Value = null;
+
+        Fixture.withinExpect.Value = false;
+    }
+
     protected static void ExpectWarnings(Action action, string context = "unlabeled context", Func<string, bool> warningValidator = null)
     {
         ExpectGeneral(action, context, ExpectationType.Expect, warningValidator, ExpectationType.Disallow, null);
