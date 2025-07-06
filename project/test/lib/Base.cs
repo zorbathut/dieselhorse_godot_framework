@@ -120,7 +120,7 @@ public class Fixture
         // find the only Bootstrap node and finish our init
         var sceneTree = Godot.Engine.GetMainLoop() as SceneTree;
         var bootstrap = sceneTree.Root.GetNode<Foundation.Bootstrap>("Bootstrap");
-        bootstrap.InitCoreProviders();
+        bootstrap.InitCoreProviders(true);
     }
 
     [OneTimeTearDown]
