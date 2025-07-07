@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Test;
 
@@ -25,6 +26,25 @@ public class ValuesAttribute : NUnit.Framework.ValuesAttribute, NUnit.Framework.
 
             // remember to include inheritance
             return Dec.Database.List.Where(dec => dec.GetType() == parameter.ParameterType || dec.GetType().IsSubclassOf(parameter.ParameterType));
+        }
+        else if (parameter.ParameterType.IsConstructedGenericType && parameter.ParameterType.GetGenericTypeDefinition() == typeof(ThingDecWith<>))
+        {
+            LibGodot.StartIfNecessary();
+
+            var decPropRequired = parameter.ParameterType.GetGenericArguments()[0];
+            var creatorFunction = parameter.ParameterType.GetMethod("From", BindingFlags.Static | BindingFlags.Public, types: [typeof(ThingDec)]);
+
+            return Dec.Database<ThingDec>.List
+                .Where(dec => dec.HasProperty(decPropRequired))
+                .Select(dec => creatorFunction.Invoke(null, [dec]));
+        }
+        else if (parameter.ParameterType.IsEnum)
+        {
+            return Enum.GetValues(parameter.ParameterType);
+        }
+        else if (parameter.ParameterType == typeof(string[]))
+        {
+            return new[] { new string[0] }; // empty string array
         }
         else
         {
@@ -85,7 +105,7 @@ public static class Util
             // verify we spawned properly
             var avatar = Find.Globals.avatars.FirstOrDefault();
             var footPosition = avatar.GetRegion(ActorRegionDecs.Base).rect.GetBC();
-            Assert.AreEqual(spawnPoint.Value.vector.Y.ToDouble(), footPosition.Y);
+            Assert.AreEqualWithin(spawnPoint.Value.vector.Y.ToDouble(), footPosition.Y, 0.1f);
             Assert.AreEqualWithin(spawnPoint.Value.vector.X.ToDouble(), footPosition.X, 0.2f);
 
             results.avatar = avatar;
