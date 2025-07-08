@@ -98,15 +98,15 @@ public static class Util
         if (spawnPoint.HasValue)
         {
             var avatarRegion = ThingDecs.Avatar.Property<Prop.Region>().GetRegionTemplate(ActorRegionDecs.Base);
-            var spawnRect = avatarRegion.Translated(spawnPoint.Value.vector.ToVector2() - avatarRegion.GetBC());
+            var spawnRect = avatarRegion.Translated(spawnPoint.Value.vector - avatarRegion.GetBC());
 
-            gameScoped.Process(new Comp.PlayerInput(), Foundation.GlobalEventSpawn.Create(MapRect2Q.From(Ghi.EntityComponent<Comp.Map>.From(mapEnt), Rect2Q.FromRect2(spawnRect)).Grow(Q32.One / 1000)));
+            gameScoped.Process(new Comp.PlayerInput(), Foundation.GlobalEventSpawn.Create(MapRect2Q.From(Ghi.EntityComponent<Comp.Map>.From(mapEnt), spawnRect).Grow(Q32.One / 1000)));
 
             // verify we spawned properly
             var avatar = Find.Globals.avatars.FirstOrDefault();
             var footPosition = avatar.GetRegion(ActorRegionDecs.Base).rect.GetBC();
-            Assert.AreEqualWithin(spawnPoint.Value.vector.Y.ToDouble(), footPosition.Y, 0.1f);
-            Assert.AreEqualWithin(spawnPoint.Value.vector.X.ToDouble(), footPosition.X, 0.2f);
+            Assert.AreEqualWithin(spawnPoint.Value.vector.Y, footPosition.Y, 0.1m);
+            Assert.AreEqualWithin(spawnPoint.Value.vector.X, footPosition.X, 0.2m);
 
             results.avatar = avatar;
         }
