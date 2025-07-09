@@ -38,7 +38,9 @@
 #include "storage/render_scene_buffers.h"
 
 // DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 #include "servers/rendering/renderer_hdss/renderer_hdss.h"
+#endif
 // DH END - HDSS rendering
 
 #ifndef _3D_DISABLED

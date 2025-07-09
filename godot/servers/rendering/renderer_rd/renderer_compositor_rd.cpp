@@ -39,7 +39,7 @@
 // DH BEGIN - HDSS rendering
 #ifdef MODULE_HDSS_ENABLED
 #include "servers/rendering/renderer_hdss/hdss_storage.h"
-#endif // MODULE_HDSS_ENABLED
+#endif
 // DH END - HDSS rendering
 
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount) {

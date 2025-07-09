@@ -43,7 +43,9 @@
 #include "servers/server_wrap_mt_common.h"
 
 // DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 #include "servers/rendering/renderer_hdss/renderer_hdss.h"
+#endif
 // DH END - HDSS rendering
 
 class RenderingServerDefault : public RenderingServer {

@@ -34,7 +34,9 @@
 #include "servers/xr_server.h"
 
 // DH BEGIN - HDSS rendering
+#ifdef MODULE_HDSS_ENABLED
 #include "servers/rendering/renderer_hdss/renderer_hdss.h"
+#endif
 // DH END - HDSS rendering
 
 RendererCompositor *RendererCompositor::singleton = nullptr;
