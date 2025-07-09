@@ -17,8 +17,17 @@ def get_env():
 def get_float_precision():
     return "double"
 
-def get_build_profile():
-    return f"build_profile=../project/godot.build_profile.json"
+def get_build_opts():
+    return [
+        "deprecated=no",
+        "build_profile=../project/godot.build_profile.json",
+    ]
+   
+def get_build_assemblies_opts():
+    return [
+        # boy I sure am glad this is the same commandline parameter and not arbitrarily different for no good reason whatsoever
+        "--no-deprecated",
+    ]
 
 def get_project_name():
     return "planefarer"

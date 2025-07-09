@@ -95,9 +95,9 @@ def run():
             f"p={args.target}",
             "target=template_release",
             "arch=x86_64",
-            "production=yes",
-            f"precision={build_utils.get_float_precision()}", 
-            build_utils.get_build_profile(),
+            "production=yes"] +
+            build_utils.get_build_opts() +
+            [f"precision={build_utils.get_float_precision()}", 
             # no extra suffix because it conflicts with the export process
         ], check=True, cwd="godot", env=build_utils.get_env())
 
@@ -112,8 +112,9 @@ def run():
     util.run([
             "python",
             "./modules/mono/build_scripts/build_assemblies.py",
-            "--godot-output-dir", "./bin",
-            f"--precision={build_utils.get_float_precision()}",
+            "--godot-output-dir", "./bin"] +
+            build_utils.get_build_assemblies_opts() +
+            [f"--precision={build_utils.get_float_precision()}",
         ], check=True, cwd="godot", env=build_utils.get_env())
 
     # Clear and remake necessary directory

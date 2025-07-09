@@ -18,8 +18,6 @@
 	},
 
 	"options_to_be_introduced": {
-		"deprecated": "no",
-
 		"module_enet_enabled": "no",
 		"module_gdscript_enabled": "no",
 		"module_gltf_enabled": "no",

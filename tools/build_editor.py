@@ -54,10 +54,10 @@ def run(dev):
             "scons",
             "-j", f"{cores}",
             f"p={platform}",
-            "target=editor"]
-            + (["dev_build=yes"] if dev else []) +
+            "target=editor"] +
+            (["dev_build=yes"] if dev else []) +
+            build_utils.get_build_opts() +
             [f"precision={build_utils.get_float_precision()}",
-            build_utils.get_build_profile(),
             "extra_suffix=dev" if dev else "extra_suffix=release",
             "output_suffix=.universal.editor.exe",
         ], check=True, cwd="godot", env=build_utils.get_env())
@@ -67,11 +67,11 @@ def run(dev):
             "scons",
             "-j", f"{cores}",
             f"p={platform}",
-            "target=editor"]
-            + (["dev_build=yes"] if dev else []) +
+            "target=editor"] +
+            (["dev_build=yes"] if dev else []) +
+            build_utils.get_build_opts() +
             [f"precision={build_utils.get_float_precision()}",
             "library_type=shared_library",
-            build_utils.get_build_profile(),
             "extra_suffix=lib_dev" if dev else "extra_suffix=lib_release",
             "output_suffix=.universal.editor.dll",
         ], check=True, cwd="godot", env=build_utils.get_env())
@@ -90,8 +90,9 @@ def run(dev):
     util.run([
            "python",
            "./modules/mono/build_scripts/build_assemblies.py",
-           "--godot-output-dir", "./bin",
-           f"--precision={build_utils.get_float_precision()}",
+           "--godot-output-dir", "./bin"] +
+           build_utils.get_build_assemblies_opts() +
+           [f"--precision={build_utils.get_float_precision()}",
         ], check=True, cwd="godot", env=build_utils.get_env())
     
     # Restore the .net code
