@@ -86,8 +86,9 @@ class GitRepoFilter:
         # Persistent working directory
         self.work_dir = None
         
-        # File cache to track what files we've already processed
-        self.file_cache = {}
+        # Map of file paths to their current blob hexsha in working directory
+        # Format: {path: hexsha}
+        self.working_dir_state = {}
     
     def _load_pathspec(self) -> pathspec.PathSpec:
         """Load gitignore-style patterns from file."""
@@ -158,69 +159,39 @@ class GitRepoFilter:
         """Check if a commit should be explicitly filtered."""
         return commit.hexsha in self.filtered_commits
     
-    def _get_changed_files(self, commit: git.Commit) -> List[str]:
-        """Get files that changed in this commit."""
-        changed_files = set()
+    def _get_filtered_tree_for_commit(self, commit: git.Commit) -> Dict[str, git.Blob]:
+        """
+        Get the complete filtered file tree for a commit.
+        Returns a dict mapping file paths to blob objects for all non-ignored files.
+        """
+        filtered_tree = {}
+        filtered_count = 0
         
-        # Get list of changed files in this commit
-        if not commit.parents:
-            # For initial commit, all files are "changed"
-            for item in commit.tree.traverse():
-                if item.type == 'blob':
-                    changed_files.add(item.path)
-        else:
-            # For other commits, get the diff
-            for parent in commit.parents:
-                # Get diff from parent to commit (what changed in this commit)
-                diffs = commit.diff(parent)
-                for diff in diffs:
-                    # Get the file path (b_path for additions/modifications, a_path for deletions)
-                    if diff.b_path:
-                        changed_files.add(diff.b_path)
-                    if diff.a_path and diff.b_path != diff.a_path:  # renamed file
-                        changed_files.add(diff.a_path)
+        # Traverse the entire tree for this commit
+        for item in commit.tree.traverse():
+            if item.type == 'blob':
+                # Check if this file should be ignored
+                if not self._should_ignore(item.path):
+                    filtered_tree[item.path] = item
+                else:
+                    filtered_count += 1
         
-        return list(changed_files)
+        # Only count filtered files once per commit (not cumulative)
+        if filtered_count > 0:
+            self.stats['filtered_files'] += filtered_count
+            self.logger.debug(f"Filtered out {filtered_count} files from commit {commit.hexsha[:8]}")
+        
+        return filtered_tree
     
-    def _get_filtered_changes(self, commit: git.Commit) -> Dict[str, git.Blob]:
-        """
-        Get only the changed files from a commit that should be kept (not ignored).
-        
-        Returns:
-            Dict mapping file paths to blob objects for non-ignored files that changed
-        """
-        changed_files = self._get_changed_files(commit)
-        self.stats['total_files'] += len(changed_files)
-        
-        self.logger.debug(f"Commit {commit.hexsha[:8]} has {len(changed_files)} changed files")
-        
-        # Track changed files that should be kept
-        kept_changes = {}
-        for path in changed_files:
-            # Skip if path should be ignored
-            if self._should_ignore(path):
-                self.stats['filtered_files'] += 1
-                self.logger.debug(f"Ignoring changed file: {path}")
-                continue
-            
-            try:
-                # Get the blob for this file in this commit
-                blob = commit.tree[path]
-                kept_changes[path] = blob
-            except (KeyError, ValueError):
-                # File was deleted in this commit
-                kept_changes[path] = None
-        
-        if not kept_changes:
-            self.logger.debug(f"Commit {commit.hexsha[:8]} has no non-ignored changes")
-        
-        return kept_changes
     
     def _setup_work_environment(self, target_repo: Repo):
         """Set up a persistent working directory and index for all commits."""
         # Create a temporary directory for the working directory
         self.work_dir = tempfile.mkdtemp(prefix="git_filter_")
         self.logger.debug(f"Created persistent working directory: {self.work_dir}")
+        
+        # Reset working directory state tracking
+        self.working_dir_state = {}
         
         # Create a temp directory for git index outside the working directory
         index_dir = tempfile.mkdtemp(prefix="git_filter_index_")
@@ -263,35 +234,49 @@ class GitRepoFilter:
             shutil.rmtree(self.index_dir, ignore_errors=True)
             self.index_dir = None
     
-    def _update_working_directory(self, kept_changes: Dict[str, git.Blob], target_repo: Repo):
+    def _update_working_directory(self, desired_tree: Dict[str, git.Blob], target_repo: Repo):
         """
-        Update the working directory with changed files.
-        Only copies files that have actually changed.
+        Update the working directory to match the desired tree state.
+        Only modifies files that have changed, been added, or need to be deleted.
+        
+        Args:
+            desired_tree: Dict mapping file paths to blob objects representing desired state
+            target_repo: Target repository object
         """
-        # Process all kept changes
-        for path, blob in kept_changes.items():
+        # Find files to delete (exist in working dir but not in desired tree)
+        files_to_delete = set(self.working_dir_state.keys()) - set(desired_tree.keys())
+        
+        # Delete files that shouldn't exist
+        for path in files_to_delete:
             full_path = Path(self.work_dir) / path
-            
-            if blob is None:
-                # File was deleted
-                if full_path.exists():
-                    full_path.unlink()
-                    subprocess.run(
-                        ['git', '--git-dir', str(target_repo.git_dir), 'rm', '--cached', path],
-                        cwd=self.work_dir,
-                        env=self.git_env,
-                        check=False,  # Don't fail if file wasn't in index
-                        capture_output=True
-                    )
-                continue
+            if full_path.exists():
+                full_path.unlink()
+                self.logger.debug(f"Deleted file: {path}")
                 
-            # Check if we need to update this file
-            blob_id = blob.hexsha
-            cache_key = f"{path}:{blob_id}"
-            
-            # Skip if file hasn't changed (same content already in working dir)
-            if cache_key in self.file_cache:
+                # Clean up empty parent directories
+                try:
+                    parent = full_path.parent
+                    while parent != Path(self.work_dir) and parent.exists():
+                        if not any(parent.iterdir()):  # Directory is empty
+                            parent.rmdir()
+                            parent = parent.parent
+                        else:
+                            break
+                except OSError:
+                    pass  # Directory not empty or other error, that's fine
+                    
+            # Remove from our state tracking
+            del self.working_dir_state[path]
+        
+        # Update or create files
+        files_updated = 0
+        for path, blob in desired_tree.items():
+            # Check if file needs updating
+            if path in self.working_dir_state and self.working_dir_state[path] == blob.hexsha:
+                # File hasn't changed, skip it
                 continue
+            
+            full_path = Path(self.work_dir) / path
             
             # Get blob content
             blob_data = self.source_repo.odb.stream(blob.binsha).read()
@@ -306,14 +291,17 @@ class GitRepoFilter:
             # Preserve file permissions (Git tracks executable bit)
             # Git file modes: 100644 (regular file), 100755 (executable file)
             if blob.mode == 0o100755:  # Executable file
-                # Make the file executable
                 os.chmod(full_path, 0o755)
             else:
-                # Regular file permissions
                 os.chmod(full_path, 0o644)
             
-            # Add to cache
-            self.file_cache[cache_key] = True
+            # Update our state tracking
+            self.working_dir_state[path] = blob.hexsha
+            self.logger.debug(f"Updated file: {path}")
+            files_updated += 1
+        
+        # Update statistics
+        self.stats['total_files'] += files_updated + len(files_to_delete)
     
     def _collect_tags_for_commit(self, commit: git.Commit):
         """
@@ -351,17 +339,17 @@ class GitRepoFilter:
             self._collect_tags_for_commit(source_commit)
             return None
         
-        # Get non-ignored files that changed in this commit
-        kept_changes = self._get_filtered_changes(source_commit)
+        # Get the complete filtered tree for this commit
+        filtered_tree = self._get_filtered_tree_for_commit(source_commit)
         
         # Skip commit if no files are kept
-        if not kept_changes:
-            self.logger.debug(f"Skipping commit {source_commit.hexsha[:8]} - no kept files or no kept changes")
+        if not filtered_tree:
+            self.logger.debug(f"Skipping commit {source_commit.hexsha[:8]} - no files remain after filtering")
             self.stats['filtered_commits'] += 1
             self._collect_tags_for_commit(source_commit)
             return None
         
-        self.logger.debug(f"Processing commit {source_commit.hexsha[:8]} with {len(kept_changes)} changed files")
+        self.logger.debug(f"Processing commit {source_commit.hexsha[:8]} with {len(filtered_tree)} files")
         
         # Map parent commits - traverse up the chain to find non-filtered parents
         new_parents = []
@@ -392,8 +380,8 @@ class GitRepoFilter:
         if source_commit.parents:
             self.logger.debug(f"Mapped {len(source_commit.parents)} parents to {len(new_parents)} parents")
         
-        # Update working directory with changed files
-        self._update_working_directory(kept_changes, target_repo)
+        # Update working directory to match the filtered tree
+        self._update_working_directory(filtered_tree, target_repo)
         
         # Add all files to index using a single command for better performance
         subprocess.run(
@@ -414,6 +402,42 @@ class GitRepoFilter:
             text=True
         )
         tree_sha = result.stdout.strip()
+        
+        # Check if this tree is identical to all parent trees
+        # For merge commits, only filter if it matches ALL parents (not just one)
+        if new_parents:
+            if len(new_parents) == 1:
+                # Single parent - filter if tree matches
+                parent_commit = target_repo.commit(new_parents[0])
+                if parent_commit.tree.hexsha == tree_sha:
+                    self.logger.debug(f"Skipping commit {source_commit.hexsha[:8]} - tree identical to parent after filtering")
+                    self.stats['filtered_commits'] += 1
+                    self._collect_tags_for_commit(source_commit)
+                    return None
+            else:
+                # Multiple parents (merge commit) - only filter if matches ALL parents
+                all_match = True
+                for parent_sha in new_parents:
+                    parent_commit = target_repo.commit(parent_sha)
+                    if parent_commit.tree.hexsha != tree_sha:
+                        all_match = False
+                        break
+                
+                if all_match:
+                    self.logger.debug(f"Skipping merge commit {source_commit.hexsha[:8]} - tree identical to all parents after filtering")
+                    self.stats['filtered_commits'] += 1
+                    self._collect_tags_for_commit(source_commit)
+                    return None
+        else:
+            # For initial commits, check if the tree is empty
+            # Git's well-known empty tree SHA
+            EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+            
+            if tree_sha == EMPTY_TREE_SHA:
+                self.logger.debug(f"Skipping commit {source_commit.hexsha[:8]} - empty tree after filtering")
+                self.stats['filtered_commits'] += 1
+                self._collect_tags_for_commit(source_commit)
+                return None
         
         # Create commit
         commit_env = self.git_env.copy()
@@ -807,8 +831,8 @@ class GitRepoFilter:
         print(f"Commits filtered out: {self.stats['filtered_commits']}")
         if self.stats['explicitly_filtered_commits'] > 0:
             print(f"  - Explicitly filtered commits: {self.stats['explicitly_filtered_commits']}")
-        print(f"Files examined: {self.stats['total_files']}")
-        print(f"Files filtered out: {self.stats['filtered_files']}")
+        print(f"File operations performed: {self.stats['total_files']}")
+        print(f"Files filtered out (cumulative): {self.stats['filtered_files']}")
         
         # Tag statistics
         if hasattr(self, 'filtered_commit_tags'):
@@ -825,10 +849,6 @@ class GitRepoFilter:
         if self.stats['total_commits'] > 0:
             filter_rate = (self.stats['filtered_commits'] / self.stats['total_commits']) * 100
             print(f"\nCommit filter rate: {filter_rate:.1f}%")
-        
-        if self.stats['total_files'] > 0:
-            file_filter_rate = (self.stats['filtered_files'] / self.stats['total_files']) * 100
-            print(f"File filter rate: {file_filter_rate:.1f}%")
 
 
 def main():
