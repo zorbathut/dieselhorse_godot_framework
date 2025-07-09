@@ -598,8 +598,19 @@ class GitRepoFilter:
         self._setup_work_environment(target_repo)
         
         try:
-            # Get all commits in topological order (parents before children)
-            commits = list(self.source_repo.iter_commits('--all', topo_order=True))
+            # Get only commits from the dev branch in topological order
+            # First check if 'dev' branch exists
+            dev_branch = None
+            for branch in self.source_repo.branches:
+                if branch.name == 'dev':
+                    dev_branch = branch
+                    break
+            
+            if not dev_branch:
+                self.logger.error("No 'dev' branch found in source repository")
+                return
+            
+            commits = list(self.source_repo.iter_commits(dev_branch, topo_order=True))
             commits.reverse()  # Process in chronological order
             
             self.stats['total_commits'] = len(commits)
@@ -646,21 +657,49 @@ class GitRepoFilter:
             self._cleanup_work_environment()
     
     def _update_branches(self, target_repo: Repo):
-        """Update branches in target repository."""
+        """Update only the dev branch in target repository."""
+        # Find the dev branch in source repo
+        dev_branch = None
         for branch in self.source_repo.branches:
-            source_commit_sha = branch.commit.hexsha
+            if branch.name == 'dev':
+                dev_branch = branch
+                break
+        
+        if not dev_branch:
+            self.logger.error("No 'dev' branch found in source repository")
+            return
+        
+        # Find the last included commit on the dev branch
+        # Start from HEAD and walk backwards until we find a non-filtered commit
+        current_commit = dev_branch.commit
+        last_valid_commit_sha = None
+        
+        # Walk through the commit history
+        for commit in self.source_repo.iter_commits(dev_branch):
+            if commit.hexsha in self.commit_map and self.commit_map[commit.hexsha]:
+                # Found a commit that was included (not filtered)
+                last_valid_commit_sha = self.commit_map[commit.hexsha]
+                break
+        
+        if last_valid_commit_sha:
+            # Log if we had to skip filtered commits at the tip
+            if current_commit.hexsha != dev_branch.commit.hexsha or \
+               (current_commit.hexsha in self.commit_map and not self.commit_map[current_commit.hexsha]):
+                skipped_count = 0
+                for commit in self.source_repo.iter_commits(dev_branch):
+                    if commit.hexsha in self.commit_map and self.commit_map[commit.hexsha]:
+                        break
+                    skipped_count += 1
+                self.logger.info(f"Skipped {skipped_count} filtered commit(s) at the tip of dev branch")
             
-            if source_commit_sha in self.commit_map:
-                new_commit_sha = self.commit_map[source_commit_sha]
-                
-                if new_commit_sha:
-                    # Create branch pointing to new commit
-                    target_repo.create_head(branch.name, new_commit_sha)
-                    self.logger.info(f"Created branch {branch.name}")
-                    
-                    # Set as active branch if it's the current branch in source
-                    if self.source_repo.active_branch.name == branch.name:
-                        target_repo.head.reference = target_repo.heads[branch.name]
+            # Create dev branch pointing to the last valid commit
+            target_repo.create_head('dev', last_valid_commit_sha)
+            self.logger.info(f"Created branch 'dev' pointing to {last_valid_commit_sha[:8]}")
+            
+            # Set dev as the active branch
+            target_repo.head.reference = target_repo.heads['dev']
+        else:
+            self.logger.error("No valid commits found on dev branch")
     
     def _update_tags(self, target_repo: Repo):
         """Update tags in target repository for non-filtered commits."""
