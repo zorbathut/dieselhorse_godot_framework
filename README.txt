@@ -1,3 +1,27 @@
+
+This is the Godot vendoring/building/testing environment being used by Diesel Horse Games. It's provided here mostly as a public service; I had to build all of this, but I'm happy for other people to make use of it. Pull requests are appreciated and likely accepted; suggestions are appreciated but probably ignored.
+
+This provides a number of features that I've found useful. In no particular order:
+
+* Easy Godot engine customization, with build steps that non-programmers can understand
+* Full C# support, including all the hoops you have to jump through to provide C# support, including all the extra hoops you have to jump through for custom code in your C# support
+* Solid commandline tools for cross-platform builds
+* Automatic license concatenation to make your deployments legal
+* Full (optional!) containerization to make builds more reproducible and require less mucking around on build servers
+* Jenkins integration so you can CI the entire mess
+* C# testing via nunit, and yes, it actually works properly, boy was that a headache
+* Mostly automated Godot version updates (less so if you don't revert the libgodot support first)
+
+If you're thinking "I'm an experienced developer with a quarter of a century experience in the game industry and this sounds like something that will save me quite a lot of mucking around with scripts and fighting with build processes", then enjoy! This is made for you! If you're thinking "I am a novice programmer who has never made a video game before, but this guy sounds like he knows what he's doing, I should start here" then *please avoid*, this will not make your life easier. Come back when you know you need it. If you don't know you need it, you don't want it.
+
+The Godot directory consists of a sequence of Godot snapshots along with custom patches. This will be slightly awkward to merge into your own Godot distribution if you want to. Sorry. The HDSS module is a proprietary renderer and is not provided in this codebase, which is why it's disabled (it won't even remotely build, the code isn't here.)
+
+Godot and third-party libraries are provided under its own licenses. Everything besides that is under the MIT license.
+
+May this make your life better.
+
+----
+
 ### Windows initial setup
 
 * Install Python from https://www.python.org/downloads/
