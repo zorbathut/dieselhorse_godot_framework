@@ -13,18 +13,9 @@ public class Example
     }
 
     [Test]
-    public void Succeed()
+    public void FormatTest([Values] Image.Format format)
     {
-        var image = Godot.Image.CreateEmpty(16, 16, false, Image.Format.Dxt3);
-        var x = image.SavePngToBuffer();
-        // make sure we got data out
-        Assert.That(x.Length, Is.GreaterThan(0), "Image should have data in the buffer");
-    }
-
-    [Test]
-    public void Fail()
-    {
-        var image = Godot.Image.CreateEmpty(16, 16, false, Image.Format.Max);   // oh no my finger slipped, what a disaster
+        var image = Godot.Image.CreateEmpty(16, 16, false, format);
         var x = image.SavePngToBuffer();
         // make sure we got data out
         Assert.That(x.Length, Is.GreaterThan(0), "Image should have data in the buffer");
