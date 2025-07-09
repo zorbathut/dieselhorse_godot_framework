@@ -8,7 +8,6 @@
 	"disabled_build_options": {
 		"debug_symbols": true,
 		"module_mono_enabled": true,
-		"module_hdss_enabled": true,
 
 		"disable_2d_physics": true,
 		"disable_3d_physics": true,
