@@ -302,6 +302,15 @@ class GitRepoFilter:
             with open(full_path, 'wb') as f:
                 f.write(blob_data)
             
+            # Preserve file permissions (Git tracks executable bit)
+            # Git file modes: 100644 (regular file), 100755 (executable file)
+            if blob.mode == 0o100755:  # Executable file
+                # Make the file executable
+                os.chmod(full_path, 0o755)
+            else:
+                # Regular file permissions
+                os.chmod(full_path, 0o644)
+            
             # Add to cache
             self.file_cache[cache_key] = True
     
