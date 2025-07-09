@@ -19,7 +19,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
 # DH END - dotnet sdk 9
 
 # DH BEGIN
-# planefarer framework
+# nutdealer framework
 # python/poetry for build env
 # python3-devel and gcc for building python modules
 # zip and git for deploy script requirements

@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\planefarer.csproj" />
+      <ProjectReference Include="..\nutdealer.csproj" />
     </ItemGroup>
 
     <ItemGroup>

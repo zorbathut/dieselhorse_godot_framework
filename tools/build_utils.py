@@ -30,7 +30,7 @@ def get_build_assemblies_opts():
     ]
 
 def get_project_name():
-    return "planefarer"
+    return "nutdealer"
 
 def get_project_version():
     # make sure to convert to an actual string
