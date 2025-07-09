@@ -697,6 +697,18 @@ class GitRepoFilter:
             except Exception as e:
                 self.logger.error(f"Error checking out dev branch: {e}")
             
+            # Add remote and fetch
+            self.logger.info("Adding remote origin and fetching...")
+            try:
+                target_repo.git.remote('add', 'origin', 'git@github.com:zorbathut/dieselhorse_godot_framework.git')
+                self.logger.info("Added remote origin")
+                
+                # Fetch from remote
+                target_repo.git.fetch('origin')
+                self.logger.info("Fetched from remote origin")
+            except Exception as e:
+                self.logger.error(f"Error setting up remote: {e}")
+            
             # Print statistics
             self._print_statistics()
             
