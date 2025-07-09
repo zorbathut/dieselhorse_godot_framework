@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Foundation;
 
 public enum GDExtensionInitializationLevel
 {
@@ -76,12 +75,7 @@ public class LibGodot
         }
 
         // note: we need to touch *something* in the Nutdealer DLL to ensure it gets loaded into the default load context before Godot tries to shove it into the plugin context, soon followed by nunit making a second copy of it and everything going all fucky
-        // luckily we also need to inform the game about our new dec directory, so we can kill two birds with one stone
-        // but otherwise, I dunno, just find some random function that has no side effects and call it
-        Bootstrap.DecDirectoryAdd = parser =>
-        {
-            parser.AddDirectory("test/dec");
-        };
+        var _ = new NutDealer.Stub();
 
         string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
         string buildDirectory = System.IO.Path.GetDirectoryName(assemblyLocation);
