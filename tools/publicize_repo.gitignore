@@ -17,3 +17,4 @@
 #. . . but remove actual tests and source data
 /project/test/test
 /project/test/dec
+/project/test/util
