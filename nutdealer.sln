@@ -2,10 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nutdealer", "project\nutdealer.csproj", "{68B32155-84C4-407C-8FFD-0879961F8FC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arbor-generator", "project\thirdparty\arbor\arbor-generator\arbor-generator.csproj", "{6354C629-E656-42F6-A74C-C1FA51F73C00}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "greact-generator", "project\thirdparty\greact\greact-generator\greact-generator.csproj", "{F417A1D3-5A56-447B-B31B-91C193B68C58}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nutdealer-test", "project\test\test.csproj", "{963A8A38-800A-4C96-ADDF-B04560653726}"
 EndProject
 Global
@@ -30,30 +26,6 @@ Global
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Optimize|Any CPU.Build.0 = Optimize|Any CPU
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Release Stripped|Any CPU.ActiveCfg = StrippedExport|Any CPU
 		{68B32155-84C4-407C-8FFD-0879961F8FC8}.Release Stripped|Any CPU.Build.0 = StrippedExport|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug Stripped|Any CPU.ActiveCfg = Debug|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Debug Stripped|Any CPU.Build.0 = Debug|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Optimize Stripped|Any CPU.ActiveCfg = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Optimize Stripped|Any CPU.Build.0 = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Optimize|Any CPU.ActiveCfg = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Optimize|Any CPU.Build.0 = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release Stripped|Any CPU.ActiveCfg = Release|Any CPU
-		{6354C629-E656-42F6-A74C-C1FA51F73C00}.Release Stripped|Any CPU.Build.0 = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Debug Stripped|Any CPU.ActiveCfg = Debug|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Debug Stripped|Any CPU.Build.0 = Debug|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Optimize Stripped|Any CPU.ActiveCfg = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Optimize Stripped|Any CPU.Build.0 = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Optimize|Any CPU.ActiveCfg = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Optimize|Any CPU.Build.0 = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Release Stripped|Any CPU.ActiveCfg = Release|Any CPU
-		{F417A1D3-5A56-447B-B31B-91C193B68C58}.Release Stripped|Any CPU.Build.0 = Release|Any CPU
 		{963A8A38-800A-4C96-ADDF-B04560653726}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{963A8A38-800A-4C96-ADDF-B04560653726}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{963A8A38-800A-4C96-ADDF-B04560653726}.Release|Any CPU.ActiveCfg = Release|Any CPU
