@@ -18,3 +18,6 @@
 /project/test/test
 /project/test/dec
 /project/test/util
+
+# and really you don't need my changelog
+/project/CHANGELOG.md
