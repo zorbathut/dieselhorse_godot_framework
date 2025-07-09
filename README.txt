@@ -16,6 +16,8 @@ If you're thinking "I'm an experienced developer with a quarter of a century exp
 
 The Godot directory consists of a sequence of Godot snapshots along with custom patches. This will be slightly awkward to merge into your own Godot distribution if you want to. Sorry. The HDSS module is a proprietary renderer and is not provided in this codebase, which is why it's disabled (it won't even remotely build, the code isn't here.)
 
+The Git history of this repo is going to be highly unstable because it's based on a program that distills another Git repo down, in order, to preserve the history, but that history is obviously going to change if I add or remove files from the filter. Sometimes I'll do merges. Sometimes I'll just rebase everything. Have fun!
+
 Godot and third-party libraries are provided under its own licenses. Everything besides that is under the MIT license.
 
 May this make your life better.
