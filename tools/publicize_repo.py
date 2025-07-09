@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import shutil
 import util
+import build_utils
 
 util.cwdhack()
 
@@ -665,6 +666,10 @@ class GitRepoFilter:
                 target_repo.git.checkout('dev', force=True)
                 target_repo.head.reset(index=True, working_tree=True)
                 self.logger.info("Successfully checked out dev branch")
+                
+                # Post-process: Replace project name with 'nutdealer'
+                self._replace_project_name(target_repo)
+                
             except Exception as e:
                 self.logger.error(f"Error checking out dev branch: {e}")
             
@@ -748,6 +753,51 @@ class GitRepoFilter:
                         self.logger.info(f"Created tag {tag.name}")
                     except Exception as e:
                         self.logger.warning(f"Could not create tag {tag.name}: {e}")
+    
+    def _replace_project_name(self, target_repo: Repo):
+        """Replace all instances of the original project name with 'nutdealer'."""
+        try:
+            original_name = build_utils.get_project_name()
+            self.logger.info(f"Replacing project name '{original_name}' with 'nutdealer'...")
+            
+            target_path = str(target_repo.working_dir)
+            
+            # Replace lowercase version
+            subprocess.run([
+                'find', target_path, '-type', 'f', 
+                '-not', '-path', '*/\\.git/*',
+                '-exec', 'sed', '-i', f's/{original_name}/nutdealer/g', '{}', '+'
+            ], capture_output=True)
+            
+            # Replace capitalized version
+            subprocess.run([
+                'find', target_path, '-type', 'f',
+                '-not', '-path', '*/\\.git/*', 
+                '-exec', 'sed', '-i', f's/{original_name.capitalize()}/Nutdealer/g', '{}', '+'
+            ], capture_output=True)
+            
+            # Rename files containing the project name
+            find_result = subprocess.run([
+                'find', target_path, '-name', f'*{original_name}*',
+                '-not', '-path', '*/\\.git/*'
+            ], capture_output=True, text=True)
+            
+            if find_result.returncode == 0 and find_result.stdout.strip():
+                for old_path in find_result.stdout.strip().split('\n'):
+                    if old_path:  # Skip empty lines
+                        new_path = old_path.replace(original_name, 'nutdealer')
+                        if old_path != new_path:
+                            os.rename(old_path, new_path)
+                            self.logger.debug(f"Renamed: {old_path} -> {new_path}")
+            
+            # Commit the changes
+            target_repo.git.add('-A')
+            if target_repo.index.diff('HEAD'):
+                target_repo.index.commit(f"Replace project name with 'nutdealer'")
+                self.logger.info("Committed project name replacement")
+                
+        except Exception as e:
+            self.logger.error(f"Error replacing project name: {e}")
     
     def _print_statistics(self):
         """Print filtering statistics."""
