@@ -658,6 +658,16 @@ class GitRepoFilter:
             # Then propagate tags from filtered commits to their next valid commit
             self._propagate_tags(target_repo)
             
+            # Check out the dev branch to populate the working directory
+            self.logger.info("Checking out dev branch in target repository...")
+            try:
+                # Reset hard to dev branch to populate working directory
+                target_repo.git.checkout('dev', force=True)
+                target_repo.head.reset(index=True, working_tree=True)
+                self.logger.info("Successfully checked out dev branch")
+            except Exception as e:
+                self.logger.error(f"Error checking out dev branch: {e}")
+            
             # Print statistics
             self._print_statistics()
             
