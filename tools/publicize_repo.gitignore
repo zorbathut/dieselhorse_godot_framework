@@ -10,3 +10,10 @@
 
 # custom renderer core
 /godot/servers/rendering/renderer_hdss
+
+# re-introduce the test system . . .
+!/project/test
+
+#. . . but remove actual tests and source data
+/project/test/test
+/project/test/dec
